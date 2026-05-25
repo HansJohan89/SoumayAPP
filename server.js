@@ -1,6 +1,6 @@
 /**
- * Soumaya App — HTTPS Server
- * Express + Web Push + Multer (bilduppladdning) + GPS-spår + Admin API
+ * Soumaya App — Server
+ * Kör med vanlig HTTP (Railway sköter HTTPS externt)
  */
 
 const express  = require('express');
@@ -15,16 +15,22 @@ const VAPID_PUBLIC  = 'BN0ejLf_fZYlrgPZgnM-uMbwCLIsobrjrC_Zn98MJYnZXoXHQv2k9bsTc
 const VAPID_PRIVATE = 'J9zJ8etgMgEdnGG9deT1NZA94LjO9e_NDfKyDBJa5aI';
 webpush.setVapidDetails('mailto:admin@soumaya.local', VAPID_PUBLIC, VAPID_PRIVATE);
 
-// ── ADMIN-LÖSENORD ───────────────────────────────────────────
+// ── KONFIGURATION ─────────────────────────────────────────────
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'invincible2024';
-const adminSessions  = new Set(); // enkla token-sessions
+const PORT           = process.env.PORT || 3000;
+const DATA_DIR       = process.env.DATA_DIR || path.join(__dirname, 'data');
+const UPLOADS_DIR    = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads/meals');
+
+// Skapa mappar om de saknas
+[DATA_DIR, UPLOADS_DIR].forEach(dir => {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+});
 
 // ── DATA-FILER ───────────────────────────────────────────────
-const DATA_DIR  = path.join(__dirname, 'data');
-const SUBS_FILE = path.join(DATA_DIR, 'subscriptions.json');
-const MEALS_FILE= path.join(DATA_DIR, 'meals.json');
-const WALKS_FILE= path.join(DATA_DIR, 'walks.json');
-const TASKS_FILE= path.join(DATA_DIR, 'tasks.json');
+const SUBS_FILE    = path.join(DATA_DIR, 'subscriptions.json');
+const MEALS_FILE   = path.join(DATA_DIR, 'meals.json');
+const WALKS_FILE   = path.join(DATA_DIR, 'walks.json');
+const TASKS_FILE   = path.join(DATA_DIR, 'tasks.json');
 const GLUCOSE_FILE = path.join(DATA_DIR, 'glucose.json');
 
 function readJSON(file, def) {
@@ -40,9 +46,9 @@ let walks         = readJSON(WALKS_FILE, []);
 let tasks         = readJSON(TASKS_FILE, []);
 let glucoseLog    = readJSON(GLUCOSE_FILE, []);
 
-// ── MULTER (bilduppladdning) ─────────────────────────────────
+// ── MULTER ───────────────────────────────────────────────────
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, 'uploads/meals')),
+  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
   filename:    (req, file, cb) => {
     const ext = path.extname(file.originalname) || '.jpg';
     cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
@@ -64,19 +70,19 @@ app.use(express.static(path.join(__dirname), {
       res.setHeader('Content-Type', 'application/manifest+json');
   }
 }));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(UPLOADS_DIR));
 
-// ── AUTH MIDDLEWARE ──────────────────────────────────────────
+// ── AUTH ─────────────────────────────────────────────────────
+const adminSessions = new Set();
+
 function adminAuth(req, res, next) {
   const token = req.headers['x-admin-token'] || req.query.token;
   if (token && adminSessions.has(token)) return next();
   res.status(401).json({ error: 'Ej autentiserad' });
 }
 
-// ── ADMIN LOGIN ──────────────────────────────────────────────
 app.post('/api/admin/login', (req, res) => {
-  const { password } = req.body;
-  if (password === ADMIN_PASSWORD) {
+  if (req.body.password === ADMIN_PASSWORD) {
     const token = crypto.randomBytes(32).toString('hex');
     adminSessions.add(token);
     res.json({ ok: true, token });
@@ -86,8 +92,7 @@ app.post('/api/admin/login', (req, res) => {
 });
 
 app.post('/api/admin/logout', adminAuth, (req, res) => {
-  const token = req.headers['x-admin-token'];
-  adminSessions.delete(token);
+  adminSessions.delete(req.headers['x-admin-token']);
   res.json({ ok: true });
 });
 
@@ -124,7 +129,6 @@ async function pushToAll(title, body, tag = 'general') {
   }
 }
 
-// ── ADMIN: SKICKA PUSH ───────────────────────────────────────
 app.post('/api/admin/push', adminAuth, async (req, res) => {
   const { title, body, tag } = req.body;
   await pushToAll(title, body, tag);
@@ -132,37 +136,30 @@ app.post('/api/admin/push', adminAuth, async (req, res) => {
 });
 
 // ── MÅLTIDER ─────────────────────────────────────────────────
-// Bild-upload: före eller efter
 app.post('/api/meals/upload', upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Ingen fil' });
-  const { mealId, phase } = req.body; // phase: 'before' | 'after'
+  const { mealId, phase } = req.body;
   if (!mealId || !['before','after'].includes(phase))
     return res.status(400).json({ error: 'Saknar mealId/phase' });
 
-  const url = `/uploads/meals/${req.file.filename}`;
+  const url = `/uploads/${req.file.filename}`;
   let meal = meals.find(m => m.id === mealId);
   if (!meal) {
-    meal = { id: mealId, createdAt: Date.now(), before: null, after: null,
-             name: '', carbs: 0, mealType: '' };
+    meal = { id: mealId, createdAt: Date.now(), before: null, after: null, name: '', carbs: 0, mealType: '' };
     meals.unshift(meal);
   }
   meal[phase] = url;
   meal[phase + 'Time'] = Date.now();
-
-  // Räknas som komplett när båda bilder finns
   if (meal.before && meal.after) meal.complete = true;
-
   writeJSON(MEALS_FILE, meals);
   res.json({ ok: true, url, meal });
 });
 
-// Spara måltidsinfo (namn, kolhydrater etc)
 app.post('/api/meals', (req, res) => {
   const { id, name, carbs, mealType } = req.body;
   let meal = meals.find(m => m.id === id);
   if (!meal) {
-    meal = { id: id || crypto.randomUUID(), createdAt: Date.now(),
-             before: null, after: null, complete: false };
+    meal = { id: id || crypto.randomUUID(), createdAt: Date.now(), before: null, after: null, complete: false };
     meals.unshift(meal);
   }
   if (name)     meal.name     = name;
@@ -172,19 +169,15 @@ app.post('/api/meals', (req, res) => {
   res.json({ ok: true, meal });
 });
 
-app.get('/api/meals', adminAuth, (req, res) => {
-  res.json(meals.slice(0, 100));
-});
+app.get('/api/meals', adminAuth, (req, res) => res.json(meals.slice(0, 100)));
 
 // ── PROMENADER ───────────────────────────────────────────────
-// Spara GPS-spår (skickas löpande från appen)
 app.post('/api/walks/track', (req, res) => {
-  const { walkId, coords } = req.body; // coords: [{lat,lng,ts}]
+  const { walkId, coords } = req.body;
   if (!walkId) return res.status(400).json({ error: 'Saknar walkId' });
   let walk = walks.find(w => w.id === walkId);
   if (!walk) {
-    walk = { id: walkId, startTime: Date.now(), coords: [], active: true,
-             distance: 0, duration: 0 };
+    walk = { id: walkId, startTime: Date.now(), coords: [], active: true, distance: 0, duration: 0 };
     walks.unshift(walk);
   }
   if (coords?.length) walk.coords.push(...coords);
@@ -193,7 +186,6 @@ app.post('/api/walks/track', (req, res) => {
   res.json({ ok: true });
 });
 
-// Avsluta promenad
 app.post('/api/walks/finish', (req, res) => {
   const { walkId, minutes } = req.body;
   const walk = walks.find(w => w.id === walkId);
@@ -216,9 +208,8 @@ app.get('/api/walks/:id', (req, res) => {
 function calcDistance(coords) {
   if (!coords || coords.length < 2) return 0;
   let d = 0;
-  for (let i = 1; i < coords.length; i++) {
+  for (let i = 1; i < coords.length; i++)
     d += haversine(coords[i-1].lat, coords[i-1].lng, coords[i].lat, coords[i].lng);
-  }
   return Math.round(d * 100) / 100;
 }
 function haversine(lat1, lon1, lat2, lon2) {
@@ -240,8 +231,7 @@ app.post('/api/glucose', (req, res) => {
 });
 
 app.get('/api/glucose', adminAuth, (req, res) => {
-  const count = parseInt(req.query.count) || 48;
-  res.json(glucoseLog.slice(-count));
+  res.json(glucoseLog.slice(-(parseInt(req.query.count) || 48)));
 });
 
 // ── UPPGIFTER ─────────────────────────────────────────────────
@@ -252,7 +242,7 @@ app.post('/api/tasks', adminAuth, (req, res) => {
     id: crypto.randomUUID(),
     title: req.body.title,
     description: req.body.description || '',
-    type: req.body.type || 'daily', // daily | once
+    type: req.body.type || 'daily',
     reward: req.body.reward || '',
     active: true,
     createdAt: Date.now()
@@ -276,18 +266,13 @@ app.delete('/api/tasks/:id', adminAuth, (req, res) => {
   res.json({ ok: true });
 });
 
-// ── ADMIN: DASHBOARD-DATA ────────────────────────────────────
+// ── ADMIN DASHBOARD ──────────────────────────────────────────
 app.get('/api/admin/dashboard', adminAuth, (req, res) => {
-  const now = Date.now();
   const today = new Date().toISOString().split('T')[0];
-
-  const todayMeals  = meals.filter(m => new Date(m.createdAt).toISOString().split('T')[0] === today);
-  const todayWalks  = walks.filter(w => new Date(w.startTime).toISOString().split('T')[0] === today);
+  const todayMeals = meals.filter(m => new Date(m.createdAt).toISOString().split('T')[0] === today);
+  const todayWalks = walks.filter(w => new Date(w.startTime).toISOString().split('T')[0] === today);
   const lastGlucose = glucoseLog[glucoseLog.length - 1] || null;
-  const recentMeals = meals.slice(0, 5);
-  const recentWalks = walks.slice(0, 5);
 
-  // Streak-beräkning
   let streak = 0;
   const d = new Date();
   while (streak < 365) {
@@ -302,25 +287,27 @@ app.get('/api/admin/dashboard', adminAuth, (req, res) => {
       meals:    todayMeals.length,
       mealsOk:  todayMeals.filter(m => m.complete).length,
       walkMins: todayWalks.reduce((a,w) => a+w.duration, 0),
-      walkKm:   todayWalks.reduce((a,w) => a+w.distance, 0).toFixed(1),
+      walkKm:   todayWalks.reduce((a,w) => a+(w.distance||0), 0).toFixed(1),
     },
     streak,
     lastGlucose,
     glucoseHistory: glucoseLog.slice(-24),
-    recentMeals,
-    recentWalks,
+    recentMeals:    meals.slice(0, 5),
+    recentWalks:    walks.slice(0, 5),
     tasks,
-    subscriptions: subscriptions.length
+    subscriptions:  subscriptions.length
   });
 });
+
+// ── ADMIN HTML ───────────────────────────────────────────────
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
+app.get('/admin.html', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
 
 // ── SCHEMALAGDA PÅMINNELSER ──────────────────────────────────
 let lastFood = 0, lastWalk = 0, lastGluc = 0;
 setInterval(async () => {
   const now = Date.now(), h = new Date().getHours();
   if (h < 7 || h >= 22) return;
-  const s = (new Date()).toISOString().split('T')[0];
-
   if (now - lastFood > 4*3600000) {
     await pushToAll('Dags att äta! 🐸', '*stirrar intensivt* ...mat?', 'food');
     lastFood = now;
@@ -330,25 +317,13 @@ setInterval(async () => {
     lastWalk = now;
   }
   if (now - lastGluc > 3*3600000) {
-    await pushToAll('Mät blodsockret!', 'Håller koll. — Butcher', 'glucose');
+    await pushToAll('Mät blodsockret!', 'Håller koll. — Omni-Man', 'glucose');
     lastGluc = now;
   }
 }, 30*60*1000);
 
-// ── ADMIN HTML (serveras från /admin) ───────────────────────
-app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
-app.get('/admin.html', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
-
 // ── STARTA ───────────────────────────────────────────────────
-const PORT = process.env.PORT || 3443;
-try {
-  const httpsLocalhost = require('https-localhost')();
-  httpsLocalhost.getCerts().then(certs => {
-    require('https').createServer(certs, app).listen(PORT, () => {
-      console.log(`\n✅ Soumaya kör på https://localhost:${PORT}`);
-      console.log(`🔐 Admin: https://localhost:${PORT}/admin  (lösenord: ${ADMIN_PASSWORD})\n`);
-    });
-  });
-} catch(e) {
-  app.listen(PORT, () => console.log(`HTTP: https://localhost:${PORT}`));
-}
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`\n✅ Soumaya kör på port ${PORT}`);
+  console.log(`🔐 Admin: /admin\n`);
+});
