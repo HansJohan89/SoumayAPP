@@ -1755,22 +1755,6 @@ if (typeof module !== 'undefined') {
   window.getAchIcon = getAchIcon;
 }
 
-</script>
-<script>
-  const unlocked = state.unlockedAchievements || [];
-  const newOnes  = checkAchievements(state, unlocked);
-  if (newOnes.length) {
-    state.unlockedAchievements = [...unlocked, ...newOnes.map(a => a.id)];
-    // Räkna XP
-    let xpGain = 0;
-    newOnes.forEach(a => { xpGain += a.xp; achQueue.push(a); });
-    state.totalXP = (state.totalXP || 0) + xpGain;
-    save();
-    if (achQueue.length === 1) showNextAchModal();
-    updateAchBadge();
-  }
-}
-
 function showNextAchModal() {
   if (!achQueue.length) return;
   const a = achQueue.shift();
