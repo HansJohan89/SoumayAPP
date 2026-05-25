@@ -1,0 +1,2029 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FF6B1A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Soumaya">
+<link rel="manifest" href="manifest.json">
+<title>Soumaya</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #FFD700;
+  --primary-dark: #cc9900;
+  --primary-glow: rgba(255,215,0,0.35);
+  --accent: #1a6bff;
+  --black: #080808;
+  --dark: #111111;
+  --dark2: #1a1a1a;
+  --card: #161616;
+  --card2: #1e1e1e;
+  --text: #f0f0e8;
+  --muted: #888880;
+  --green: #4aff6a;
+  --green-d: #1a8a2a;
+  --red: #ff3a2a;
+  --red-d: #8a1a0a;
+  --blue: #3a9aff;
+  --halftone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Ccircle cx='3' cy='3' r='1' fill='rgba(255,107,26,0.07)'/%3E%3C/svg%3E");
+  --font-title: 'Bangers', cursive;
+  --font-body: 'Nunito', sans-serif;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  background: var(--black);
+  color: var(--text);
+  font-family: var(--font-body);
+  overscroll-behavior: none;
+}
+
+body {
+  background-color: var(--black);
+  background-image: var(--halftone);
+  min-height: 100vh;
+  padding-bottom: calc(72px + var(--safe-bottom));
+}
+
+/* ── HEADER ── */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--black);
+  border-bottom: 3px solid var(--primary);
+  padding: calc(var(--safe-top) + 12px) 16px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.app-title {
+  font-family: var(--font-title);
+  font-size: 28px;
+  letter-spacing: 2px;
+  color: var(--primary);
+  text-shadow: 3px 3px 0 var(--primary-dark), 0 0 20px var(--primary-glow);
+  line-height: 1;
+}
+.app-subtitle { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+.header-right { text-align: right; }
+
+/* ── NAV ── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  background: var(--dark);
+  border-top: 3px solid var(--primary);
+  display: flex;
+  padding-bottom: var(--safe-bottom);
+  z-index: 200;
+}
+.nav-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 10px 4px 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: color 0.15s;
+  font-family: var(--font-body);
+}
+.nav-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.nav-btn span { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+.nav-btn.active { color: var(--primary); }
+
+/* ── PAGES ── */
+.page { display: none; padding: 16px; animation: fadeIn 0.2s ease; }
+.page.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── CARDS ── */
+.card {
+  background: var(--card);
+  border: 2px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--primary);
+}
+.card-title {
+  font-family: var(--font-title);
+  font-size: 18px;
+  letter-spacing: 1px;
+  color: var(--primary);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+.card.green::before { background: var(--green); }
+.card.green .card-title { color: var(--green); }
+.card.blue::before { background: var(--blue); }
+.card.blue .card-title { color: var(--blue); }
+.card.red::before { background: var(--red); }
+.card.red .card-title { color: var(--red); }
+
+/* ── GLUKOS-DISPLAY ── */
+.glucose-big {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.glucose-value {
+  font-family: var(--font-title);
+  font-size: 64px;
+  line-height: 1;
+  color: var(--green);
+  letter-spacing: -1px;
+  text-shadow: 0 0 30px rgba(74,255,106,0.4);
+  transition: color 0.5s;
+}
+.glucose-value.warning { color: var(--accent); text-shadow: 0 0 30px rgba(26,107,255,0.4); }
+.glucose-value.danger { color: var(--red); text-shadow: 0 0 30px rgba(255,58,42,0.4); }
+.glucose-unit { font-size: 18px; color: var(--muted); font-weight: 700; }
+.glucose-trend { font-size: 28px; margin-left: 4px; }
+.glucose-time { font-size: 12px; color: var(--muted); font-weight: 600; }
+
+/* ── RANGE BAR ── */
+.range-bar {
+  position: relative;
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #ff3a2a 0%, #ff3a2a 22%, #4aff6a 22%, #4aff6a 72%, #ff9030 72%, #ff9030 87%, #ff3a2a 87%);
+  margin: 10px 0 4px;
+  overflow: visible;
+}
+.range-needle {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid var(--primary);
+  box-shadow: 0 0 8px var(--primary-glow);
+  transition: left 0.8s cubic-bezier(.34,1.56,.64,1);
+}
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+/* ── KARAKTÄR ── */
+.companion-section {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.companion-avatar {
+  width: 80px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+}
+.companion-avatar svg { width: 80px; height: auto; display: block; }
+.companion-speech {
+  background: var(--dark2);
+  border: 2px solid #333;
+  border-radius: 10px;
+  border-bottom-left-radius: 2px;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  flex: 1;
+  position: relative;
+  font-weight: 600;
+}
+.companion-speech::before {
+  content: '';
+  position: absolute;
+  left: -10px; bottom: 12px;
+  border: 5px solid transparent;
+  border-right-color: #333;
+}
+.companion-name {
+  font-family: var(--font-title);
+  font-size: 14px;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+/* ── STREAK ── */
+.streak-row { display: flex; gap: 6px; margin-bottom: 12px; }
+.streak-day {
+  flex: 1;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  border: 2px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--muted);
+}
+.streak-day.done { background: var(--primary); border-color: var(--primary-dark); color: white; }
+.streak-day.today { border-color: var(--primary); color: var(--primary); }
+
+/* ── GRID ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.stat-mini {
+  background: var(--card2);
+  border: 1.5px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+.stat-mini-val { font-family: var(--font-title); font-size: 28px; color: var(--primary); letter-spacing: 1px; }
+.stat-mini-label { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+/* ── KNAPPAR ── */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  font-family: var(--font-title);
+  font-size: 20px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  text-transform: uppercase;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 0 var(--primary-dark), 0 0 20px var(--primary-glow); }
+.btn-primary:active { box-shadow: 0 1px 0 var(--primary-dark); }
+.btn-ghost { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+.btn-sm { padding: 10px 14px; font-size: 16px; border-radius: 8px; }
+
+/* ── INPUT ── */
+.input-group { margin-bottom: 14px; }
+.input-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; display: block; }
+.input-field {
+  width: 100%;
+  background: var(--dark2);
+  border: 2px solid #333;
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  padding: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.input-field:focus { border-color: var(--primary); }
+.input-big {
+  font-family: var(--font-title);
+  font-size: 36px;
+  letter-spacing: 2px;
+  text-align: center;
+  color: var(--primary);
+}
+
+/* ── LOGG-LISTA ── */
+.log-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #222;
+}
+.log-item:last-child { border-bottom: none; }
+.log-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.log-icon.food { background: rgba(255,107,26,0.15); }
+.log-icon.glucose { background: rgba(74,255,106,0.1); }
+.log-icon.walk { background: rgba(58,154,255,0.1); }
+.log-main { flex: 1; }
+.log-title { font-size: 14px; font-weight: 700; }
+.log-meta { font-size: 12px; color: var(--muted); }
+.log-value { font-family: var(--font-title); font-size: 18px; letter-spacing: 1px; }
+.log-value.ok { color: var(--green); }
+.log-value.warn { color: var(--accent); }
+.log-value.bad { color: var(--red); }
+
+/* ── CGM SETUP ── */
+.setup-box {
+  background: rgba(255,107,26,0.08);
+  border: 2px dashed var(--primary);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 300;
+  display: flex;
+  align-items: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal-sheet {
+  background: var(--dark);
+  border-top: 3px solid var(--primary);
+  border-radius: 16px 16px 0 0;
+  width: 100%;
+  padding: 20px 16px calc(20px + var(--safe-bottom));
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+}
+.modal-overlay.open .modal-sheet { transform: translateY(0); }
+.modal-title { font-family: var(--font-title); font-size: 24px; letter-spacing: 2px; color: var(--primary); text-align: center; margin-bottom: 20px; text-transform: uppercase; }
+
+/* ── SETTINGS ── */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid #222;
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-label { font-size: 14px; font-weight: 700; }
+.setting-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.toggle {
+  position: relative;
+  width: 48px; height: 26px;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: #333;
+  border-radius: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 20px; height: 20px;
+  left: 3px; top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.toggle input:checked + .toggle-slider { background: var(--primary); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(22px); }
+
+/* ── CHART ── */
+.mini-chart { height: 80px; position: relative; margin: 8px 0; }
+.mini-chart canvas { width: 100% !important; height: 80px !important; }
+
+/* ── ACHIEVEMENT TOAST ── */
+.toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: var(--primary);
+  color: white;
+  font-family: var(--font-title);
+  font-size: 16px;
+  letter-spacing: 1px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px var(--primary-glow);
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+  z-index: 500;
+  text-align: center;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── SECTION HEADER ── */
+.section-header {
+  font-family: var(--font-title);
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin: 20px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-header::after { content: ''; flex: 1; height: 1px; background: #2a2a2a; }
+
+/* ── TAG-KNAPPAR ── */
+.tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.tag {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 2px solid #333;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: none;
+  font-family: var(--font-body);
+}
+.tag.selected { border-color: var(--primary); color: var(--primary); background: rgba(255,215,0,0.12); }
+
+/* ── ACHIEVEMENT CARDS ── */
+.ach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ach-card {
+  background: var(--card);
+  border: 1.5px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+}
+.ach-card.unlocked {
+  border-color: #3a3a00;
+  box-shadow: 0 0 12px rgba(255,215,0,0.1);
+}
+.ach-card.locked { opacity: 0.45; filter: grayscale(0.6); }
+.ach-icon { font-size: 32px; margin-bottom: 6px; line-height: 1; }
+.ach-icon.locked-icon { filter: grayscale(1); opacity: 0.4; }
+.ach-title { font-family: var(--font-title); font-size: 14px; letter-spacing: 0.5px; line-height: 1.2; margin-bottom: 3px; }
+.ach-desc { font-size: 10px; color: var(--muted); font-weight: 600; line-height: 1.3; margin-bottom: 6px; }
+.ach-xp { font-family: var(--font-title); font-size: 13px; letter-spacing: 1px; }
+.ach-tier-badge {
+  position: absolute; top: 6px; right: 6px;
+  font-size: 9px; font-weight: 900; letter-spacing: 0.5px;
+  padding: 2px 5px; border-radius: 4px; text-transform: uppercase;
+}
+.tier-bronze   { background: rgba(205,127,50,0.2);  color: #cd7f32; }
+.tier-silver   { background: rgba(192,192,192,0.2); color: #c0c0c0; }
+.tier-gold     { background: rgba(255,215,0,0.2);   color: #FFD700; }
+.tier-platinum { background: rgba(229,228,226,0.2); color: #e5e4e2; }
+.tier-invincible {
+  background: linear-gradient(135deg,rgba(255,215,0,0.3),rgba(26,107,255,0.3));
+  color: white; animation: shimmer 2s infinite;
+}
+@keyframes shimmer {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+.ach-check {
+  position: absolute; top: 6px; left: 6px;
+  font-size: 14px;
+}
+.ach-char-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  position: absolute; bottom: 8px; left: 8px;
+}
+.section-divider {
+  font-family: var(--font-title); font-size: 13px; letter-spacing: 2px;
+  color: var(--muted); text-transform: uppercase;
+  display: flex; align-items: center; gap: 8px;
+  margin: 16px 0 10px;
+}
+.section-divider::after { content: ''; flex: 1; height: 1px; background: #222; }
+
+/* ── PROGRESS RING ── */
+.progress-ring-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 12px;
+}
+.ring-container { position: relative; width: 80px; height: 80px; }
+.ring-container svg { width: 80px; height: 80px; transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: #2a2a2a; stroke-width: 8; }
+.ring-fill { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.8s cubic-bezier(.34,1.56,.64,1); }
+.ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.ring-val { font-family: var(--font-title); font-size: 18px; letter-spacing: 1px; line-height: 1; }
+.ring-sub { font-size: 9px; color: var(--muted); font-weight: 700; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div>
+    <div class="app-title">SOUMAYA</div>
+    <div class="app-subtitle">Din styrka, varje dag</div>
+  </div>
+  <div class="header-right">
+    <div id="headerTime" style="font-size:13px; font-weight:700; color:var(--muted);"></div>
+    <div id="headerDate" style="font-size:11px; color:#555;"></div>
+  </div>
+</header>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ══ SIDA: HEM ══ -->
+<div class="page active" id="page-home">
+
+  <!-- GLUKOS CARD -->
+  <div class="card" id="glucoseCard">
+    <div class="card-title">Blodsocker just nu</div>
+    <div class="companion-section" style="margin-bottom:12px;">
+      <div class="companion-avatar" id="butcherAvatar"></div>
+      <div>
+        <div class="glucose-big">
+          <span class="glucose-value" id="glucoseValue">--</span>
+          <span class="glucose-unit">mmol/L</span>
+          <span class="glucose-trend" id="glucoseTrend"></span>
+        </div>
+        <div class="glucose-time" id="glucoseTime">Inte ansluten till xDrip</div>
+      </div>
+    </div>
+    <div class="range-bar">
+      <div class="range-needle" id="rangeNeedle" style="left:50%"></div>
+    </div>
+    <div class="range-labels">
+      <span>Lågt &lt;4</span><span>Målzon 4–8</span><span>Högt &gt;10</span>
+    </div>
+    <div id="butcherSpeech" style="margin-top:12px;"></div>
+  </div>
+
+  <!-- STREAK -->
+  <div class="card green">
+    <div class="card-title">Veckostreak</div>
+    <div class="streak-row" id="streakRow"></div>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <span id="streakCount" style="font-family:var(--font-title);font-size:24px;color:var(--green);"></span>
+      <span id="streakText" style="font-size:13px; color:var(--muted); font-weight:600;"></span>
+    </div>
+  </div>
+
+  <!-- DAGLIGA MÅL -->
+  <div class="card blue">
+    <div class="card-title">Dagens mål</div>
+    <div class="progress-ring-wrap" id="ringsRow"></div>
+  </div>
+
+  <!-- GROGU / MAT-COMPANION -->
+  <div class="card">
+    <div class="card-title">Grogu säger</div>
+    <div class="companion-section">
+      <div class="companion-avatar" id="groguAvatar"><img id="groguAvatarImg" style="width:80px;height:auto;display:block;" alt="Grogu"></div>
+      <div>
+        <div class="companion-name" style="color:var(--green);">GROGU</div>
+        <div class="companion-speech" id="groguSpeech">Laddar...</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ SIDA: MAT ══ -->
+<div class="page" id="page-food">
+  <div class="card">
+    <div class="card-title">Logga måltid</div>
+    <div class="companion-section" style="margin-bottom:14px;">
+      <div class="companion-avatar" id="groguAvatarFood" style="width:90px;flex-shrink:0;">
+        <img id="groguAvatarFoodImg" style="width:90px;height:auto;display:block;filter:drop-shadow(0 4px 10px rgba(74,255,106,0.3));" alt="Grogu">
+      </div>
+      <div style="flex:1;">
+        <div class="companion-name" style="color:var(--green);">GROGU</div>
+        <div class="companion-speech" id="groguFoodSpeech">Vad ska vi äta?</div>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">Måltid</label>
+      <input type="text" class="input-field" id="foodName" placeholder="T.ex. havregrynsgröt med bär...">
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">Kolhydrater (gram)</label>
+      <input type="number" class="input-field input-big" id="foodCarbs" placeholder="0" min="0" max="300">
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">Typ av måltid</label>
+      <div class="tag-row" id="mealTypeTags">
+        <button class="tag selected" data-val="frukost">🌅 Frukost</button>
+        <button class="tag" data-val="lunch">☀️ Lunch</button>
+        <button class="tag" data-val="middag">🌙 Middag</button>
+        <button class="tag" data-val="mellis">🍎 Mellis</button>
+      </div>
+    </div>
+
+    <!-- BILDER: FÖRE / EFTER -->
+    <div style="margin-bottom:14px;">
+      <div class="input-label" style="margin-bottom:8px;">📸 Bilder (båda krävs!)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px;">Innan du äter</div>
+          <div id="beforePreview" style="width:100%;aspect-ratio:1;background:var(--dark2);border:2px dashed #333;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;" onclick="triggerCamera('before')">
+            <span style="font-size:28px;">📷</span>
+          </div>
+          <input type="file" id="beforeInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto('before',this)">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px;">Efter du ätit</div>
+          <div id="afterPreview" style="width:100%;aspect-ratio:1;background:var(--dark2);border:2px dashed #333;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;" onclick="triggerCamera('after')">
+            <span style="font-size:28px;">📷</span>
+          </div>
+          <input type="file" id="afterInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto('after',this)">
+        </div>
+      </div>
+      <div id="photoStatus" style="font-size:12px;color:var(--muted);text-align:center;margin-top:8px;font-weight:600;"></div>
+    </div>
+    <button class="btn btn-primary" onclick="logFood()" id="logFoodBtn">LOGGA MAT</button>
+  </div>
+
+  <div class="section-header">Senaste måltider</div>
+  <div class="card">
+    <div id="foodLog"></div>
+  </div>
+</div>
+
+<!-- ══ SIDA: RÖRELSE ══ -->
+<div class="page" id="page-walk">
+  <div class="card blue">
+    <div class="card-title">Promenad</div>
+    <div class="companion-section" style="margin-bottom:14px;">
+      <div class="companion-avatar" id="allenAvatar" style="width:90px;flex-shrink:0;">
+        <img id="allenAvatarImg" style="width:90px;height:auto;display:block;filter:drop-shadow(0 4px 10px rgba(26,107,255,0.4));" alt="Allen">
+      </div>
+      <div style="flex:1;">
+        <div class="companion-name" style="color:#1a6bff;">ALLEN</div>
+        <div class="companion-speech" id="allenSpeech">Dags att röra på sig!</div>
+      </div>
+    </div>
+
+    <!-- LIVE STATS -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
+      <div style="text-align:center;background:var(--dark2);border-radius:8px;padding:10px;">
+        <div id="walkTimerDisplay" style="font-family:var(--font-title);font-size:22px;color:#1a6bff;letter-spacing:1px;">00:00</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;">Tid</div>
+      </div>
+      <div style="text-align:center;background:var(--dark2);border-radius:8px;padding:10px;">
+        <div id="walkDistDisplay" style="font-family:var(--font-title);font-size:22px;color:#1a6bff;letter-spacing:1px;">0.00</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;">km</div>
+      </div>
+      <div style="text-align:center;background:var(--dark2);border-radius:8px;padding:10px;">
+        <div id="walkPaceDisplay" style="font-family:var(--font-title);font-size:22px;color:#1a6bff;letter-spacing:1px;">--</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;">min/km</div>
+      </div>
+    </div>
+
+    <!-- KARTA -->
+    <div id="walkMap" style="width:100%;height:220px;border-radius:10px;border:2px solid #333;margin-bottom:14px;overflow:hidden;background:var(--dark2);display:flex;align-items:center;justify-content:center;">
+      <div style="text-align:center;color:var(--muted);">
+        <div style="font-size:28px;margin-bottom:6px;">🗺️</div>
+        <div style="font-size:13px;font-weight:600;">Kartan visas när promenaden startar</div>
+      </div>
+    </div>
+
+    <!-- KNAPPAR -->
+    <div style="display:flex;gap:10px;margin-bottom:10px;">
+      <button class="btn btn-primary btn-sm" id="walkStartBtn" onclick="toggleWalk()" style="flex:2;background:#1a6bff;box-shadow:0 3px 0 #1a5aaa;">STARTA GPS</button>
+      <button class="btn btn-ghost btn-sm" onclick="resetWalk()" style="flex:1;border-color:#444;color:var(--muted);">NOLLST.</button>
+    </div>
+    <button class="btn btn-primary" onclick="finishWalk()" id="finishWalkBtn" style="background:#1a6bff;box-shadow:0 4px 0 #1a5aaa;display:none;">AVSLUTA &amp; SPARA</button>
+  </div>
+
+  <div class="grid-2">
+    <div class="stat-mini">
+      <div class="stat-mini-val" id="walkTotal" style="color:#1a6bff;">0</div>
+      <div class="stat-mini-label">Minuter idag</div>
+    </div>
+    <div class="stat-mini">
+      <div class="stat-mini-val" id="walkDistToday" style="color:#1a6bff;">0.0</div>
+      <div class="stat-mini-label">km idag</div>
+    </div>
+  </div>
+
+  <div class="section-header">Senaste promenader</div>
+  <div class="card">
+    <div id="walkLog"></div>
+  </div>
+</div>
+
+<!-- ══ SIDA: GLUKOS-HISTORIK ══ -->
+<div class="page" id="page-glucose">
+  <div class="card">
+    <div class="card-title">xDrip Anslutning</div>
+    <div id="cgmStatus">
+      <div class="setup-box">
+        <div style="font-size:32px;margin-bottom:8px;">📡</div>
+        <div style="font-family:var(--font-title);font-size:18px;color:var(--primary);margin-bottom:6px;">ANSLUT XDRIP</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Aktivera "xDrip Web Service" i xDrip+ inställningar och ange adressen nedan</div>
+        <div class="input-group">
+          <label class="input-label">xDrip URL (lämna standard om lokal)</label>
+          <input type="text" class="input-field" id="xdripUrl" placeholder="http://127.0.0.1:17580" value="http://127.0.0.1:17580">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="connectXDrip()">ANSLUT</button>
+      </div>
+    </div>
+    <div id="cgmConnected" style="display:none;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);"></div>
+        <span style="font-weight:700;font-size:14px;">Ansluten till xDrip+</span>
+        <button onclick="disconnectXDrip()" style="margin-left:auto;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:var(--font-body);">Koppla bort</button>
+      </div>
+      <div class="mini-chart">
+        <canvas id="glucoseChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Manuell loggning</div>
+    <div class="input-group">
+      <label class="input-label">Blodsocker (mmol/L)</label>
+      <input type="number" class="input-field input-big" id="manualGlucose" placeholder="6.4" min="1" max="30" step="0.1">
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="logManualGlucose()">LOGGA</button>
+  </div>
+
+  <div class="section-header">Senaste mätningar</div>
+  <div class="card">
+    <div id="glucoseLog"></div>
+  </div>
+</div>
+
+<!-- ══ SIDA: ACHIEVEMENTS ══ -->
+<div class="page" id="page-achievements">
+  <!-- XP-total -->
+  <div class="card" style="text-align:center;background:linear-gradient(135deg,#1a1a00 0%,#1a1a1a 100%);">
+    <div style="font-family:var(--font-title);font-size:13px;letter-spacing:3px;color:var(--muted);margin-bottom:4px;">TOTAL XP</div>
+    <div id="achTotalXP" style="font-family:var(--font-title);font-size:56px;color:var(--primary);letter-spacing:-1px;line-height:1;text-shadow:0 0 30px rgba(255,215,0,0.4);">0</div>
+    <div style="font-size:12px;color:var(--muted);font-weight:700;margin-top:4px;" id="achUnlockedCount">0 / 0 upplåsta</div>
+    <!-- Progress bar -->
+    <div style="background:#1a1a1a;border-radius:4px;height:6px;margin-top:12px;overflow:hidden;">
+      <div id="achProgressBar" style="height:100%;background:linear-gradient(90deg,var(--primary),#ff9900);border-radius:4px;transition:width 0.8s;width:0%;"></div>
+    </div>
+  </div>
+
+  <!-- Filter-knappar -->
+  <div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;">
+    <button class="tag selected" data-filter="all" onclick="filterAch('all',this)">Alla</button>
+    <button class="tag" data-filter="unlocked" onclick="filterAch('unlocked',this)">Upplåsta</button>
+    <button class="tag" data-filter="daily" onclick="filterAch('daily',this)">Dagliga</button>
+    <button class="tag" data-filter="streak" onclick="filterAch('streak',this)">Streaks</button>
+    <button class="tag" data-filter="milestone" onclick="filterAch('milestone',this)">Milstolpar</button>
+    <button class="tag" data-filter="special" onclick="filterAch('special',this)">Special</button>
+  </div>
+
+  <div id="achGrid"></div>
+</div>
+
+<!-- ══ ACHIEVEMENT UNLOCK MODAL ══ -->
+<div id="achModal" style="position:fixed;inset:0;z-index:400;pointer-events:none;display:flex;align-items:center;justify-content:center;">
+  <div id="achModalInner" style="background:var(--dark);border:3px solid var(--primary);border-radius:16px;padding:24px;text-align:center;max-width:300px;width:90%;transform:scale(0.5) translateY(40px);opacity:0;transition:all 0.4s cubic-bezier(.34,1.56,.64,1);pointer-events:none;box-shadow:0 0 60px rgba(255,215,0,0.3);">
+    <div style="font-family:var(--font-title);font-size:13px;letter-spacing:3px;color:var(--muted);margin-bottom:8px;">ACHIEVEMENT UNLOCKED</div>
+    <div id="achModalIcon" style="font-size:52px;margin-bottom:10px;"></div>
+    <div id="achModalTitle" style="font-family:var(--font-title);font-size:26px;color:var(--primary);letter-spacing:1px;margin-bottom:6px;"></div>
+    <div id="achModalDesc" style="font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.5;"></div>
+    <div id="achModalFlavor" style="font-size:13px;color:var(--text);font-style:italic;border-top:1px solid #333;padding-top:10px;margin-bottom:12px;line-height:1.5;"></div>
+    <div id="achModalXP" style="font-family:var(--font-title);font-size:24px;color:var(--green);letter-spacing:2px;"></div>
+  </div>
+</div>
+
+<!-- ══ SIDA: INSTÄLLNINGAR ══ -->
+<div class="page" id="page-settings">
+  <div class="card">
+    <div class="card-title">Påminnelser</div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Mätpåminnelse</div>
+        <div class="setting-sub">Påminn om blodsockret inte loggats</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="toggleGlucoseReminder" checked onchange="saveSettings()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Matpåminnelse</div>
+        <div class="setting-sub" id="foodReminderSub">Var 4:e timme</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="toggleFoodReminder" checked onchange="saveSettings()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Promenadpåminnelse</div>
+        <div class="setting-sub">Daglig uppmuntran från Allen</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="toggleWalkReminder" checked onchange="saveSettings()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Blodsockermål</div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Låg gräns (mmol/L)</div>
+      </div>
+      <input type="number" class="input-field" id="lowTarget" value="4.0" min="2" max="6" step="0.1" style="width:80px;text-align:center;padding:8px;" onchange="saveSettings()">
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Hög gräns (mmol/L)</div>
+      </div>
+      <input type="number" class="input-field" id="highTarget" value="8.0" min="6" max="15" step="0.1" style="width:80px;text-align:center;padding:8px;" onchange="saveSettings()">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Matpåminnelse intervall</div>
+    <div class="setting-row">
+      <div><div class="setting-label">Timmar mellan påminnelser</div></div>
+      <select class="input-field" id="foodInterval" style="width:80px;" onchange="saveSettings()">
+        <option value="3">3h</option>
+        <option value="4" selected>4h</option>
+        <option value="5">5h</option>
+        <option value="6">6h</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Om appen</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.7;">
+      Byggd med kärlek.<br>
+      Grogu, Allen &amp; Butcher hejar alltid på dig. 💪
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="goTo('home',this)" id="nav-home">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Hem</span>
+  </button>
+  <button class="nav-btn" onclick="goTo('food',this)" id="nav-food">
+    <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+    <span>Mat</span>
+  </button>
+  <button class="nav-btn" onclick="goTo('walk',this)" id="nav-walk">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M16 17l-4-4-4 4"/><path d="M8 10l4-5 4 5"/><path d="M8 17v4"/><path d="M16 17v4"/></svg>
+    <span>Rörelse</span>
+  </button>
+  <button class="nav-btn" onclick="goTo('glucose',this)" id="nav-glucose">
+    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    <span>Socker</span>
+  </button>
+  <button class="nav-btn" onclick="goTo('achievements',this)" id="nav-achievements">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+    <span>Trophies</span>
+  </button>
+  <button class="nav-btn" onclick="goTo('settings',this)" id="nav-settings">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    <span>Inställn.</span>
+  </button>
+</nav>
+
+<!-- KARAKTÄRSBILDER -->
+<script src="char_imgs.js"></script>
+<!-- ACHIEVEMENTS -->
+<script src="achievements.js"></script>
+<!-- CHART.JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<!-- LEAFLET -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ══════════════════════════════════════════
+// KARAKTÄRS-SVGs
+// ══════════════════════════════════════════
+const GROGU_SVG = `<svg viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="60" cy="115" rx="34" ry="22" fill="#2a2a1a"/>
+  <rect x="26" y="95" width="68" height="25" rx="8" fill="#3a3a22"/>
+  <ellipse cx="60" cy="72" rx="46" ry="42" fill="#7a9e6e"/>
+  <ellipse cx="14" cy="68" rx="13" ry="22" fill="#7a9e6e"/>
+  <ellipse cx="106" cy="68" rx="13" ry="22" fill="#7a9e6e"/>
+  <ellipse cx="14" cy="68" rx="8" ry="15" fill="#c8847a" opacity="0.6"/>
+  <ellipse cx="106" cy="68" rx="8" ry="15" fill="#c8847a" opacity="0.6"/>
+  <ellipse cx="60" cy="78" rx="34" ry="30" fill="#8ab07c"/>
+  <ellipse cx="46" cy="68" rx="11" ry="12" fill="#1a1a0a"/>
+  <ellipse cx="74" cy="68" rx="11" ry="12" fill="#1a1a0a"/>
+  <circle cx="46" cy="68" r="7" fill="#2a3a1a"/>
+  <circle cx="74" cy="68" r="7" fill="#2a3a1a"/>
+  <circle cx="46" cy="67" r="4" fill="#0a1a05"/>
+  <circle cx="74" cy="67" r="4" fill="#0a1a05"/>
+  <circle cx="48" cy="65" r="2" fill="white" opacity="0.9"/>
+  <circle cx="76" cy="65" r="2" fill="white" opacity="0.9"/>
+  <ellipse cx="60" cy="80" rx="5" ry="3" fill="#5a7a52"/>
+  <circle cx="58" cy="79" r="2" fill="#3a5a32" opacity="0.7"/>
+  <circle cx="62" cy="79" r="2" fill="#3a5a32" opacity="0.7"/>
+  <path d="M50 90 Q60 97 70 90" stroke="#3a5a32" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <ellipse cx="30" cy="108" rx="9" ry="7" fill="#7a9e6e"/>
+  <ellipse cx="90" cy="108" rx="9" ry="7" fill="#7a9e6e"/>
+</svg>`;
+
+const ALLEN_SVG = `<svg viewBox="0 0 120 150" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="60" cy="118" rx="32" ry="28" fill="#1a3a5a"/>
+  <rect x="28" y="95" width="64" height="30" rx="10" fill="#1e4472"/>
+  <rect x="48" y="85" width="24" height="18" rx="5" fill="#2a5a8a"/>
+  <ellipse cx="60" cy="65" rx="42" ry="44" fill="#2a6aaa"/>
+  <ellipse cx="60" cy="70" rx="34" ry="36" fill="#3278be"/>
+  <ellipse cx="44" cy="60" rx="14" ry="10" fill="#fff8e0"/>
+  <ellipse cx="76" cy="60" rx="14" ry="10" fill="#fff8e0"/>
+  <ellipse cx="44" cy="60" rx="9" ry="7" fill="#ff6b00"/>
+  <ellipse cx="76" cy="60" rx="9" ry="7" fill="#ff6b00"/>
+  <circle cx="44" cy="60" r="5" fill="#1a0a00"/>
+  <circle cx="76" cy="60" r="5" fill="#1a0a00"/>
+  <circle cx="46" cy="58" r="2" fill="white" opacity="0.9"/>
+  <circle cx="78" cy="58" r="2" fill="white" opacity="0.9"/>
+  <ellipse cx="60" cy="74" rx="4" ry="3" fill="#1a5a9a"/>
+  <path d="M44 84 Q60 94 76 84" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <ellipse cx="22" cy="108" rx="12" ry="20" fill="#1e4472"/>
+  <ellipse cx="98" cy="108" rx="12" ry="20" fill="#1e4472"/>
+  <ellipse cx="22" cy="128" rx="11" ry="9" fill="#2a6aaa"/>
+  <ellipse cx="98" cy="128" rx="11" ry="9" fill="#2a6aaa"/>
+</svg>`;
+
+const BUTCHER_SVG = `<svg viewBox="0 0 120 155" xmlns="http://www.w3.org/2000/svg">
+  <rect x="32" y="118" width="24" height="34" rx="4" fill="#1a1a2a"/>
+  <rect x="64" y="118" width="24" height="34" rx="4" fill="#1a1a2a"/>
+  <rect x="22" y="78" width="76" height="50" rx="8" fill="#0a0a0a"/>
+  <path d="M60 78 L60 128" stroke="#1a1a1a" stroke-width="3"/>
+  <rect x="28" y="85" width="14" height="18" rx="2" fill="#1a1a1a"/>
+  <rect x="78" y="85" width="14" height="18" rx="2" fill="#1a1a1a"/>
+  <ellipse cx="22" cy="82" rx="10" ry="8" fill="#0a0a0a"/>
+  <ellipse cx="98" cy="82" rx="10" ry="8" fill="#0a0a0a"/>
+  <rect x="50" y="66" width="20" height="18" rx="4" fill="#c8956a"/>
+  <rect x="28" y="28" width="64" height="52" rx="14" fill="#c8956a"/>
+  <rect x="28" y="28" width="64" height="18" rx="14" fill="#1a0a05"/>
+  <rect x="28" y="38" width="64" height="8" fill="#1a0a05"/>
+  <rect x="34" y="58" width="52" height="24" rx="6" fill="#2a1a0a"/>
+  <rect x="34" y="70" width="52" height="14" rx="4" fill="#1a0a05"/>
+  <ellipse cx="46" cy="50" rx="9" ry="7" fill="#fff"/>
+  <ellipse cx="74" cy="50" rx="9" ry="7" fill="#fff"/>
+  <ellipse cx="46" cy="51" rx="6" ry="6" fill="#1a3a1a"/>
+  <ellipse cx="74" cy="51" rx="6" ry="6" fill="#1a3a1a"/>
+  <circle cx="46" cy="51" r="3.5" fill="#0a0a0a"/>
+  <circle cx="74" cy="51" r="3.5" fill="#0a0a0a"/>
+  <circle cx="47.5" cy="49.5" r="1.5" fill="white" opacity="0.8"/>
+  <circle cx="75.5" cy="49.5" r="1.5" fill="white" opacity="0.8"/>
+  <path d="M38 43 L54 46" stroke="#1a0a05" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M66 46 L82 43" stroke="#1a0a05" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M46 72 L74 72" stroke="#8a5a3a" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="10" y="78" width="18" height="44" rx="8" fill="#0a0a0a"/>
+  <rect x="92" y="78" width="18" height="44" rx="8" fill="#0a0a0a"/>
+  <ellipse cx="19" cy="128" rx="10" ry="9" fill="#c8956a"/>
+  <ellipse cx="101" cy="128" rx="10" ry="9" fill="#c8956a"/>
+  <rect x="12" y="124" width="14" height="6" rx="2" fill="#8a8a7a"/>
+</svg>`;
+
+// ══════════════════════════════════════════
+// STATE & STORAGE
+// ══════════════════════════════════════════
+let state = {
+  glucoseHistory: [],
+  foodLog: [],
+  walkLog: [],
+  settings: { lowTarget: 4.0, highTarget: 8.0, foodInterval: 4,
+    glucoseReminder: true, foodReminder: true, walkReminder: true },
+  streak: { days: [], walkDays: [], foodDays: [] },
+  cgmConnected: false,
+  xdripUrl: 'http://127.0.0.1:17580',
+  walkActive: false, walkStart: null, walkElapsed: 0,
+  selectedMealType: 'frukost'
+};
+
+function save() { localStorage.setItem('soumaya_state', JSON.stringify(state)); }
+function load() {
+  try {
+    const s = localStorage.getItem('soumaya_state');
+    if (s) state = { ...state, ...JSON.parse(s) };
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════
+// KARAKTÄRS-REPLIKER
+// ══════════════════════════════════════════
+const GROGU_LINES = {
+  hungry: ["*stirrar intensivt* ...mat?", "*koar oroligt* Det är dags att äta nu.", "*lyfter handen mot magen* Hungrig. Mycket hungrig.", "*tittar upp med stora ögon* Frukost?"],
+  eating: ["*sluter ögonen nöjt* Mmmmm.", "*koar glatt* Bra mat. Bra Soumaya.", "*vilar nöjt* Full. Kraft. Bra.", "*nickar godkännande* Ja. Precis såhär."],
+  great: ["*mediterar lugnt* Allt är i balans.", "*koar stilla* Kraften flödar. Du gör bra.", "*ler med hela ansiktet* Stolt över dig."],
+  default: ["*tittar nyfiket* Vad händer idag?", "*koar mjukt* Jag är här.", "*sitter lugnt* Vi klarar det tillsammans."]
+};
+const ALLEN_LINES = {
+  noWalk: ["Oi, vi har inte gått idag! Kom igen — jag flyger bredvid!", "Earth-standard promenad? Enkelt för dig, fantastiskt för din hälsa!", "Jeg har flugit 12 parsec idag. Du kan gå 30 minuter. Fixat!"],
+  walked: ["Excellent! Det där var imponerande — för en människa!", "*tummen upp* Varje steg räknas. Ni på Tellus är tuffare än ni ser ut.", "Brilliant! Din kropp tackar dig, även om den inte säger det högt."],
+  great: ["Du är starkare än du tror, Soumaya. Jag har sett hjältar — du är en av dem.", "100% dedikation! Om alla Tellus-bor var som du vore vi oövervinnerliga."]
+};
+const BUTCHER_LINES = {
+  high: ["Oi, ditt socker är ute och spelar, grabben. Ta hand om det nu.", "Högt socker? Det gillar jag inte. Fixa det, yeah?", "Din kropp skickar varningssignaler. Lyssna på den, för fan."],
+  low: ["Lågt socker — det är farligt skit. Ät nåt nu, direkt.", "Oi! Sockret sjunker. Nu behöver du kolhydrater, ASAP.", "Lågt är värre än högt. Ät. Nu. Jag menar allvar."],
+  good: ["Bra jobbat. Sockret sitter som det ska. Fortsätt såhär.", "Det där är precis rätt nivå. Inte många kan hålla det — men du gör det.", "Stabilt. Precis som jag gillar det. Bra, grabben."],
+  default: ["Håller koll på dig. Bara för att bry sig, inte för att vara jobbig.", "Butcher-metoden: förbered dig, mät, agera. Enkelt."]
+};
+
+function getGroguLine(ctx) {
+  const lines = GROGU_LINES[ctx] || GROGU_LINES.default;
+  return lines[Math.floor(Math.random() * lines.length)];
+}
+function getAllenLine(ctx) {
+  const lines = ALLEN_LINES[ctx] || ALLEN_LINES.great;
+  return lines[Math.floor(Math.random() * lines.length)];
+}
+function getButcherLine(ctx) {
+  const lines = BUTCHER_LINES[ctx] || BUTCHER_LINES.default;
+  return lines[Math.floor(Math.random() * lines.length)];
+}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function goTo(page, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  btn.classList.add('active');
+  if (page === 'home') renderHome();
+  if (page === 'food') renderFoodPage();
+  if (page === 'walk') renderWalkPage();
+  if (page === 'glucose') renderGlucosePage();
+}
+
+// ══════════════════════════════════════════
+// GLUCOSE
+// ══════════════════════════════════════════
+function getGlucoseClass(val) {
+  if (val < state.settings.lowTarget) return 'danger';
+  if (val > state.settings.highTarget) return 'warning';
+  if (val > state.settings.highTarget * 1.3) return 'danger';
+  return '';
+}
+function getGlucosePos(val) {
+  const min = 2, max = 14;
+  return Math.min(95, Math.max(5, ((val - min) / (max - min)) * 100));
+}
+function glucoseTrend(history) {
+  if (history.length < 2) return '';
+  const last = history[history.length - 1].val;
+  const prev = history[history.length - 2].val;
+  const diff = last - prev;
+  if (diff > 1.5) return '↑↑';
+  if (diff > 0.5) return '↑';
+  if (diff < -1.5) return '↓↓';
+  if (diff < -0.5) return '↓';
+  return '→';
+}
+
+function renderGlucoseCard(val) {
+  const cls = getGlucoseClass(val);
+  const el = document.getElementById('glucoseValue');
+  el.textContent = val ? val.toFixed(1) : '--';
+  el.className = 'glucose-value' + (cls ? ' ' + cls : '');
+  document.getElementById('glucoseTrend').textContent = glucoseTrend(state.glucoseHistory);
+  const pos = val ? getGlucosePos(val) : 50;
+  document.getElementById('rangeNeedle').style.left = pos + '%';
+
+  // Butcher-replik
+  let ctx = 'default';
+  if (val) {
+    if (val < state.settings.lowTarget) ctx = 'low';
+    else if (val > state.settings.highTarget) ctx = 'high';
+    else ctx = 'good';
+  }
+  const speech = document.getElementById('butcherSpeech');
+  const omniSrc = (typeof CHAR_IMGS !== 'undefined') ? CHAR_IMGS.omni_speech : '';
+  speech.innerHTML = '<div class="companion-section"><div style="width:70px;flex-shrink:0;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.7))"><img src="' + omniSrc + '" style="width:70px;height:auto;display:block;" alt="Omni-Man"></div><div><div class="companion-name" style="color:var(--red)">OMNI-MAN</div><div class="companion-speech">' + getButcherLine(ctx) + '</div></div></div>';
+}
+
+function logManualGlucose() {
+  const val = parseFloat(document.getElementById('manualGlucose').value);
+  if (isNaN(val) || val < 1 || val > 30) { showToast('Ange ett giltigt värde (1–30)'); return; }
+  const entry = { val, time: Date.now(), source: 'manual' };
+  state.glucoseHistory.push(entry);
+  if (state.glucoseHistory.length > 200) state.glucoseHistory.shift();
+  document.getElementById('manualGlucose').value = '';
+  save();
+  renderGlucoseCard(val);
+  renderGlucoseLog();
+  renderHome();
+  showToast('Blodsocker loggat!');
+  checkAlerts(val);
+}
+
+function checkAlerts(val) {
+  if (val < state.settings.lowTarget) showToast('⚠️ LÅGT BLODSOCKER — ät något!');
+  else if (val > state.settings.highTarget * 1.4) showToast('⚠️ HÖGT BLODSOCKER');
+}
+
+// xDrip
+async function connectXDrip() {
+  const url = document.getElementById('xdripUrl').value.trim();
+  state.xdripUrl = url;
+  save();
+  try {
+    const res = await fetch(url + '/sgv.json?count=1', { mode: 'cors' });
+    if (!res.ok) throw new Error();
+    state.cgmConnected = true;
+    save();
+    document.getElementById('cgmStatus').style.display = 'none';
+    document.getElementById('cgmConnected').style.display = 'block';
+    showToast('Ansluten till xDrip+!');
+    pollXDrip();
+  } catch(e) {
+    showToast('Kunde inte ansluta — kolla xDrip-inställningar');
+  }
+}
+
+function disconnectXDrip() {
+  state.cgmConnected = false;
+  save();
+  document.getElementById('cgmStatus').style.display = 'block';
+  document.getElementById('cgmConnected').style.display = 'none';
+}
+
+async function pollXDrip() {
+  if (!state.cgmConnected) return;
+  try {
+    const res = await fetch(state.xdripUrl + '/sgv.json?count=48', { mode: 'cors' });
+    const data = await res.json();
+    if (data && data.length) {
+      // Konvertera mg/dL → mmol/L
+      const entries = data.map(d => ({
+        val: d.sgv ? Math.round(d.sgv / 18 * 10) / 10 : null,
+        time: d.date || d.dateString,
+        source: 'cgm'
+      })).filter(d => d.val);
+
+      // Lägg till nya värden
+      const existing = new Set(state.glucoseHistory.map(g => g.time));
+      entries.forEach(e => { if (!existing.has(e.time)) state.glucoseHistory.push(e); });
+      state.glucoseHistory.sort((a,b) => a.time - b.time);
+      if (state.glucoseHistory.length > 200) state.glucoseHistory = state.glucoseHistory.slice(-200);
+
+      const latest = entries[0];
+      document.getElementById('glucoseTime').textContent = 'xDrip • ' + new Date(latest.time).toLocaleTimeString('sv-SE', {hour:'2-digit',minute:'2-digit'});
+      renderGlucoseCard(latest.val);
+      save();
+      drawGlucoseChart();
+    }
+  } catch(e) {}
+  setTimeout(pollXDrip, 60000);
+}
+
+function renderGlucosePage() {
+  if (state.cgmConnected) {
+    document.getElementById('cgmStatus').style.display = 'none';
+    document.getElementById('cgmConnected').style.display = 'block';
+  }
+  renderGlucoseLog();
+}
+
+function renderGlucoseLog() {
+  const el = document.getElementById('glucoseLog');
+  const history = [...state.glucoseHistory].reverse().slice(0, 15);
+  if (!history.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0;">Inga mätningar än</div>'; return; }
+  el.innerHTML = history.map(e => {
+    const cls = getGlucoseClass(e.val);
+    const cssClass = cls === 'danger' ? 'bad' : cls === 'warning' ? 'warn' : 'ok';
+    const t = new Date(e.time).toLocaleTimeString('sv-SE', {hour:'2-digit',minute:'2-digit'});
+    const d = new Date(e.time).toLocaleDateString('sv-SE', {day:'numeric',month:'short'});
+    return `<div class="log-item">
+      <div class="log-icon glucose">🩸</div>
+      <div class="log-main"><div class="log-title">${e.source === 'cgm' ? 'CGM mätning' : 'Manuell mätning'}</div><div class="log-meta">${d} ${t}</div></div>
+      <div class="log-value ${cssClass}">${e.val.toFixed(1)}</div>
+    </div>`;
+  }).join('');
+}
+
+function drawGlucoseChart() {
+  const canvas = document.getElementById('glucoseChart');
+  if (!canvas) return;
+  const recent = state.glucoseHistory.slice(-24);
+  if (recent.length < 2) return;
+  const labels = recent.map(e => new Date(e.time).toLocaleTimeString('sv-SE', {hour:'2-digit',minute:'2-digit'}));
+  const vals = recent.map(e => e.val);
+
+  if (window._glucoseChart) window._glucoseChart.destroy();
+  window._glucoseChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: vals,
+        borderColor: '#4aff6a',
+        backgroundColor: 'rgba(74,255,106,0.08)',
+        borderWidth: 2,
+        pointRadius: 2,
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: '#1a1a1a',
+        titleColor: '#4aff6a',
+        bodyColor: '#f0f0e8',
+        borderColor: '#333',
+        borderWidth: 1
+      }},
+      scales: {
+        x: { display: false },
+        y: {
+          min: 2, max: 14,
+          grid: { color: '#222' },
+          ticks: { color: '#666', font: { size: 10 } }
+        }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+// MAT + BILDTAGNING
+// ══════════════════════════════════════════
+let currentMealId = null;
+let mealPhotos = { before: false, after: false };
+
+function triggerCamera(phase) {
+  document.getElementById(phase + 'Input').click();
+}
+
+async function handlePhoto(phase, input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // Visa förhandsgranskning
+  const preview = document.getElementById(phase + 'Preview');
+  const reader = new FileReader();
+  reader.onload = e => {
+    preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+  };
+  reader.readAsDataURL(file);
+  mealPhotos[phase] = true;
+
+  // Skapa mealId om det inte finns
+  if (!currentMealId) currentMealId = 'meal-' + Date.now();
+
+  // Ladda upp till server
+  updatePhotoStatus();
+  try {
+    const fd = new FormData();
+    fd.append('image', file);
+    fd.append('mealId', currentMealId);
+    fd.append('phase', phase);
+    const res = await fetch('/api/meals/upload', { method: 'POST', body: fd });
+    if (!res.ok) throw new Error();
+    updatePhotoStatus();
+  } catch(e) {
+    showToast('Bilduppladdning misslyckades');
+  }
+}
+
+function updatePhotoStatus() {
+  const el = document.getElementById('photoStatus');
+  if (mealPhotos.before && mealPhotos.after) {
+    el.textContent = '✅ Båda bilder tagna — redo att logga!';
+    el.style.color = 'var(--green)';
+  } else if (mealPhotos.before) {
+    el.textContent = '📷 Kom ihåg att ta en bild efter du ätit!';
+    el.style.color = 'var(--primary)';
+  } else {
+    el.textContent = 'Ta en bild innan du äter för att starta';
+    el.style.color = 'var(--muted)';
+  }
+}
+
+async function logFood() {
+  const name = document.getElementById('foodName').value.trim();
+  const carbs = parseFloat(document.getElementById('foodCarbs').value);
+  if (!name) { showToast('Ange en måltid!'); return; }
+  if (!mealPhotos.before) { showToast('📷 Ta en bild innan du äter!'); return; }
+
+  const mealId = currentMealId || ('meal-' + Date.now());
+  const entry = { id: mealId, name, carbs: isNaN(carbs) ? 0 : carbs,
+                  type: state.selectedMealType, time: Date.now(),
+                  complete: mealPhotos.before && mealPhotos.after };
+  state.foodLog.unshift(entry);
+  if (state.foodLog.length > 100) state.foodLog.pop();
+
+  // Spara info till server
+  try {
+    await fetch('/api/meals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: mealId, name, carbs: entry.carbs, mealType: entry.type })
+    });
+  } catch(e) {}
+
+  const today = todayStr();
+  if (!state.streak.foodDays.includes(today)) state.streak.foodDays.push(today);
+
+  // Återställ
+  document.getElementById('foodName').value = '';
+  document.getElementById('foodCarbs').value = '';
+  document.getElementById('beforePreview').innerHTML = '<span style="font-size:28px;">📷</span>';
+  document.getElementById('afterPreview').innerHTML = '<span style="font-size:28px;">📷</span>';
+  currentMealId = null;
+  mealPhotos = { before: false, after: false };
+  updatePhotoStatus();
+  save();
+  renderFoodPage();
+  showToast(mealPhotos.after ? 'Grogu är nöjd! 🐸' : 'Loggat! Kom ihåg efterbilden 📷');
+}
+
+function renderFoodPage() {
+  const lastFood = state.foodLog[0];
+  let ctx = 'default';
+  if (!lastFood || Date.now() - lastFood.time > 4 * 3600000) ctx = 'hungry';
+  else ctx = 'eating';
+  document.getElementById('groguFoodSpeech').textContent = getGroguLine(ctx);
+
+  const el = document.getElementById('foodLog');
+  if (!state.foodLog.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0;">Inga måltider loggade än</div>'; return; }
+  el.innerHTML = state.foodLog.slice(0, 12).map(e => {
+    const t = new Date(e.time).toLocaleTimeString('sv-SE', {hour:'2-digit',minute:'2-digit'});
+    const d = new Date(e.time).toLocaleDateString('sv-SE', {day:'numeric',month:'short'});
+    const badge = e.complete
+      ? '<span style="color:var(--green);font-size:11px;font-weight:700;">✅ Komplett</span>'
+      : '<span style="color:var(--primary);font-size:11px;font-weight:700;">📷 Saknar bild</span>';
+    return `<div class="log-item">
+      <div class="log-icon food">🍽️</div>
+      <div class="log-main"><div class="log-title">${e.name}</div><div class="log-meta">${e.type} • ${d} ${t}</div>${badge}</div>
+      <div style="font-size:13px;color:var(--muted);font-weight:700;">${e.carbs}g kh</div>
+    </div>`;
+  }).join('');
+}
+
+document.querySelectorAll('#mealTypeTags .tag').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#mealTypeTags .tag').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    state.selectedMealType = btn.dataset.val;
+  });
+});
+
+// ══════════════════════════════════════════
+// GPS-PROMENAD MED KARTA
+// ══════════════════════════════════════════
+let walkInterval = null;
+let gpsWatchId   = null;
+let walkMap      = null;
+let walkPolyline = null;
+let walkMarker   = null;
+let currentWalkId   = null;
+let currentWalkCoords = [];
+let pendingCoords  = [];
+let walkStartTime  = null;
+let walkTotalDist  = 0;
+
+function haversine(lat1,lon1,lat2,lon2) {
+  const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function initWalkMap(lat, lng) {
+  const container = document.getElementById('walkMap');
+  container.innerHTML = '';
+  container.style.display = 'block';
+  if (walkMap) { walkMap.remove(); walkMap = null; }
+  walkMap = L.map('walkMap', { zoomControl: true, attributionControl: false }).setView([lat,lng], 16);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(walkMap);
+  walkPolyline = L.polyline([], { color: '#1a6bff', weight: 4, opacity: 0.9 }).addTo(walkMap);
+  walkMarker = L.circleMarker([lat,lng], { radius:10, color:'#FFD700', fillColor:'#1a6bff', fillOpacity:1, weight:3 }).addTo(walkMap);
+}
+
+async function toggleWalk() {
+  const btn = document.getElementById('walkStartBtn');
+  const finBtn = document.getElementById('finishWalkBtn');
+
+  if (!state.walkActive) {
+    // Starta
+    if (!navigator.geolocation) { showToast('GPS saknas på denna enhet'); return; }
+    state.walkActive = true;
+    walkStartTime = Date.now();
+    currentWalkId = 'walk-' + walkStartTime;
+    currentWalkCoords = [];
+    pendingCoords = [];
+    walkTotalDist = 0;
+    btn.textContent = 'PAUSA GPS';
+    btn.style.background = '#cc9900';
+    finBtn.style.display = 'block';
+
+    // Be om GPS
+    navigator.geolocation.getCurrentPosition(pos => {
+      initWalkMap(pos.coords.latitude, pos.coords.longitude);
+    }, () => showToast('Kunde inte hämta GPS-position'));
+
+    gpsWatchId = navigator.geolocation.watchPosition(
+      pos => onGPSUpdate(pos),
+      err => console.warn('GPS-fel:', err),
+      { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
+    );
+    walkInterval = setInterval(updateWalkDisplay, 1000);
+
+  } else {
+    // Pausa
+    state.walkActive = false;
+    clearInterval(walkInterval);
+    if (gpsWatchId !== null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+    btn.textContent = 'FORTSÄTT GPS';
+    btn.style.background = '#1a6bff';
+  }
+}
+
+function onGPSUpdate(pos) {
+  const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+  if (accuracy > 50) return; // Ignorera dåliga positioner
+
+  const point = { lat, lng, ts: Date.now() };
+  const prev = currentWalkCoords[currentWalkCoords.length - 1];
+
+  if (prev) {
+    const d = haversine(prev.lat, prev.lng, lat, lng);
+    if (d < 0.005) return; // Ignorera < 5m rörelser (GPS-brus)
+    walkTotalDist += d;
+  }
+
+  currentWalkCoords.push(point);
+  pendingCoords.push(point);
+
+  // Uppdatera karta
+  if (walkMap) {
+    const latlngs = currentWalkCoords.map(c => [c.lat, c.lng]);
+    walkPolyline.setLatLngs(latlngs);
+    walkMarker.setLatLng([lat, lng]);
+    walkMap.panTo([lat, lng], { animate: true, duration: 0.5 });
+  }
+
+  // Skicka batch till server var 10:e punkt
+  if (pendingCoords.length >= 10) flushCoordsToServer();
+}
+
+async function flushCoordsToServer() {
+  if (!pendingCoords.length || !currentWalkId) return;
+  const batch = [...pendingCoords];
+  pendingCoords = [];
+  try {
+    await fetch('/api/walks/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ walkId: currentWalkId, coords: batch })
+    });
+  } catch(e) { pendingCoords = [...batch, ...pendingCoords]; } // lägg tillbaka vid fel
+}
+
+function updateWalkDisplay() {
+  if (!walkStartTime) return;
+  const elapsed = Math.floor((Date.now() - walkStartTime) / 1000);
+  const m = Math.floor(elapsed / 60), s = elapsed % 60;
+  document.getElementById('walkTimerDisplay').textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  document.getElementById('walkDistDisplay').textContent = walkTotalDist.toFixed(2);
+  // Pace (min/km)
+  if (walkTotalDist > 0.1) {
+    const pace = (elapsed / 60) / walkTotalDist;
+    const pm = Math.floor(pace), ps = Math.round((pace - pm) * 60);
+    document.getElementById('walkPaceDisplay').textContent = pm + ':' + String(ps).padStart(2,'0');
+  }
+}
+
+async function finishWalk() {
+  if (!currentWalkId) return;
+  clearInterval(walkInterval);
+  if (gpsWatchId !== null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+  state.walkActive = false;
+
+  await flushCoordsToServer();
+
+  const elapsed = walkStartTime ? Math.round((Date.now() - walkStartTime) / 60000) : 0;
+
+  try {
+    await fetch('/api/walks/finish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ walkId: currentWalkId, minutes: elapsed })
+    });
+  } catch(e) {}
+
+  // Spara lokalt
+  const entry = { id: currentWalkId, minutes: elapsed, distance: walkTotalDist, time: Date.now() };
+  state.walkLog.unshift(entry);
+  if (state.walkLog.length > 100) state.walkLog.pop();
+  const today = todayStr();
+  if (!state.streak.walkDays.includes(today)) state.streak.walkDays.push(today);
+  save();
+
+  // Återställ UI
+  document.getElementById('walkStartBtn').textContent = 'STARTA GPS';
+  document.getElementById('walkStartBtn').style.background = '#1a6bff';
+  document.getElementById('finishWalkBtn').style.display = 'none';
+  document.getElementById('walkTimerDisplay').textContent = '00:00';
+  document.getElementById('walkDistDisplay').textContent = '0.00';
+  document.getElementById('walkPaceDisplay').textContent = '--';
+
+  currentWalkId = null; walkStartTime = null; walkTotalDist = 0;
+  renderWalkPage();
+  showToast(`Allen är imponerad! ${elapsed} min · ${walkTotalDist.toFixed(1)} km 💪`);
+}
+
+function resetWalk() {
+  if (state.walkActive) {
+    clearInterval(walkInterval);
+    if (gpsWatchId !== null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+    state.walkActive = false;
+  }
+  currentWalkId = null; walkStartTime = null; walkTotalDist = 0;
+  currentWalkCoords = []; pendingCoords = [];
+  document.getElementById('walkStartBtn').textContent = 'STARTA GPS';
+  document.getElementById('walkStartBtn').style.background = '#1a6bff';
+  document.getElementById('finishWalkBtn').style.display = 'none';
+  document.getElementById('walkTimerDisplay').textContent = '00:00';
+  document.getElementById('walkDistDisplay').textContent = '0.00';
+  document.getElementById('walkPaceDisplay').textContent = '--';
+  const container = document.getElementById('walkMap');
+  container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;"><div style="font-size:28px;margin-bottom:6px;">🗺️</div><div style="font-size:13px;font-weight:600;">Kartan visas när promenaden startar</div></div>';
+  if (walkMap) { walkMap.remove(); walkMap = null; }
+}
+
+function renderWalkPage() {
+  const today = todayStr();
+  const walkedToday = state.walkLog.some(w => todayStr(w.time) === today);
+  document.getElementById('allenSpeech').textContent = getAllenLine(walkedToday ? 'walked' : 'noWalk');
+
+  const todayMins = state.walkLog.filter(w => todayStr(w.time) === today).reduce((a,w) => a+w.minutes, 0);
+  const todayKm   = state.walkLog.filter(w => todayStr(w.time) === today).reduce((a,w) => a+(w.distance||0), 0);
+  document.getElementById('walkTotal').textContent = todayMins;
+  document.getElementById('walkDistToday').textContent = todayKm.toFixed(1);
+
+  const el = document.getElementById('walkLog');
+  if (!state.walkLog.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px 0;">Inga promenader loggade än</div>'; return; }
+  el.innerHTML = state.walkLog.slice(0, 10).map(e => {
+    const t = new Date(e.time).toLocaleTimeString('sv-SE', {hour:'2-digit',minute:'2-digit'});
+    const d = new Date(e.time).toLocaleDateString('sv-SE', {day:'numeric',month:'short'});
+    const dist = e.distance ? ` · ${e.distance.toFixed(1)} km` : '';
+    return `<div class="log-item">
+      <div class="log-icon walk">🚶</div>
+      <div class="log-main"><div class="log-title">Promenad${dist}</div><div class="log-meta">${d} ${t}</div></div>
+      <div class="log-value" style="color:#1a6bff;">${e.minutes} min</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// HEM
+// ══════════════════════════════════════════
+function todayStr(ts) {
+  const d = ts ? new Date(ts) : new Date();
+  return d.toISOString().split('T')[0];
+}
+
+function renderStreak() {
+  const days = ['Mån','Tis','Ons','Tor','Fre','Lör','Sön'];
+  const today = new Date();
+  const row = document.getElementById('streakRow');
+  row.innerHTML = '';
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const str = d.toISOString().split('T')[0];
+    const isToday = i === 0;
+    const hasFood = state.foodLog.some(f => todayStr(f.time) === str);
+    const hasWalk = state.walkLog.some(w => todayStr(w.time) === str);
+    const done = hasFood && hasWalk;
+    const div = document.createElement('div');
+    div.className = 'streak-day' + (done ? ' done' : isToday ? ' today' : '');
+    div.textContent = days[(d.getDay() + 6) % 7];
+    row.appendChild(div);
+  }
+
+  // Räkna streak
+  let streak = 0;
+  const d = new Date();
+  while (streak < 365) {
+    const s = d.toISOString().split('T')[0];
+    const hf = state.foodLog.some(f => todayStr(f.time) === s);
+    const hw = state.walkLog.some(w => todayStr(w.time) === s);
+    if (hf && hw) { streak++; d.setDate(d.getDate()-1); } else break;
+  }
+  document.getElementById('streakCount').textContent = streak + ' dagar';
+  document.getElementById('streakText').textContent = streak > 0 ? '– håll i det! 🔥' : '– starta idag!';
+}
+
+function renderRings() {
+  const today = todayStr();
+  const foodToday = state.foodLog.filter(f => todayStr(f.time) === today).length;
+  const walkToday = state.walkLog.filter(w => todayStr(w.time) === today).reduce((a,w) => a + w.minutes, 0);
+  const glucoseToday = state.glucoseHistory.filter(g => todayStr(g.time) === today).length;
+
+  const rings = [
+    { label: 'Måltider', val: foodToday, max: 4, color: '#FF6B1A', unit: '/4' },
+    { label: 'Promenad', val: walkToday, max: 30, color: '#3a9aff', unit: 'min' },
+    { label: 'Mätningar', val: glucoseToday, max: 6, color: '#4aff6a', unit: '/6' }
+  ];
+  const C = 2 * Math.PI * 32;
+  document.getElementById('ringsRow').innerHTML = rings.map(r => {
+    const pct = Math.min(1, r.val / r.max);
+    const offset = C * (1 - pct);
+    return `<div style="text-align:center;">
+      <div class="ring-container">
+        <svg viewBox="0 0 80 80"><circle class="ring-track" cx="40" cy="40" r="32"/><circle class="ring-fill" cx="40" cy="40" r="32" stroke="${r.color}" stroke-dasharray="${C}" stroke-dashoffset="${offset.toFixed(1)}"/></svg>
+        <div class="ring-label"><div class="ring-val" style="color:${r.color}">${r.val}</div><div class="ring-sub">${r.unit}</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:4px;">${r.label}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderHome() {
+  // Avatars hanteras av setAvatars()
+
+  // Glukos
+  const last = state.glucoseHistory[state.glucoseHistory.length - 1];
+  if (last) {
+    renderGlucoseCard(last.val);
+    const t = new Date(last.time).toLocaleTimeString('sv-SE', {hour:'2-digit',minute:'2-digit'});
+    document.getElementById('glucoseTime').textContent = (state.cgmConnected ? 'xDrip • ' : 'Manuell • ') + t;
+  } else {
+    renderGlucoseCard(null);
+  }
+
+  // Grogu
+  const lastFood = state.foodLog[0];
+  let gCtx = 'default';
+  if (!lastFood || Date.now() - lastFood.time > 4 * 3600000) gCtx = 'hungry';
+  else if (Date.now() - lastFood.time < 2 * 3600000) gCtx = 'eating';
+  document.getElementById('groguSpeech').textContent = getGroguLine(gCtx);
+
+  renderStreak();
+  renderRings();
+}
+
+// ══════════════════════════════════════════
+// PÅMINNELSER
+// ══════════════════════════════════════════
+// ── WEB PUSH (server-side VAPID) ──────────────────────────
+let pushSubscription = null;
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+async function setupPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') return;
+
+    const reg = await navigator.serviceWorker.ready;
+
+    // Hämta VAPID public key från servern
+    const res  = await fetch('/api/vapid-public-key');
+    const { key } = await res.json();
+    const appServerKey = urlBase64ToUint8Array(key);
+
+    // Kolla om vi redan har en subscription
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: appServerKey });
+    }
+    pushSubscription = sub;
+
+    // Skicka subscription till servern
+    await fetch('/api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sub.toJSON())
+    });
+    console.log('Push-notiser aktiverade ✅');
+  } catch(e) {
+    console.warn('Push-setup misslyckades:', e.message);
+  }
+}
+
+// Klientside-påminnelser som backup (om appen är öppen)
+function startReminders() {
+  setInterval(() => {
+    const s = state.settings;
+    const now = Date.now();
+    const h = new Date().getHours();
+    if (h < 7 || h >= 22) return;
+    // Enbart lokal varning vid kritiskt lågt/högt socker
+    const last = state.glucoseHistory[state.glucoseHistory.length - 1];
+    if (last && s.glucoseReminder) {
+      if (last.val < s.lowTarget) showToast('⚠️ LÅGT BLODSOCKER — ät något nu!');
+      else if (last.val > s.highTarget * 1.5) showToast('⚠️ HÖGT BLODSOCKER!');
+    }
+  }, 5 * 60 * 1000);
+}
+
+// ══════════════════════════════════════════
+// INSTÄLLNINGAR
+// ══════════════════════════════════════════
+function saveSettings() {
+  state.settings = {
+    lowTarget: parseFloat(document.getElementById('lowTarget').value) || 4,
+    highTarget: parseFloat(document.getElementById('highTarget').value) || 8,
+    foodInterval: parseInt(document.getElementById('foodInterval').value) || 4,
+    glucoseReminder: document.getElementById('toggleGlucoseReminder').checked,
+    foodReminder: document.getElementById('toggleFoodReminder').checked,
+    walkReminder: document.getElementById('toggleWalkReminder').checked
+  };
+  save();
+  showToast('Inställningar sparade!');
+}
+
+function loadSettings() {
+  const s = state.settings;
+  document.getElementById('lowTarget').value = s.lowTarget;
+  document.getElementById('highTarget').value = s.highTarget;
+  document.getElementById('foodInterval').value = s.foodInterval;
+  document.getElementById('toggleGlucoseReminder').checked = s.glucoseReminder;
+  document.getElementById('toggleFoodReminder').checked = s.foodReminder;
+  document.getElementById('toggleWalkReminder').checked = s.walkReminder;
+}
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+let toastTimeout;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ══════════════════════════════════════════
+// KLOCKA
+// ══════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  document.getElementById('headerTime').textContent = now.toLocaleTimeString('sv-SE', {hour:'2-digit',minute:'2-digit'});
+  document.getElementById('headerDate').textContent = now.toLocaleDateString('sv-SE', {weekday:'short',day:'numeric',month:'short'});
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+load();
+loadSettings();
+updateClock();
+setInterval(updateClock, 10000);
+
+// Sätt avatars med riktiga bilder
+function setAvatars() {
+  if (typeof CHAR_IMGS === 'undefined') { setTimeout(setAvatars, 100); return; }
+  ['groguAvatarImg', 'groguAvatarFoodImg'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.src = CHAR_IMGS.grogu_avatar;
+  });
+  const allen = document.getElementById('allenAvatarImg');
+  if (allen) allen.src = CHAR_IMGS.allen_avatar;
+  const butcher = document.getElementById('butcherAvatarImg');
+  if (butcher) butcher.src = CHAR_IMGS.omni_avatar;
+}
+setAvatars();
+
+// xDrip reconnect
+if (state.cgmConnected) {
+  document.getElementById('xdripUrl').value = state.xdripUrl;
+  pollXDrip();
+}
+
+renderHome();
+
+// Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js')
+    .then(() => console.log('SW registrerad'))
+    .catch(e => console.log('SW fel:', e));
+}
+
+setupPush();
+startReminders();
+
+// ══════════════════════════════════════════
+// ACHIEVEMENTS
+// ══════════════════════════════════════════
+const TIER_COLORS = {
+  bronze: '#cd7f32', silver: '#c0c0c0', gold: '#FFD700',
+  platinum: '#e5e4e2', invincible: '#FFD700'
+};
+const CHAR_COLORS = {
+  food: '#4aff6a', walk: '#1a6bff', glucose: '#ff3a2a', special: '#FFD700'
+};
+const TYPE_LABELS = {
+  daily: 'Daglig', streak: 'Streak', milestone: 'Milstolpe', special: 'Special'
+};
+
+let achFilter = 'all';
+let achQueue  = []; // kö av nylåsta att visa i modal
+
+function runAchievementCheck() {
+  const unlocked = state.unlockedAchievements || [];
+  const newOnes  = checkAchievements(state, unlocked);
+  if (newOnes.length) {
+    state.unlockedAchievements = [...unlocked, ...newOnes.map(a => a.id)];
+    // Räkna XP
+    let xpGain = 0;
+    newOnes.forEach(a => { xpGain += a.xp; achQueue.push(a); });
+    state.totalXP = (state.totalXP || 0) + xpGain;
+    save();
+    if (achQueue.length === 1) showNextAchModal();
+    updateAchBadge();
+  }
+}
+
+function showNextAchModal() {
+  if (!achQueue.length) return;
+  const a = achQueue.shift();
+  const modal = document.getElementById('achModal');
+  const inner = document.getElementById('achModalInner');
+  const iconInfo2 = typeof getAchIcon !== 'undefined' ? getAchIcon(a) : null;
+  const modalIconEl = document.getElementById('achModalIcon');
+  if (iconInfo2 && iconInfo2.type === 'img' && typeof CHAR_IMGS !== 'undefined' && CHAR_IMGS[iconInfo2.src]) {
+    modalIconEl.innerHTML = '<img src="' + CHAR_IMGS[iconInfo2.src] + '" style="width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(255,215,0,0.5));" alt="' + a.title + '">';
+  } else {
+    modalIconEl.textContent = a.icon;
+  }
+  document.getElementById('achModalTitle').textContent = a.title;
+  document.getElementById('achModalDesc').textContent  = a.desc;
+  document.getElementById('achModalFlavor').textContent= a.flavor;
+  document.getElementById('achModalXP').textContent    = '+' + a.xp + ' XP';
+  inner.style.borderColor = TIER_COLORS[a.tier] || '#FFD700';
+  inner.style.boxShadow = `0 0 60px ${TIER_COLORS[a.tier]}44`;
+  modal.style.pointerEvents = 'all';
+  // Animate in
+  requestAnimationFrame(() => {
+    inner.style.transform = 'scale(1) translateY(0)';
+    inner.style.opacity   = '1';
+    inner.style.pointerEvents = 'all';
+  });
+  // Auto-dismiss
+  setTimeout(() => dismissAchModal(), a.tier === 'invincible' ? 8000 : 5000);
+}
+
+function dismissAchModal() {
+  const modal = document.getElementById('achModal');
+  const inner = document.getElementById('achModalInner');
+  inner.style.transform = 'scale(0.8) translateY(-20px)';
+  inner.style.opacity   = '0';
+  inner.style.pointerEvents = 'none';
+  modal.style.pointerEvents = 'none';
+  setTimeout(() => {
+    if (achQueue.length) showNextAchModal();
+  }, 500);
+}
+
+document.getElementById('achModal').addEventListener('click', dismissAchModal);
+
+function updateAchBadge() {
+  const unlocked = (state.unlockedAchievements || []).length;
+  const total    = ACHIEVEMENTS.length;
+  const navBtn   = document.getElementById('nav-achievements');
+  if (navBtn && unlocked > 0) {
+    // Visa liten dot om ej på sidan
+    navBtn.style.color = 'var(--primary)';
+  }
+}
+
+function renderAchievementsPage() {
+  const unlocked = new Set(state.unlockedAchievements || []);
+  const totalXP  = state.totalXP || 0;
+  const maxXP    = ACHIEVEMENTS.reduce((a,b) => a + b.xp, 0);
+
+  document.getElementById('achTotalXP').textContent     = totalXP.toLocaleString('sv-SE');
+  document.getElementById('achUnlockedCount').textContent = `${unlocked.size} / ${ACHIEVEMENTS.length} upplåsta`;
+  document.getElementById('achProgressBar').style.width  = Math.min(100, (unlocked.size / ACHIEVEMENTS.length * 100)).toFixed(1) + '%';
+
+  // Filtrera
+  let list = ACHIEVEMENTS;
+  if (achFilter === 'unlocked')  list = list.filter(a => unlocked.has(a.id));
+  if (achFilter === 'daily')     list = list.filter(a => a.type === 'daily');
+  if (achFilter === 'streak')    list = list.filter(a => a.type === 'streak');
+  if (achFilter === 'milestone') list = list.filter(a => a.type === 'milestone');
+  if (achFilter === 'special')   list = list.filter(a => a.type === 'special');
+
+  // Sortera: upplåsta först
+  list = [...list].sort((a,b) => {
+    const ua = unlocked.has(a.id) ? 0 : 1;
+    const ub = unlocked.has(b.id) ? 0 : 1;
+    return ua - ub;
+  });
+
+  const grid = document.getElementById('achGrid');
+
+  // Gruppera om "alla" eller "milestone/streak"
+  if (['all','unlocked'].includes(achFilter)) {
+    const groups = [
+      { label: '⚡ Dagliga', items: list.filter(a => a.type === 'daily') },
+      { label: '🔥 Streaks', items: list.filter(a => a.type === 'streak') },
+      { label: '🏆 Milstolpar', items: list.filter(a => a.type === 'milestone') },
+      { label: '✨ Special', items: list.filter(a => a.type === 'special') },
+    ].filter(g => g.items.length > 0);
+
+    grid.innerHTML = groups.map(g => `
+      <div class="section-divider">${g.label}</div>
+      <div class="ach-grid">${g.items.map(a => achCard(a, unlocked)).join('')}</div>
+    `).join('');
+  } else {
+    grid.innerHTML = `<div class="ach-grid">${list.map(a => achCard(a, unlocked)).join('')}</div>`;
+  }
+}
+
+function achIconHTML(a, size, isUnlocked) {
+  const iconInfo = typeof getAchIcon !== 'undefined' ? getAchIcon(a) : { type: 'emoji', val: a.icon };
+  if (iconInfo.type === 'img' && typeof CHAR_IMGS !== 'undefined' && CHAR_IMGS[iconInfo.src]) {
+    const filter = isUnlocked ? 'drop-shadow(0 2px 6px rgba(255,215,0,0.4))' : 'grayscale(1) opacity(0.3)';
+    return `<img src="${CHAR_IMGS[iconInfo.src]}" style="width:${size}px;height:${size}px;object-fit:contain;filter:${filter};" alt="${a.title}">`;
+  }
+  return `<span style="font-size:${Math.round(size*0.6)}px;line-height:1;">${a.icon}</span>`;
+}
+
+function achCard(a, unlocked) {
+  const isUnlocked = unlocked.has(a.id);
+  const charColor  = CHAR_COLORS[a.char] || '#FFD700';
+  const tierLabel  = a.tier.toUpperCase();
+  return `<div class="ach-card ${isUnlocked ? 'unlocked' : 'locked'}" style="${isUnlocked ? 'border-color:'+charColor+'33;box-shadow:0 0 16px '+charColor+'15;' : ''}">
+    <span class="ach-tier-badge tier-${a.tier}">${tierLabel}</span>
+    ${isUnlocked ? '<span class="ach-check">✅</span>' : ''}
+    <div class="ach-icon ${isUnlocked ? '' : 'locked-icon'}" style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
+      ${achIconHTML(a, 52, isUnlocked)}
+    </div>
+    <div class="ach-title" style="color:${isUnlocked ? charColor : 'var(--muted)'};">${a.title}</div>
+    <div class="ach-desc">${isUnlocked ? a.desc : '???'}</div>
+    <div class="ach-xp" style="color:${isUnlocked ? 'var(--green)' : '#333'};">+${a.xp} XP</div>
+    <div class="ach-char-dot" style="background:${charColor};"></div>
+  </div>`;
+}
+
+function filterAch(filter, btn) {
+  document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  achFilter = filter;
+  renderAchievementsPage();
+}
+
+// Kör achievement-check efter varje loggning
+const _origLogFood = logFood;
+// Koppla till save() — kör check varje gång state sparas
+const _origSave = save;
+window.save = function() {
+  _origSave();
+  runAchievementCheck();
+};
+
+// Kör en gång vid start
+setTimeout(runAchievementCheck, 500);
+
+// goTo-patch för achievements-sida
+const _origGoTo = goTo;
+window.goTo = function(page, btn) {
+  _origGoTo(page, btn);
+  if (page === 'achievements') renderAchievementsPage();
+};
+</script>
+</body>
+</html>

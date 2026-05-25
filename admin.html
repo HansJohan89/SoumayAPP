@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Soumaya Admin</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="char_imgs.js"></script>
+<script src="achievements.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #FFD700;
+  --primary-dark: #cc9900;
+  --blue: #1a6bff;
+  --black: #080808;
+  --dark: #111;
+  --card: #161616;
+  --card2: #1e1e1e;
+  --text: #f0f0e8;
+  --muted: #888;
+  --green: #4aff6a;
+  --red: #ff3a2a;
+  --border: #2a2a2a;
+  --font-title: 'Bangers', cursive;
+  --font-body: 'Nunito', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--black); color: var(--text); font-family: var(--font-body); }
+body { display: flex; }
+
+/* SIDEBAR */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--dark);
+  border-right: 3px solid var(--primary);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+.sidebar-logo {
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid #222;
+}
+.sidebar-logo .title { font-family: var(--font-title); font-size: 26px; color: var(--primary); letter-spacing: 2px; text-shadow: 2px 2px 0 var(--primary-dark); }
+.sidebar-logo .sub { font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 14px; font-weight: 700;
+  color: var(--muted);
+  border-left: 3px solid transparent;
+  transition: all 0.15s;
+}
+.nav-item:hover { background: #1a1a1a; color: var(--text); }
+.nav-item.active { color: var(--primary); border-left-color: var(--primary); background: rgba(255,215,0,0.05); }
+.nav-item svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.sidebar-footer { padding: 16px; border-top: 1px solid #222; }
+.logout-btn { width: 100%; padding: 8px; background: none; border: 1px solid #333; color: var(--muted); font-family: var(--font-body); font-size: 13px; border-radius: 6px; cursor: pointer; }
+.logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+/* MAIN */
+.main { flex: 1; overflow-y: auto; padding: 24px; }
+.page-section { display: none; }
+.page-section.active { display: block; }
+.page-title { font-family: var(--font-title); font-size: 32px; letter-spacing: 2px; color: var(--primary); margin-bottom: 20px; text-transform: uppercase; text-shadow: 2px 2px 0 var(--primary-dark); }
+
+/* CARDS */
+.card { background: var(--card); border: 1.5px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 16px; position: relative; overflow: hidden; }
+.card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--primary); }
+.card.blue::before { background: var(--blue); }
+.card.green::before { background: var(--green); }
+.card.red::before { background: var(--red); }
+.card-title { font-family: var(--font-title); font-size: 16px; letter-spacing: 1px; color: var(--primary); margin-bottom: 14px; text-transform: uppercase; }
+.card.blue .card-title { color: var(--blue); }
+.card.green .card-title { color: var(--green); }
+.card.red .card-title { color: var(--red); }
+
+/* GRID */
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 16px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+.stat-card { background: var(--card2); border: 1.5px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
+.stat-val { font-family: var(--font-title); font-size: 36px; letter-spacing: 1px; color: var(--primary); line-height: 1; }
+.stat-label { font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
+/* TABLE */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 8px 12px; color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #2a2a2a; }
+td { padding: 10px 12px; border-bottom: 1px solid #1a1a1a; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #1a1a1a; }
+
+/* BADGE */
+.badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.badge-green { background: rgba(74,255,106,0.15); color: var(--green); }
+.badge-yellow { background: rgba(255,215,0,0.15); color: var(--primary); }
+.badge-red { background: rgba(255,58,42,0.15); color: var(--red); }
+.badge-blue { background: rgba(26,107,255,0.15); color: var(--blue); }
+
+/* FORM */
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 6px; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; background: #1e1e1e; border: 1.5px solid #333; border-radius: 8px;
+  color: var(--text); font-family: var(--font-body); font-size: 14px; padding: 10px 12px; outline: none;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--primary); }
+.form-textarea { resize: vertical; min-height: 80px; }
+
+/* BUTTONS */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 8px; border: none; font-family: var(--font-title); font-size: 16px; letter-spacing: 1px; cursor: pointer; transition: transform 0.1s; }
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--primary); color: #111; box-shadow: 0 3px 0 var(--primary-dark); }
+.btn-blue { background: var(--blue); color: white; box-shadow: 0 3px 0 #1a5aaa; }
+.btn-red { background: var(--red); color: white; box-shadow: 0 3px 0 #8a1a0a; }
+.btn-ghost { background: none; border: 1.5px solid #333; color: var(--muted); font-family: var(--font-body); font-size: 13px; padding: 6px 12px; }
+.btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
+.btn-sm { font-size: 13px; padding: 6px 12px; letter-spacing: 0.5px; }
+
+/* FOTO */
+.photo-pair { display: flex; gap: 10px; }
+.photo-thumb { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; border: 1.5px solid #333; cursor: pointer; }
+.photo-thumb:hover { border-color: var(--primary); }
+.photo-missing { width: 60px; height: 60px; border-radius: 8px; background: #1a1a1a; border: 1.5px dashed #333; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+
+/* MAP */
+#walkDetailMap { height: 300px; border-radius: 10px; border: 1.5px solid #333; }
+
+/* PUSH PANEL */
+.push-panel { background: rgba(255,215,0,0.05); border: 1.5px solid rgba(255,215,0,0.2); border-radius: 10px; padding: 16px; }
+
+/* LOGIN */
+#loginScreen {
+  position: fixed; inset: 0; background: var(--black);
+  display: flex; align-items: center; justify-content: center; z-index: 9999;
+}
+.login-box { width: 340px; text-align: center; }
+.login-title { font-family: var(--font-title); font-size: 48px; color: var(--primary); letter-spacing: 3px; text-shadow: 4px 4px 0 var(--primary-dark); margin-bottom: 8px; }
+.login-sub { color: var(--muted); font-size: 13px; font-weight: 600; margin-bottom: 28px; letter-spacing: 1px; text-transform: uppercase; }
+.login-input { width: 100%; background: var(--card); border: 2px solid #333; border-radius: 10px; color: var(--text); font-family: var(--font-body); font-size: 18px; padding: 14px; text-align: center; letter-spacing: 3px; outline: none; margin-bottom: 14px; }
+.login-input:focus { border-color: var(--primary); }
+.login-err { color: var(--red); font-size: 13px; font-weight: 700; min-height: 20px; margin-bottom: 8px; }
+
+/* MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 500; display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--dark); border: 2px solid var(--primary); border-radius: 14px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; padding: 24px; }
+.modal-title { font-family: var(--font-title); font-size: 22px; color: var(--primary); letter-spacing: 2px; margin-bottom: 20px; }
+
+/* GLUCOSE STATUS */
+.glucose-big { font-family: var(--font-title); font-size: 52px; color: var(--green); letter-spacing: -1px; line-height: 1; }
+.glucose-big.warn { color: var(--primary); }
+.glucose-big.danger { color: var(--red); }
+
+/* MINI CHART */
+.chart-wrap { height: 120px; }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .sidebar { width: 60px; }
+  .sidebar-logo .title, .sidebar-logo .sub, .nav-item span { display: none; }
+  .nav-item { justify-content: center; padding: 14px; }
+  .grid-4 { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-title">ADMIN</div>
+    <div class="login-sub">Soumaya — Kontrollpanel</div>
+    <input type="password" class="login-input" id="passwordInput" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="login-err" id="loginErr"></div>
+    <button class="btn btn-primary" style="width:100%;font-size:20px;padding:14px;" onclick="doLogin()">LOGGA IN</button>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="title">ADMIN</div>
+    <div class="sub">Soumaya</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" onclick="goTo('dashboard',this)" data-page="dashboard">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>Översikt</span>
+    </div>
+    <div class="nav-item" onclick="goTo('glucose',this)" data-page="glucose">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>Blodsocker</span>
+    </div>
+    <div class="nav-item" onclick="goTo('meals',this)" data-page="meals">
+      <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+      <span>Måltider</span>
+    </div>
+    <div class="nav-item" onclick="goTo('walks',this)" data-page="walks">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M16 17l-4-4-4 4"/><path d="M8 10l4-5 4 5"/><path d="M8 17v4"/><path d="M16 17v4"/></svg>
+      <span>Promenader</span>
+    </div>
+    <div class="nav-item" onclick="goTo('tasks',this)" data-page="tasks">
+      <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      <span>Uppgifter</span>
+    </div>
+    <div class="nav-item" onclick="goTo('achievements',this)" data-page="achievements">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+      <span>Achievements</span>
+    </div>
+    <div class="nav-item" onclick="goTo('push',this)" data-page="push">
+      <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      <span>Notiser</span>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="logout-btn" onclick="doLogout()">Logga ut</button>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- ══ ÖVERSIKT ══ -->
+  <section class="page-section active" id="sec-dashboard">
+    <div class="page-title">Översikt</div>
+
+    <div class="grid-4" id="dashStats">
+      <div class="stat-card"><div class="stat-val" id="d-meals">—</div><div class="stat-label">Måltider idag</div></div>
+      <div class="stat-card"><div class="stat-val" id="d-walkmin">—</div><div class="stat-label">Promenadmin</div></div>
+      <div class="stat-card"><div class="stat-val" id="d-walkKm">—</div><div class="stat-label">km idag</div></div>
+      <div class="stat-card"><div class="stat-val" id="d-streak">—</div><div class="stat-label">Dagars streak</div></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Blodsocker just nu</div>
+        <div id="glucoseNow" style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;">
+          <div class="glucose-big" id="dashGlucoseVal">—</div>
+          <div style="color:var(--muted);font-size:16px;font-weight:700;">mmol/L</div>
+        </div>
+        <div id="dashGlucoseTime" style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:10px;"></div>
+        <div class="chart-wrap"><canvas id="dashGlucoseChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Senaste aktivitet</div>
+        <div id="recentActivity"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Senaste måltider (bilder)</div>
+      <div id="recentMealPics" style="display:flex;gap:12px;flex-wrap:wrap;"></div>
+    </div>
+  </section>
+
+  <!-- ══ BLODSOCKER ══ -->
+  <section class="page-section" id="sec-glucose">
+    <div class="page-title">Blodsocker</div>
+    <div class="card">
+      <div class="card-title">24-timmars kurva</div>
+      <div style="height:200px;"><canvas id="glucoseFullChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Logg</div>
+      <table>
+        <thead><tr><th>Tid</th><th>Värde</th><th>Källa</th><th>Status</th></tr></thead>
+        <tbody id="glucoseTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══ MÅLTIDER ══ -->
+  <section class="page-section" id="sec-meals">
+    <div class="page-title">Måltider</div>
+    <div class="card">
+      <div class="card-title">Alla måltider med bilder</div>
+      <table>
+        <thead><tr><th>Bilder</th><th>Måltid</th><th>Typ</th><th>Kh</th><th>Tid</th><th>Status</th></tr></thead>
+        <tbody id="mealsTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══ PROMENADER ══ -->
+  <section class="page-section" id="sec-walks">
+    <div class="page-title">Promenader</div>
+    <div class="card">
+      <div class="card-title">Promenadshistorik</div>
+      <table>
+        <thead><tr><th>Datum</th><th>Tid</th><th>Distans</th><th>Karta</th></tr></thead>
+        <tbody id="walksTable"></tbody>
+      </table>
+    </div>
+    <div class="card" id="walkMapCard" style="display:none;">
+      <div class="card-title" id="walkMapTitle">Promenadkarta</div>
+      <div id="walkDetailMap"></div>
+      <div id="walkMapStats" style="display:flex;gap:20px;margin-top:12px;font-size:13px;color:var(--muted);font-weight:700;"></div>
+    </div>
+  </section>
+
+  <!-- ══ UPPGIFTER ══ -->
+  <section class="page-section" id="sec-tasks">
+    <div class="page-title">Uppgifter</div>
+    <div class="card">
+      <div class="card-title">Skapa ny uppgift</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Titel</label>
+          <input type="text" class="form-input" id="taskTitle" placeholder="T.ex. Drick 2L vatten">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Typ</label>
+          <select class="form-select" id="taskType">
+            <option value="daily">Daglig</option>
+            <option value="once">Engång</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Beskrivning (valfritt)</label>
+        <textarea class="form-textarea" id="taskDesc" placeholder="Mer info om uppgiften..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Belöning (visas i appen)</label>
+        <input type="text" class="form-input" id="taskReward" placeholder="T.ex. +50 XP, Allen hejar extra!">
+      </div>
+      <button class="btn btn-primary" onclick="createTask()">SKAPA UPPGIFT</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Aktiva uppgifter</div>
+      <div id="tasksList"></div>
+    </div>
+  </section>
+
+  <!-- ══ ACHIEVEMENTS ══ -->
+  <section class="page-section" id="sec-achievements">
+    <div class="page-title">Achievements</div>
+
+    <div class="grid-3" id="achAdminStats">
+      <div class="stat-card"><div class="stat-val" id="adm-ach-unlocked">—</div><div class="stat-label">Upplåsta</div></div>
+      <div class="stat-card"><div class="stat-val" id="adm-ach-total">—</div><div class="stat-label">Totalt</div></div>
+      <div class="stat-card"><div class="stat-val" id="adm-ach-xp" style="color:var(--primary);">—</div><div class="stat-label">Total XP</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Upplåsta achievements</div>
+      <div id="adminAchUnlocked"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Alla achievements</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;" id="adminAchFilter">
+        <button class="btn-ghost btn btn-sm" style="border-color:var(--primary);color:var(--primary);" onclick="adminFilterAch('all')">Alla</button>
+        <button class="btn-ghost btn btn-sm" onclick="adminFilterAch('daily')">Dagliga</button>
+        <button class="btn-ghost btn btn-sm" onclick="adminFilterAch('streak')">Streaks</button>
+        <button class="btn-ghost btn btn-sm" onclick="adminFilterAch('milestone')">Milstolpar</button>
+        <button class="btn-ghost btn btn-sm" onclick="adminFilterAch('special')">Special</button>
+      </div>
+      <div id="adminAchGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;"></div>
+    </div>
+  </section>
+
+  <!-- ══ NOTISER ══ -->
+  <section class="page-section" id="sec-push">
+    <div class="page-title">Push-notiser</div>
+    <div class="grid-3">
+      <div class="card" style="cursor:pointer;" onclick="sendQuickPush('food')">
+        <div class="card-title" style="font-size:24px;">🐸</div>
+        <div style="font-weight:700;margin-bottom:4px;">Grogu påminnelse</div>
+        <div style="font-size:13px;color:var(--muted);">Dags att äta!</div>
+      </div>
+      <div class="card blue" style="cursor:pointer;" onclick="sendQuickPush('walk')">
+        <div class="card-title" style="font-size:24px;">💪</div>
+        <div style="font-weight:700;margin-bottom:4px;">Allen påminnelse</div>
+        <div style="font-size:13px;color:var(--muted);">Dags för promenad!</div>
+      </div>
+      <div class="card red" style="cursor:pointer;" onclick="sendQuickPush('glucose')">
+        <div class="card-title" style="font-size:24px;">🔪</div>
+        <div style="font-weight:700;margin-bottom:4px;">Butcher påminnelse</div>
+        <div style="font-size:13px;color:var(--muted);">Mät blodsockret!</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Skicka anpassad notis</div>
+      <div class="push-panel">
+        <div class="form-group">
+          <label class="form-label">Rubrik</label>
+          <input type="text" class="form-input" id="pushTitle" placeholder="T.ex. Hej Soumaya!">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Meddelande</label>
+          <textarea class="form-textarea" id="pushBody" placeholder="Skriv ett personligt meddelande..."></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="sendCustomPush()">SKICKA NOTIS</button>
+        <span id="pushResult" style="margin-left:12px;font-size:13px;color:var(--green);font-weight:700;"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Anslutna enheter</div>
+      <div id="deviceCount" style="font-family:var(--font-title);font-size:36px;color:var(--primary);"></div>
+      <div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-top:4px;">Push-subscriptions</div>
+    </div>
+  </section>
+
+</main>
+
+<!-- BILD-MODAL -->
+<div class="modal-overlay" id="photoModal" onclick="closePhotoModal()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:600px;padding:0;overflow:hidden;background:#0a0a0a;">
+    <img id="photoModalImg" style="width:100%;display:block;" src="">
+    <div style="padding:12px;display:flex;justify-content:flex-end;">
+      <button class="btn-ghost btn" onclick="closePhotoModal()">Stäng</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════
+let adminToken = sessionStorage.getItem('adminToken');
+
+async function doLogin() {
+  const pw = document.getElementById('passwordInput').value;
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      adminToken = data.token;
+      sessionStorage.setItem('adminToken', adminToken);
+      document.getElementById('loginScreen').style.display = 'none';
+      loadDashboard();
+    } else {
+      document.getElementById('loginErr').textContent = 'Fel lösenord';
+    }
+  } catch(e) {
+    document.getElementById('loginErr').textContent = 'Anslutningsfel';
+  }
+}
+
+async function doLogout() {
+  if (adminToken) {
+    await fetch('/api/admin/logout', { method: 'POST', headers: { 'x-admin-token': adminToken } });
+  }
+  sessionStorage.removeItem('adminToken');
+  adminToken = null;
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function apiHeaders() {
+  return { 'Content-Type': 'application/json', 'x-admin-token': adminToken };
+}
+
+// Auto-login om token finns
+if (adminToken) {
+  document.getElementById('loginScreen').style.display = 'none';
+  setTimeout(loadDashboard, 100);
+}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function goTo(page, el) {
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sec-' + page).classList.add('active');
+  el.classList.add('active');
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'glucose')   loadGlucose();
+  if (page === 'meals')     loadMeals();
+  if (page === 'walks')     loadWalks();
+  if (page === 'tasks')     loadTasks();
+  if (page === 'push')         loadPush();
+  if (page === 'achievements') loadAchievements();
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
+async function loadDashboard() {
+  try {
+    const res = await fetch('/api/admin/dashboard', { headers: apiHeaders() });
+    if (res.status === 401) { doLogout(); return; }
+    const d = await res.json();
+
+    document.getElementById('d-meals').textContent   = `${d.today.mealsOk}/${d.today.meals}`;
+    document.getElementById('d-walkmin').textContent = d.today.walkMins;
+    document.getElementById('d-walkKm').textContent  = d.today.walkKm;
+    document.getElementById('d-streak').textContent  = d.streak;
+
+    // Glukos
+    if (d.lastGlucose) {
+      const val = d.lastGlucose.val;
+      const el = document.getElementById('dashGlucoseVal');
+      el.textContent = val.toFixed(1);
+      el.className = 'glucose-big' + (val < 4 ? ' danger' : val > 8 ? ' warn' : '');
+      const t = new Date(d.lastGlucose.time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
+      document.getElementById('dashGlucoseTime').textContent = 'Senast: ' + t;
+    }
+
+    // Mini-glukos-chart
+    if (d.glucoseHistory.length > 1) {
+      drawMiniChart('dashGlucoseChart', d.glucoseHistory);
+    }
+
+    // Senaste aktivitet
+    const acts = [...(d.recentMeals||[]).map(m => ({
+      icon:'🍽️', text: m.name || 'Okänd måltid',
+      meta: new Date(m.createdAt).toLocaleString('sv-SE',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'}),
+      badge: m.complete ? 'badge-green' : 'badge-yellow',
+      badgeText: m.complete ? '✅ Komplett' : '📷 Saknar bild'
+    })), ...(d.recentWalks||[]).map(w => ({
+      icon:'🚶', text: `Promenad ${w.distance ? w.distance.toFixed(1)+'km' : ''}`,
+      meta: new Date(w.startTime).toLocaleString('sv-SE',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'}),
+      badge:'badge-blue', badgeText: w.duration+'min'
+    }))].sort((a,b) => 0);
+
+    document.getElementById('recentActivity').innerHTML = acts.slice(0,6).map(a =>
+      `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #1a1a1a;">
+        <span style="font-size:20px;">${a.icon}</span>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:700;">${a.text}</div><div style="font-size:11px;color:var(--muted);">${a.meta}</div></div>
+        <span class="badge ${a.badge}">${a.badgeText}</span>
+      </div>`
+    ).join('') || '<div style="color:var(--muted);font-size:13px;padding:12px 0;">Ingen aktivitet ännu</div>';
+
+    // Senaste matbilder
+    document.getElementById('recentMealPics').innerHTML = (d.recentMeals||[]).slice(0,6).map(m =>
+      `<div style="text-align:center;">
+        <div style="display:flex;gap:4px;margin-bottom:4px;">
+          ${m.before ? `<img class="photo-thumb" src="${m.before}" onclick="openPhoto('${m.before}')">` : '<div class="photo-missing">🍽️</div>'}
+          ${m.after  ? `<img class="photo-thumb" src="${m.after}"  onclick="openPhoto('${m.after}')">` : '<div class="photo-missing">✅</div>'}
+        </div>
+        <div style="font-size:11px;color:var(--muted);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.name||'—'}</div>
+      </div>`
+    ).join('') || '<div style="color:var(--muted);font-size:13px;">Inga bilder ännu</div>';
+
+  } catch(e) { console.error(e); }
+}
+
+// ══════════════════════════════════════════
+// GLUKOS
+// ══════════════════════════════════════════
+async function loadGlucose() {
+  try {
+    const res = await fetch('/api/glucose?count=48', { headers: apiHeaders() });
+    const data = await res.json();
+
+    if (data.length > 1) drawFullChart('glucoseFullChart', data);
+
+    const tbody = document.getElementById('glucoseTable');
+    tbody.innerHTML = [...data].reverse().slice(0,30).map(e => {
+      const cls = e.val < 4 ? 'badge-red' : e.val > 8 ? 'badge-yellow' : 'badge-green';
+      const label = e.val < 4 ? 'Lågt' : e.val > 8 ? 'Högt' : 'Bra';
+      const t = new Date(e.time).toLocaleString('sv-SE',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'});
+      return `<tr>
+        <td>${t}</td>
+        <td style="font-family:var(--font-title);font-size:18px;">${e.val.toFixed(1)}</td>
+        <td>${e.source === 'cgm' ? 'CGM' : 'Manuell'}</td>
+        <td><span class="badge ${cls}">${label}</span></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:20px;">Inga mätningar</td></tr>';
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════
+// MÅLTIDER
+// ══════════════════════════════════════════
+async function loadMeals() {
+  try {
+    const res = await fetch('/api/meals', { headers: apiHeaders() });
+    const data = await res.json();
+    const tbody = document.getElementById('mealsTable');
+    tbody.innerHTML = data.map(m => {
+      const t = new Date(m.createdAt).toLocaleString('sv-SE',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'});
+      const cls = m.complete ? 'badge-green' : 'badge-yellow';
+      const label = m.complete ? '✅ Komplett' : '📷 Saknar bild';
+      return `<tr>
+        <td>
+          <div class="photo-pair">
+            ${m.before ? `<img class="photo-thumb" src="${m.before}" onclick="openPhoto('${m.before}')">` : '<div class="photo-missing">🍽️</div>'}
+            ${m.after  ? `<img class="photo-thumb" src="${m.after}"  onclick="openPhoto('${m.after}')">` : '<div class="photo-missing">✅</div>'}
+          </div>
+        </td>
+        <td><strong>${m.name || '—'}</strong></td>
+        <td>${m.mealType || '—'}</td>
+        <td>${m.carbs || 0}g</td>
+        <td style="font-size:12px;color:var(--muted);">${t}</td>
+        <td><span class="badge ${cls}">${label}</span></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px;">Inga måltider</td></tr>';
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════
+// PROMENADER
+// ══════════════════════════════════════════
+let detailMap = null;
+
+async function loadWalks() {
+  try {
+    const res = await fetch('/api/walks', { headers: apiHeaders() });
+    const data = await res.json();
+    const tbody = document.getElementById('walksTable');
+    tbody.innerHTML = data.map(w => {
+      const t = new Date(w.startTime).toLocaleString('sv-SE',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'});
+      const dist = w.distance ? w.distance.toFixed(1) + ' km' : '—';
+      const hasGps = w.coords && w.coords.length > 1;
+      return `<tr>
+        <td>${t}</td>
+        <td style="font-family:var(--font-title);font-size:18px;">${w.duration || '—'} min</td>
+        <td style="font-family:var(--font-title);font-size:18px;">${dist}</td>
+        <td>${hasGps ? `<button class="btn-ghost btn btn-sm" onclick="showWalkMap('${w.id}')">🗺️ Visa karta</button>` : '<span style="color:var(--muted);font-size:12px;">Ingen GPS</span>'}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:20px;">Inga promenader</td></tr>';
+  } catch(e) {}
+}
+
+async function showWalkMap(walkId) {
+  try {
+    const res = await fetch(`/api/walks/${walkId}`, { headers: apiHeaders() });
+    const walk = await res.json();
+
+    document.getElementById('walkMapCard').style.display = 'block';
+    document.getElementById('walkMapTitle').textContent = `Promenadkarta — ${new Date(walk.startTime).toLocaleDateString('sv-SE',{day:'numeric',month:'long'})}`;
+    document.getElementById('walkMapStats').innerHTML = `
+      <span>⏱️ ${walk.duration || '?'} min</span>
+      <span>📍 ${walk.distance ? walk.distance.toFixed(2)+' km' : '—'}</span>
+      <span>📌 ${walk.coords.length} GPS-punkter</span>
+    `;
+    document.getElementById('walkMapCard').scrollIntoView({ behavior: 'smooth' });
+
+    setTimeout(() => {
+      if (detailMap) { detailMap.remove(); detailMap = null; }
+      const coords = walk.coords.map(c => [c.lat, c.lng]);
+      detailMap = L.map('walkDetailMap').setView(coords[0], 15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OSM' }).addTo(detailMap);
+      const line = L.polyline(coords, { color: '#1a6bff', weight: 4, opacity: 0.9 }).addTo(detailMap);
+      // Start / slut-markörer
+      L.circleMarker(coords[0], { radius:8, color:'#4aff6a', fillColor:'#4aff6a', fillOpacity:1 }).addTo(detailMap).bindPopup('Start');
+      L.circleMarker(coords[coords.length-1], { radius:8, color:'#FFD700', fillColor:'#FFD700', fillOpacity:1 }).addTo(detailMap).bindPopup('Slut');
+      detailMap.fitBounds(line.getBounds(), { padding: [20,20] });
+    }, 100);
+  } catch(e) { console.error(e); }
+}
+
+// ══════════════════════════════════════════
+// UPPGIFTER
+// ══════════════════════════════════════════
+async function loadTasks() {
+  try {
+    const res = await fetch('/api/tasks', { headers: apiHeaders() });
+    const tasks = await res.json();
+    const el = document.getElementById('tasksList');
+    if (!tasks.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px 0;">Inga uppgifter skapade</div>'; return; }
+    el.innerHTML = tasks.map(t => `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #1a1a1a;">
+        <div style="flex:1;">
+          <div style="font-weight:700;font-size:14px;">${t.title}</div>
+          ${t.description ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">${t.description}</div>` : ''}
+          ${t.reward ? `<div style="font-size:12px;color:var(--primary);margin-top:2px;">🏆 ${t.reward}</div>` : ''}
+        </div>
+        <span class="badge badge-blue">${t.type === 'daily' ? 'Daglig' : 'Engång'}</span>
+        <button class="btn-ghost btn btn-sm" onclick="deleteTask('${t.id}')" style="color:var(--red);border-color:var(--red);">Ta bort</button>
+      </div>
+    `).join('');
+  } catch(e) {}
+}
+
+async function createTask() {
+  const title = document.getElementById('taskTitle').value.trim();
+  if (!title) { alert('Ange en titel'); return; }
+  try {
+    await fetch('/api/tasks', {
+      method: 'POST',
+      headers: apiHeaders(),
+      body: JSON.stringify({
+        title,
+        description: document.getElementById('taskDesc').value.trim(),
+        type: document.getElementById('taskType').value,
+        reward: document.getElementById('taskReward').value.trim()
+      })
+    });
+    document.getElementById('taskTitle').value = '';
+    document.getElementById('taskDesc').value = '';
+    document.getElementById('taskReward').value = '';
+    loadTasks();
+  } catch(e) {}
+}
+
+async function deleteTask(id) {
+  if (!confirm('Ta bort uppgiften?')) return;
+  await fetch(`/api/tasks/${id}`, { method: 'DELETE', headers: apiHeaders() });
+  loadTasks();
+}
+
+// ══════════════════════════════════════════
+// PUSH-NOTISER
+// ══════════════════════════════════════════
+const QUICK_PUSH = {
+  food:    { title: 'Dags att äta! 🐸', body: '*stirrar intensivt* ...mat?' },
+  walk:    { title: 'Dags för promenad! 💪', body: 'Allen väntar på dig! Jag flyger bredvid.' },
+  glucose: { title: 'Mät blodsockret! 🩸', body: 'Håller koll på dig. — Butcher' }
+};
+
+async function sendQuickPush(type) {
+  const p = QUICK_PUSH[type];
+  const res = await fetch('/api/admin/push', {
+    method: 'POST',
+    headers: apiHeaders(),
+    body: JSON.stringify({ ...p, tag: type })
+  });
+  const d = await res.json();
+  showPushResult(`Skickat till ${d.to} enhet(er)!`);
+}
+
+async function sendCustomPush() {
+  const title = document.getElementById('pushTitle').value.trim();
+  const body  = document.getElementById('pushBody').value.trim();
+  if (!title || !body) { alert('Fyll i rubrik och meddelande'); return; }
+  const res = await fetch('/api/admin/push', {
+    method: 'POST',
+    headers: apiHeaders(),
+    body: JSON.stringify({ title, body, tag: 'custom' })
+  });
+  const d = await res.json();
+  showPushResult(`Skickat till ${d.to} enhet(er)!`);
+}
+
+function showPushResult(msg) {
+  const el = document.getElementById('pushResult');
+  el.textContent = msg;
+  setTimeout(() => el.textContent = '', 4000);
+}
+
+async function loadPush() {
+  try {
+    const res = await fetch('/api/admin/dashboard', { headers: apiHeaders() });
+    const d = await res.json();
+    document.getElementById('deviceCount').textContent = d.subscriptions;
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════
+// CHARTAR
+// ══════════════════════════════════════════
+function chartConfig(data, small = true) {
+  const labels = data.map(e => new Date(e.time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'}));
+  const vals   = data.map(e => e.val);
+  return {
+    type: 'line',
+    data: { labels, datasets: [{ data: vals, borderColor: '#4aff6a', backgroundColor: 'rgba(74,255,106,0.08)', borderWidth: 2, pointRadius: small ? 0 : 3, tension: 0.4, fill: true }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a1a1a', titleColor: '#4aff6a', bodyColor: '#f0f0e8', borderColor: '#333', borderWidth: 1 } },
+      scales: {
+        x: { display: !small, ticks: { color: '#555', font: { size: 10 } }, grid: { color: '#1a1a1a' } },
+        y: { min: 2, max: 14, grid: { color: '#1a1a1a' }, ticks: { color: '#555', font: { size: 10 } } }
+      }
+    }
+  };
+}
+
+let miniChart = null, fullChart = null;
+function drawMiniChart(id, data) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  if (miniChart) miniChart.destroy();
+  miniChart = new Chart(canvas, chartConfig(data, true));
+}
+function drawFullChart(id, data) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  if (fullChart) fullChart.destroy();
+  fullChart = new Chart(canvas, chartConfig(data, false));
+}
+
+// ══════════════════════════════════════════
+// FOTO-MODAL
+// ══════════════════════════════════════════
+function openPhoto(url) {
+  document.getElementById('photoModalImg').src = url;
+  document.getElementById('photoModal').classList.add('open');
+}
+function closePhotoModal() {
+  document.getElementById('photoModal').classList.remove('open');
+}
+
+// Enter i login
+document.getElementById('passwordInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+// ══════════════════════════════════════════
+// ADMIN ACHIEVEMENTS
+// ══════════════════════════════════════════
+let adminAchFilter = 'all';
+
+async function loadAchievements() {
+  // Hämta state-data från dashboard för att simulera unlock-check
+  try {
+    const res = await fetch('/api/admin/dashboard', { headers: apiHeaders() });
+    const d = await res.json();
+
+    // Vi hämtar localStorage från appen om möjligt — annars visa alla
+    // Admin visar bara statisk lista + förklaring
+    renderAdminAchGrid(adminAchFilter);
+
+    document.getElementById('adm-ach-total').textContent = ACHIEVEMENTS.length;
+    document.getElementById('adm-ach-unlocked').textContent = '?';
+    document.getElementById('adm-ach-xp').textContent = ACHIEVEMENTS.reduce((a,b)=>a+b.xp,0).toLocaleString('sv-SE');
+  } catch(e) {}
+}
+
+const TIER_COLORS = { bronze:'#cd7f32', silver:'#c0c0c0', gold:'#FFD700', platinum:'#e5e4e2', invincible:'#FFD700' };
+const CHAR_COLORS = { food:'#4aff6a', walk:'#1a6bff', glucose:'#ff3a2a', special:'#FFD700' };
+
+function renderAdminAchGrid(filter) {
+  let list = ACHIEVEMENTS;
+  if (filter !== 'all') list = list.filter(a => a.type === filter);
+
+  document.getElementById('adminAchGrid').innerHTML = list.map(a => {
+    const cc = CHAR_COLORS[a.char] || '#FFD700';
+    const tc = TIER_COLORS[a.tier] || '#FFD700';
+    const iconInfo = typeof getAchIcon !== 'undefined' ? getAchIcon(a) : null;
+    let iconHTML = '<span style="font-size:26px;">' + a.icon + '</span>';
+    if (iconInfo && iconInfo.type === 'img' && typeof CHAR_IMGS !== 'undefined' && CHAR_IMGS[iconInfo.src]) {
+      iconHTML = '<img src="' + CHAR_IMGS[iconInfo.src] + '" style="width:52px;height:52px;object-fit:contain;" alt="' + a.title + '">';
+    }
+    return `<div style="background:var(--card2);border:1.5px solid #2a2a2a;border-radius:10px;padding:12px;position:relative;">
+      <div style="position:absolute;top:6px;right:6px;font-size:9px;font-weight:900;padding:2px 5px;border-radius:4px;background:${tc}22;color:${tc};">${a.tier.toUpperCase()}</div>
+      <div style="margin-bottom:8px;height:56px;display:flex;align-items:center;">${iconHTML}</div>
+      <div style="font-family:var(--font-title);font-size:14px;color:${cc};margin-bottom:3px;">${a.title}</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.4;margin-bottom:6px;">${a.desc}</div>
+      <div style="font-size:11px;color:var(--text);font-style:italic;line-height:1.4;border-top:1px solid #222;padding-top:6px;margin-bottom:6px;">${a.flavor}</div>
+      <div style="font-size:12px;font-weight:700;color:var(--green);">+${a.xp} XP</div>
+    </div>`;
+  }).join('');
+}
+
+function adminFilterAch(filter) {
+  adminAchFilter = filter;
+  document.querySelectorAll('#adminAchFilter button').forEach(b => {
+    b.style.borderColor = ''; b.style.color = '';
+  });
+  event.target.style.borderColor = 'var(--primary)';
+  event.target.style.color = 'var(--primary)';
+  renderAdminAchGrid(filter);
+}
+
+// Auto-refresh dashboard
+setInterval(() => {
+  const active = document.querySelector('.page-section.active');
+  if (active && active.id === 'sec-dashboard') loadDashboard();
+}, 60000);
+</script>
+</body>
+</html>
