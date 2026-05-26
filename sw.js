@@ -1,21 +1,47 @@
-const CACHE = 'soumaya-v1';
-const ASSETS = ['/', '/index.html', '/manifest.json'];
+// Bumpa versionen vid varje deploy så gammal cache rensas
+const CACHE = 'soumaya-v' + Date.now();
+const STATIC = ['soumaya-static-v3'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  // Hoppa över väntan direkt
   self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-  ));
-  self.clients.claim();
+  // Rensa ALLA gamla cacher
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+
+  // HTML-filer: alltid network-first, aldrig cache
+  if (e.request.headers.get('accept') && e.request.headers.get('accept').includes('text/html')) {
+    e.respondWith(
+      fetch(e.request).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // API-anrop: alltid network, aldrig cache
+  if (url.pathname.startsWith('/api/')) {
+    e.respondWith(fetch(e.request));
+    return;
+  }
+
+  // Övrigt (ikoner, manifest): network-first med cache-fallback
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
+    fetch(e.request)
+      .then(res => {
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return res;
+      })
+      .catch(() => caches.match(e.request))
   );
 });
 
