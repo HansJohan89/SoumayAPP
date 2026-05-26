@@ -771,6 +771,8 @@ async function loadTasks() {
     }).join('');
 
 
+} // end loadTasks
+
 // ── FOTO-KRAV ────────────────────────────────────────────
 function togglePhotoCount() {
   const cb = document.getElementById('taskRequirePhotos');
@@ -974,7 +976,6 @@ function adminFilterAch(filter) {
   renderAdminAchGrid(filter);
 }
 
-}
 // Auto-login om token finns
 if (adminToken) {
   document.getElementById('loginScreen').style.display = 'none';
