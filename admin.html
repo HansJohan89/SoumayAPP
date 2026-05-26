@@ -731,6 +731,14 @@ async function showWalkMap(walkId) {
 // ══════════════════════════════════════════
 // UPPGIFTER
 // ══════════════════════════════════════════
+let taskFilter = 'all';
+function filterTasksAdmin(filter, btn) {
+  taskFilter = filter;
+  document.querySelectorAll('.task-filter').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  loadTasks();
+}
+
 async function loadTasks() {
     const res = await fetch('/api/tasks', { headers: apiHeaders() });
     let tasks = await res.json();
@@ -961,6 +969,7 @@ function adminFilterAch(filter) {
   renderAdminAchGrid(filter);
 }
 
+}
 // Auto-refresh dashboard
 setInterval(() => {
   const active = document.querySelector('.page-section.active');

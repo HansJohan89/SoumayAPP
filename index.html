@@ -2366,6 +2366,11 @@ function renderActionButtons(weaponItem){ return renderCombatActions(null, weapo
 function doAction(actionId){
   const c=state.activeCombat; if(!c||c.done) return;
   const action=COMBAT_ACTIONS.find(a=>a.id===actionId); if(!action) return;
+
+  // Inaktivera knappar medan animationen körs
+  document.querySelectorAll('.combat-action-btn').forEach(b=>b.disabled=true);
+  const fleeBtn=document.querySelector('.flee-btn'); if(fleeBtn) fleeBtn.disabled=true;
+
   const stats=c.heroStats;
   const weaponItem=state.equipped&&state.equipped.weapon?SHOP_ITEMS.find(i=>i.id===state.equipped.weapon):null;
   let logs=[]; let totalDmg=0; c.defendBonus=0;
@@ -2384,14 +2389,13 @@ function doAction(actionId){
     }else{
       logs.push({type:'hero', text:'🛡️ Defensivt läge (+4 AC). Inget svar möjligt.'});
     }
-
   }else if(actionId==='double'){
     let total=0;
     for(let i=0;i<2;i++){
       const d20=roll(20); const hitRoll=d20+Math.floor(stats.SMI/2)-2; const hit=hitRoll>=c.enemyAc;
       logs.push({type:'dice', text:'Slag '+(i+1)+': [d20='+d20+'] + SMI/2-2 = '+hitRoll+' mot AC'+c.enemyAc+' → '+(hit?'TRÄFF!':'Miss')});
       if(hit){
-        const dmgDie=roll(6); const bonus=Math.floor(stats.SMI/2)+(weaponItem&&weaponItem.special==='dualBonus'?2:0);
+        const dmgDie=roll(6); const bonus=Math.floor(stats.SMI/2)+(weaponItem&&weaponItem.special==='dualBonus'?3:0);
         const dmg=dmgDie+bonus;
         logs.push({type:'dice', text:'  Skada: [d6='+dmgDie+'] + '+bonus+' = '+dmg});
         total+=dmg;
@@ -2400,42 +2404,40 @@ function doAction(actionId){
     totalDmg=total;
     if(total>0) logs.push({type:'hero', text:'Dubbelhugg landar — '+total+' total skada!'});
     else logs.push({type:'hero', text:'Båda huggen missar!'});
-
   }else if(actionId==='power'){
     const d20=roll(20); const hitRoll=d20+stats.STY-3; const isCrit=d20===20; const hit=isCrit||hitRoll>=c.enemyAc;
     logs.push({type:'dice', text:'Träffslag: [d20='+d20+'] + STY'+stats.STY+'-3 = '+hitRoll+' mot AC'+c.enemyAc+' → '+(isCrit?'⚡ KRITISK!':hit?'TRÄFF!':'Miss')});
     if(hit){
-      const dmgDie=roll(12); const bonus=stats.STY*2+(weaponItem&&weaponItem.special==='powerBonus'?3:0);
-      let dmg=dmgDie+bonus; if(isCrit) dmg*=2;
-      logs.push({type:'dice', text:'Skadeslag: [d12='+dmgDie+'] × '+(isCrit?'2 (KRITISK)':'1')+' + '+bonus+' = '+dmg});
+      const dmgDie=roll(12); const bonus=stats.STY*2+(weaponItem&&weaponItem.special==='powerBonus'?4:0);
+      let dmg=dmgDie+bonus; if(isCrit) dmg=Math.round(dmg*2);
+      logs.push({type:'dice', text:'Skadeslag: [d12='+dmgDie+']'+(isCrit?' × 2 KRITISK':'')+' + '+bonus+' = '+dmg});
       totalDmg=dmg;
       logs.push({type:'hero', text:(isCrit?'⚡⚡ FÖRÖDANDE KRITISK! ':'')+dmg+' skada!'});
     }else{
       logs.push({type:'hero', text:'Kraftslaget sveper förbi — för tungt!'});
     }
-
   }else if(actionId==='special'){
-    if(!weaponItem){logs.push({type:'system', text:'Inget vapen utrustat för Special!'});}
-    else{
+    if(!weaponItem){
+      logs.push({type:'system', text:'Inget vapen utrustat för Special!'});
+    }else{
       const mod=weaponItem.special==='intAttack'?stats.INT:stats.STY;
       const d20=roll(20); const hitRoll=d20+mod; const isCrit=d20===20; const hit=isCrit||hitRoll>=c.enemyAc;
       logs.push({type:'dice', text:'Special ['+weaponItem.name+']: [d20='+d20+'] + mod'+mod+' = '+hitRoll+' mot AC'+c.enemyAc+' → '+(isCrit?'⚡ KRITISK!':hit?'TRÄFF!':'Miss')});
       if(hit){
-        const dmgDie=roll(10); let dmg=dmgDie+mod+(weaponItem.dmgBonus||0); if(isCrit) dmg*=2;
-        logs.push({type:'dice', text:'Skadeslag: [d10='+dmgDie+'] + '+mod+' = '+dmg+(isCrit?' (KRITISK)':'')});
+        const dmgDie=roll(10); let dmg=dmgDie+mod+(weaponItem.dmgBonus||0); if(isCrit) dmg=Math.round(dmg*2);
+        logs.push({type:'dice', text:'Skadeslag: [d10='+dmgDie+'] + '+mod+(isCrit?' × 2 KRITISK':'')+' = '+dmg});
         totalDmg=dmg;
         logs.push({type:'hero', text:'✨ Specialattack: '+dmg+' skada!'});
       }else{
         logs.push({type:'hero', text:'Specialattacken missar sitt mål.'});
       }
     }
-
-  }else{ // slash
+  }else{
     const d20=roll(20); const hitRoll=d20+stats.STY; const isCrit=d20===20; const hit=isCrit||hitRoll>=c.enemyAc;
     logs.push({type:'dice', text:'Träffslag: [d20='+d20+'] + STY'+stats.STY+' = '+hitRoll+' mot AC'+c.enemyAc+' → '+(isCrit?'⚡ KRITISK!':hit?'TRÄFF!':'Miss')});
     if(hit){
       const dmgDie=roll(8); const bonus=stats.STY+(weaponItem?weaponItem.dmgBonus||0:0);
-      let dmg=dmgDie+bonus; if(isCrit) dmg*=2;
+      let dmg=dmgDie+bonus; if(isCrit) dmg=Math.round(dmg*2);
       logs.push({type:'dice', text:'Skadeslag: [d8='+dmgDie+'] + '+bonus+(isCrit?' × 2 KRITISK':'')+' = '+dmg});
       totalDmg=dmg;
       logs.push({type:'hero', text:rnd(action.dialog.hit)+' ('+dmg+' skada)'});
@@ -2445,35 +2447,109 @@ function doAction(actionId){
   }
 
   c.enemyHp=Math.max(0,c.enemyHp-totalDmg);
-  if(totalDmg>0) logs.push({type:'system', text:c.enemyName+' har nu '+c.enemyHp+' HP kvar.'});
+  if(totalDmg>0) logs.push({type:'system', text:c.enemyName+' har nu '+c.enemyHp+'/'+c.enemyMaxHp+' HP kvar.'});
 
-  if(c.enemyHp<=0){
-    c.done=true;
-    logs.push({type:'system', text:'💥 '+c.enemyName+' är besegrad!'});
-    c.log.push(...logs); state.activeCombat=c; endCombatFlow(true); save(); renderActiveCombat(); return;
-  }
+  // Fiende svarar (om den lever)
+  let enemyKilled = c.enemyHp <= 0;
+  let enemyLogs = [];
 
-  // ── Fienden svarar ──
-  logs.push({type:'enemy', text:'━━━ '+c.enemyName.toUpperCase()+' ATTACKERAR ━━━'});
-  const eD20=roll(20); const eHitRoll=eD20+c.enemyStats.STY; const effAc=c.heroAc+c.defendBonus; const eHit=eHitRoll>=effAc;
-  logs.push({type:'dice', text:'[d20='+eD20+'] + STY'+c.enemyStats.STY+' = '+eHitRoll+' mot din AC'+effAc+(c.defendBonus>0?' (+4 försvar)':'')+' → '+(eHit?'TRÄFF!':'Miss')});
-  if(eHit){
-    const eDmgDie=roll(8); const eDmg=Math.max(1,eDmgDie+Math.floor(c.enemyStats.STY/2));
-    logs.push({type:'dice', text:'Skadeslag: [d8='+eDmgDie+'] + '+Math.floor(c.enemyStats.STY/2)+' = '+eDmg});
-    c.heroHp=Math.max(0,c.heroHp-eDmg);
-    const atkList=c.enemyAttacks||[c.enemyName+" attackerar!"];const atkMsg=atkList[Math.floor(Math.random()*atkList.length)];logs.push({type:'enemy', text:atkMsg+' Träff! '+eDmg+' skada! 💢'});
-    logs.push({type:'system', text:'Du har '+c.heroHp+' HP kvar.'});
+  if(!enemyKilled){
+    enemyLogs.push({type:'enemy', text:'━━━ '+c.enemyName.toUpperCase()+' SVARAR ━━━'});
+    const eD20=roll(20); const eHitRoll=eD20+c.enemyStats.STY; const effAc=c.heroAc+c.defendBonus; const eHit=eHitRoll>=effAc;
+    enemyLogs.push({type:'dice', text:'[d20='+eD20+'] + STY'+c.enemyStats.STY+' = '+eHitRoll+' mot din AC'+effAc+(c.defendBonus>0?' (+4 försvar)':'')+' → '+(eHit?'TRÄFF!':'Miss')});
+    if(eHit){
+      const eDmgDie=roll(8); const eDmg=Math.max(1,eDmgDie+Math.floor(c.enemyStats.STY/2));
+      enemyLogs.push({type:'dice', text:'Skadeslag: [d8='+eDmgDie+'] + '+Math.floor(c.enemyStats.STY/2)+' = '+eDmg});
+      c.heroHp=Math.max(0,c.heroHp-eDmg);
+      const atkList=c.enemyAttacks||[c.enemyName+' attackerar!'];
+      const atkMsg=atkList[Math.floor(Math.random()*atkList.length)];
+      enemyLogs.push({type:'enemy', text:atkMsg+' '+eDmg+' skada! 💢'});
+      enemyLogs.push({type:'system', text:'Du har '+c.heroHp+'/'+c.heroMaxHp+' HP kvar.'});
+    }else{
+      const atkList=c.enemyAttacks||[c.enemyName+' attackerar!'];
+      const atkMsg=atkList[Math.floor(Math.random()*atkList.length)];
+      enemyLogs.push({type:'enemy', text:atkMsg.replace('!','')+' — men missar! Soumaya undviker.'});
+    }
   }else{
-    const atkList2=c.enemyAttacks||[c.enemyName+" attackerar!"];const atkMsg2=atkList2[Math.floor(Math.random()*atkList2.length)];logs.push({type:'enemy', text:atkMsg2.replace("!","")+" — men missar! Soumaya undviker."});
+    logs.push({type:'system', text:'💥 '+c.enemyName+' är besegrad!'});
   }
-  c.log.push(...logs); c.defendBonus=0;
 
-  if(c.heroHp<=0){
-    c.done=true;
-    c.log.push({type:'system', text:'💀 Soumaya faller i strid...'});
-    endCombatFlow(false);
+  c.defendBonus=0;
+  if(!enemyKilled && c.heroHp<=0){
+    enemyLogs.push({type:'system', text:'💀 Soumaya faller i strid...'});
   }
-  state.activeCombat=c; save(); renderActiveCombat();
+
+  // Animera logg rad för rad
+  const allLogs=[...logs,...enemyLogs];
+  const DELAY=350; // ms per rad
+
+  allLogs.forEach((entry, idx)=>{
+    setTimeout(()=>{
+      c.log.push(entry);
+      // Uppdatera bara loggen, inte hela UI (för prestanda)
+      const logEl=document.getElementById('combatLogEl');
+      if(logEl){
+        const div=document.createElement('div');
+        div.className='combat-log-line '+entry.type;
+        const prefix={hero:'🗡️ ',enemy:'💢 ',system:'⚡ ',dice:'🎲 '}[entry.type]||'';
+        div.textContent=prefix+entry.text;
+        // Ny-rad-effekt
+        div.style.opacity='0';
+        div.style.transform='translateX(-8px)';
+        div.style.transition='opacity .2s ease, transform .2s ease';
+        logEl.appendChild(div);
+        requestAnimationFrame(()=>{ div.style.opacity='1'; div.style.transform='translateX(0)'; });
+        logEl.scrollTop=logEl.scrollHeight;
+      }
+
+      // Sista loggen — uppdatera hela UI
+      if(idx===allLogs.length-1){
+        state.activeCombat=c;
+        if(enemyKilled){
+          endCombatFlow(true);
+        }else if(c.heroHp<=0){
+          c.done=true;
+          endCombatFlow(false);
+        }
+        save();
+        // Uppdatera HP-bars och actions utan att radera loggen
+        updateCombatUI(c);
+      }
+    }, idx*DELAY);
+  });
+}
+
+// Uppdaterar HP, actions m.m. utan att röra loggen
+function updateCombatUI(c){
+  // HP
+  const hp=Math.max(0,Math.round(c.heroHp/c.heroMaxHp*100));
+  const ep=Math.max(0,Math.round(c.enemyHp/c.enemyMaxHp*100));
+  const heroFill=document.querySelector('.combatant-card:first-child .hp-fill');
+  const enemyFill=document.querySelector('.enemy-card-combat .hp-fill');
+  const heroHpLabel=document.querySelector('.combatant-card:first-child .hp-label');
+  const enemyHpLabel=document.querySelector('.enemy-card-combat .hp-label');
+  if(heroFill){heroFill.style.width=hp+'%';heroFill.className='hp-fill'+(hp<25?' crit':hp<50?' low':'');}
+  if(enemyFill){enemyFill.style.width=ep+'%';enemyFill.className='hp-fill'+(ep<25?' crit':ep<50?' low':'');}
+  if(heroHpLabel) heroHpLabel.textContent=c.heroHp+' / '+c.heroMaxHp+' HP';
+  if(enemyHpLabel) enemyHpLabel.textContent=c.enemyHp+' / '+c.enemyMaxHp+' HP';
+
+  if(c.done){
+    // Ersätt actions med resultat
+    const actionsEl=document.querySelector('.combat-actions-grid');
+    const fleeEl=document.querySelector('.flee-btn');
+    const parent=actionsEl?actionsEl.parentNode:null;
+    if(actionsEl) actionsEl.remove();
+    if(fleeEl) fleeEl.remove();
+    if(parent){
+      const resultDiv=document.createElement('div');
+      resultDiv.innerHTML=renderCombatResult(c);
+      parent.appendChild(resultDiv);
+    }
+  }else{
+    // Återaktivera knappar
+    document.querySelectorAll('.combat-action-btn').forEach(b=>b.disabled=false);
+    const fleeBtn=document.querySelector('.flee-btn'); if(fleeBtn) fleeBtn.disabled=false;
+  }
 }
 
 
