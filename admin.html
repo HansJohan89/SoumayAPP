@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Soumaya Admin</title>
+<title>Soumaya Admin v0526-0551</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="char_imgs.js"></script>
 <script src="achievements.js"></script>
@@ -536,12 +536,6 @@ function apiHeaders() {
   return { 'Content-Type': 'application/json', 'x-admin-token': adminToken };
 }
 
-// Auto-login om token finns
-if (adminToken) {
-  document.getElementById('loginScreen').style.display = 'none';
-  setTimeout(loadDashboard, 100);
-}
-
 // ══════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════
@@ -778,6 +772,19 @@ async function loadTasks() {
       </div>`;
     }).join('');
 
+
+// ── FOTO-KRAV ────────────────────────────────────────────
+function togglePhotoCount() {
+  const cb = document.getElementById('taskRequirePhotos');
+  document.getElementById('photoCountRow').style.display = cb.checked ? 'block' : 'none';
+}
+
+function setPhotoCount(val, btn) {
+  document.querySelectorAll('.pcbtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('taskPhotoCount').value = val;
+}
+
 async function createTask() {
   const title = document.getElementById('taskTitle').value.trim();
   if (!title) { alert('Ange en titel'); return; }
@@ -970,6 +977,12 @@ function adminFilterAch(filter) {
 }
 
 }
+// Auto-login om token finns
+if (adminToken) {
+  document.getElementById('loginScreen').style.display = 'none';
+  setTimeout(loadDashboard, 100);
+}
+
 // Auto-refresh dashboard
 setInterval(() => {
   const active = document.querySelector('.page-section.active');
