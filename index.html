@@ -312,6 +312,52 @@ body{
 
 .shop-locked { opacity:.5; filter:grayscale(.5); }
 .shop-locked .shop-item-icon { filter:grayscale(1); }
+
+/* ── FIENDEKNAPPAR ── */
+.enemy-btn {
+  width:100%;
+  border-radius:12px;
+  padding:14px 12px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  text-align:left;
+  transition:transform .1s, box-shadow .1s;
+  -webkit-tap-highlight-color:transparent;
+  font-family:var(--font-ui);
+}
+.enemy-btn:active { transform:translate(3px,3px); box-shadow:1px 1px 0 !important; }
+.enemy-btn-left { display:flex; align-items:center; gap:10px; flex:1; min-width:0; }
+.enemy-btn-icon { font-size:38px; flex-shrink:0; line-height:1; }
+.enemy-btn-info { flex:1; min-width:0; }
+.enemy-btn-name { font-family:var(--font-burst); font-size:15px; letter-spacing:.5px; margin-bottom:3px; }
+.enemy-btn-flavor { font-size:11px; color:var(--ink-muted); font-weight:600; line-height:1.3; margin-bottom:5px; }
+.enemy-btn-stats {
+  display:flex; flex-wrap:wrap; gap:5px;
+}
+.enemy-btn-stats span {
+  font-size:10px; font-weight:700;
+  background:rgba(255,255,255,.7);
+  padding:2px 6px; border-radius:8px;
+  border:1px solid rgba(0,0,0,.12);
+}
+.enemy-btn-diff {
+  flex-shrink:0;
+  font-family:var(--font-burst);
+  font-size:10px;
+  letter-spacing:.5px;
+  padding:6px 8px;
+  border-radius:8px;
+  border:2px solid;
+  background:rgba(255,255,255,.5);
+  text-align:center;
+  line-height:1.3;
+  writing-mode:vertical-rl;
+  text-orientation:mixed;
+}
+
 </style>
 </head>
 <body>
@@ -2164,7 +2210,6 @@ function renderCombatTab(){
   const el=document.getElementById('heroTabCombat'); if(!el) return;
   if(state.activeCombat){renderActiveCombat(); return;}
   const canFight=canFightToday(), ld=heroLevelData(), heroLvl=ld.current.level;
-  const allEnemies=getEnemiesForLevel(heroLvl);
 
   if(!canFight){
     const last=(state.combatLog||[])[0];
@@ -2172,37 +2217,55 @@ function renderCombatTab(){
     return;
   }
 
-  // Bygg zonat fiendeväljare
+  const allEnemies = getEnemiesForLevel(heroLvl);
   const zones = [
-    {z:1, name:'Sockerfältet',        icon:'🍬', color:'var(--in-range-dark)'},
-    {z:2, name:'Stressdalen',         icon:'😤', color:'var(--high)'},
-    {z:3, name:'Blodsockerbergen',    icon:'⛰️', color:'var(--pulse-red-deep)'},
-    {z:4, name:'Hormonernas Kammare', icon:'💀', color:'#7c3aed'},
-    {z:5, name:'Olympen',             icon:'⚡', color:'#b8860b'},
+    {z:1, name:'Sockerfältet',        icon:'🍬', minLvl:1},
+    {z:2, name:'Stressdalen',         icon:'😤', minLvl:3},
+    {z:3, name:'Blodsockerbergen',    icon:'⛰️', minLvl:6},
+    {z:4, name:'Hormonernas Kammare', icon:'💀', minLvl:9},
+    {z:5, name:'Olympen',             icon:'⚡', minLvl:12},
   ];
 
-  let html = '<div class="card dark" style="text-align:center;padding:14px;margin-bottom:12px;"><div class="burst burst-sm" style="color:var(--power-yellow);letter-spacing:2px;margin-bottom:4px;">VÄLJ MOTSTÅNDARE</div><div style="font-size:11px;color:rgba(255,255,255,.6);font-weight:600;">En strid per dag. Nivå '+heroLvl+'.</div></div>';
+  // Svårighetsfärger och stilar
+  const diffStyle = {
+    easy:     {bg:'#E8FBF0', border:'#1a8a4a', text:'#1a8a4a',  shadow:'#1a8a4a', label:'⭐ LÄTT'},
+    medium:   {bg:'#FFFBE0', border:'#b8860b', text:'#b8860b',  shadow:'#b8860b', label:'⭐⭐ MEDEL'},
+    hard:     {bg:'#FDECEA', border:'#B00020', text:'#B00020',  shadow:'#B00020', label:'⭐⭐⭐ SVÅR'},
+    legendary:{bg:'#F3E8FF', border:'#5b21b6', text:'#5b21b6',  shadow:'#5b21b6', label:'💀 LEGENDAR'},
+  };
+
+  let html = '<div class="card dark" style="text-align:center;padding:14px;margin-bottom:12px;"><div class="burst burst-sm" style="color:var(--power-yellow);letter-spacing:2px;margin-bottom:4px;">VÄLJ DIN MOTSTÅNDARE</div><div style="font-size:11px;color:rgba(255,255,255,.6);font-weight:600;">En strid per dag · Nivå '+heroLvl+'</div></div>';
 
   zones.forEach(zone => {
     const zoneEnemies = allEnemies.filter(e => e.zone === zone.z);
-    if(!zoneEnemies.length) return;
-    html += '<div style="margin-bottom:14px;">';
-    html += '<div class="section-head" style="color:'+zone.color+';">'+zone.icon+' '+zone.name+'</div>';
-    html += '<div class="enemy-select-grid">';
+    if (!zoneEnemies.length) return;
+    html += '<div style="margin-bottom:18px;">';
+    html += '<div class="section-head">'+zone.icon+' ZON '+zone.z+' — '+zone.name+'</div>';
+    html += '<div style="display:flex;flex-direction:column;gap:10px;">';
     zoneEnemies.forEach(e => {
-      const diffColors={easy:'var(--in-range-dark)',medium:'var(--high)',hard:'var(--pulse-red-deep)',legendary:'#7c3aed'};
-      const diffLabels={easy:'⭐ Lätt',medium:'⭐⭐ Medel',hard:'⭐⭐⭐ Svår',legendary:'💀 Legendar'};
-      html += '<div class="enemy-card" data-eid="'+e.id+'" onclick="startCombat(this.dataset.eid)">'+
-        '<div class="enemy-card-icon">'+e.icon+'</div>'+
-        '<div class="enemy-card-name">'+e.name+'</div>'+
-        '<div class="enemy-card-diff" style="color:'+diffColors[e.difficulty||'medium']+';">'+diffLabels[e.difficulty||'medium']+'</div>'+
-        '<div style="font-size:10px;color:var(--ink-muted);margin-top:2px;font-weight:600;">HP: '+e.scaledHp+' · AC: '+e.scaledAc+'</div>'+
-        '<div style="font-size:9px;font-family:var(--font-script);color:var(--ink-muted);margin-top:3px;line-height:1.3;">'+e.flavor+'</div>'+
-        '<div style="font-size:9px;color:var(--ink-muted);margin-top:2px;font-weight:600;">XP: +'+e.scaledXp+' · 🪙 '+e.scaledGold+'</div>'+
-      '</div>';
+      const ds = diffStyle[e.difficulty] || diffStyle.medium;
+      html +=
+        '<button class="enemy-btn" data-eid="'+e.id+'" onclick="startCombat(this.dataset.eid)" '+
+          'style="background:'+ds.bg+';border:3px solid '+ds.border+';box-shadow:4px 4px 0 '+ds.shadow+';">'+
+          '<div class="enemy-btn-left">'+
+            '<div class="enemy-btn-icon">'+e.icon+'</div>'+
+            '<div class="enemy-btn-info">'+
+              '<div class="enemy-btn-name">'+e.name+'</div>'+
+              '<div class="enemy-btn-flavor">'+e.flavor+'</div>'+
+              '<div class="enemy-btn-stats">'+
+                '<span>❤️ '+e.scaledHp+' HP</span>'+
+                '<span>🛡️ AC '+e.scaledAc+'</span>'+
+                '<span>⚡ +'+e.scaledXp+' XP</span>'+
+                '<span>🪙 '+e.scaledGold+'</span>'+
+              '</div>'+
+            '</div>'+
+          '</div>'+
+          '<div class="enemy-btn-diff" style="color:'+ds.text+';border-color:'+ds.border+';">'+ds.label+'</div>'+
+        '</button>';
     });
     html += '</div></div>';
   });
+
   html += renderCombatHistory();
   el.innerHTML = html;
 }
@@ -2398,10 +2461,10 @@ function doAction(actionId){
     const eDmgDie=roll(8); const eDmg=Math.max(1,eDmgDie+Math.floor(c.enemyStats.STY/2));
     logs.push({type:'dice', text:'Skadeslag: [d8='+eDmgDie+'] + '+Math.floor(c.enemyStats.STY/2)+' = '+eDmg});
     c.heroHp=Math.max(0,c.heroHp-eDmg);
-    logs.push({type:'enemy', text:enemyAttackDialog(c,true,eDmg)});
+    const atkList=c.enemyAttacks||[c.enemyName+" attackerar!"];const atkMsg=atkList[Math.floor(Math.random()*atkList.length)];logs.push({type:'enemy', text:atkMsg+' Träff! '+eDmg+' skada! 💢'});
     logs.push({type:'system', text:'Du har '+c.heroHp+' HP kvar.'});
   }else{
-    logs.push({type:'enemy', text:enemyAttackDialog(c,false,0)});
+    const atkList2=c.enemyAttacks||[c.enemyName+" attackerar!"];const atkMsg2=atkList2[Math.floor(Math.random()*atkList2.length)];logs.push({type:'enemy', text:atkMsg2.replace("!","")+" — men missar! Soumaya undviker."});
   }
   c.log.push(...logs); c.defendBonus=0;
 
