@@ -38,7 +38,7 @@ body{
   color:var(--ink);
   font-family:var(--font-ui);
   min-height:100vh;
-  padding-bottom:calc(68px + var(--safe-bottom));
+  padding-bottom:calc(80px + var(--safe-bottom));
   background-image:radial-gradient(circle,rgba(10,10,10,0.06) 1px,transparent 1px);
   background-size:8px 8px;
 }
@@ -209,6 +209,109 @@ body{
 .morning-greeting{font-family:var(--font-script);font-size:18px;color:rgba(255,255,255,.85);margin-bottom:2px}
 .morning-name{font-family:var(--font-burst);font-size:34px;color:var(--power-yellow);letter-spacing:2px;text-shadow:2px 2px 0 var(--ink);line-height:1}
 .morning-sub{font-size:12px;color:rgba(255,255,255,.7);font-weight:600;margin-top:6px}
+
+/* ── COMBAT UI ── */
+.combat-vs-row{display:flex;gap:8px;align-items:stretch;margin-bottom:12px;}
+.combatant-card{background:var(--white);border:var(--border-thick);border-radius:12px;padding:10px;box-shadow:3px 3px 0 var(--ink);flex:1;min-width:0;}
+.enemy-card-combat{background:#FFF0F0;}
+.combatant-name{font-family:var(--font-burst);font-size:12px;letter-spacing:.5px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hp-label{font-family:var(--font-mono);font-size:11px;font-weight:700;margin-bottom:3px;color:var(--ink-muted);}
+.hp-bar{height:14px;border-radius:7px;border:var(--border);background:var(--paper-dark);overflow:hidden;margin-bottom:6px;}
+.hp-fill{height:100%;border-radius:7px;background:var(--in-range);transition:width .5s ease;}
+.hp-fill.low{background:var(--high);}.hp-fill.crit{background:var(--pulse-red);}
+.stat-chips{display:flex;flex-wrap:wrap;gap:3px;}
+.stat-chip{display:inline-flex;align-items:center;padding:2px 6px;border-radius:8px;border:1.5px solid var(--ink);font-size:9px;font-weight:700;font-family:var(--font-mono);background:var(--paper);}
+.vs-badge{display:flex;align-items:center;font-family:var(--font-burst);font-size:18px;color:var(--ink-muted);flex-shrink:0;}
+
+.combat-log{background:#1a1a2e;border:var(--border-thick);border-radius:10px;padding:10px 12px;min-height:120px;max-height:220px;overflow-y:auto;margin-bottom:14px;scroll-behavior:smooth;}
+.combat-log-line{font-size:12px;font-weight:600;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06);line-height:1.5;color:rgba(255,255,255,.8);}
+.combat-log-line:last-child{border-bottom:none;color:white;}
+.combat-log-line.hero{color:#FFE600;}
+.combat-log-line.enemy{color:#ff7875;}
+.combat-log-line.system{color:#2DD881;font-style:italic;}
+.combat-log-line.dice{color:#a78bfa;font-family:var(--font-mono);font-size:11px;}
+.combat-log-empty{color:rgba(255,255,255,.4);text-align:center;padding:20px 0;font-style:italic;}
+
+.combat-actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.combat-action-btn{
+  background:var(--white);border:var(--border-thick);border-radius:12px;
+  padding:14px 10px;text-align:center;cursor:pointer;
+  box-shadow:4px 4px 0 var(--ink);
+  transition:transform .1s,box-shadow .1s;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  -webkit-tap-highlight-color:transparent;
+}
+.combat-action-btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink);}
+.combat-action-btn.disabled{opacity:.35;cursor:not-allowed;}
+.cab-icon{font-size:28px;line-height:1;}
+.cab-name{font-family:var(--font-burst);font-size:14px;letter-spacing:1px;line-height:1;}
+.cab-dice{font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--ink-muted);margin-top:2px;}
+.cab-desc{font-size:9px;color:var(--ink-muted);font-weight:600;line-height:1.3;margin-top:2px;}
+.btn-action-red{background:#FFF0F0;border-color:var(--pulse-red);box-shadow:4px 4px 0 var(--pulse-red-deep);}
+.btn-action-blue{background:#EBF6FD;border-color:var(--hero-blue);box-shadow:4px 4px 0 var(--hero-blue-dark);}
+.btn-action-orange{background:#FFF3E0;border-color:var(--high);box-shadow:4px 4px 0 #b35a00;}
+.btn-action-green{background:#E8FBF0;border-color:var(--in-range-dark);box-shadow:4px 4px 0 var(--in-range-dark);}
+.btn-action-purple{background:#F3E8FF;border-color:#7c3aed;box-shadow:4px 4px 0 #5b21b6;}
+.flee-btn{font-size:13px;color:var(--ink-muted);border-color:var(--paper-dark);box-shadow:none;padding:10px;margin-bottom:4px;}
+
+.combat-result{text-align:center;padding:20px;border:var(--border-thick);border-radius:16px;box-shadow:5px 5px 0 var(--ink);}
+.combat-result.win{background:#E8FBF0;border-color:var(--in-range-dark);}
+.combat-result.loss{background:#FDECEA;border-color:var(--pulse-red-deep);}
+.result-icon{font-size:52px;margin-bottom:8px;}
+.result-title{font-family:var(--font-burst);font-size:28px;letter-spacing:2px;margin-bottom:8px;}
+.result-flavor{font-family:var(--font-script);font-size:17px;line-height:1.5;color:var(--ink-soft);margin-bottom:12px;padding:0 8px;}
+.result-rewards{display:flex;gap:12px;justify-content:center;margin-bottom:4px;}
+.result-xp{font-family:var(--font-mono);font-size:20px;font-weight:700;color:var(--in-range-dark);}
+.result-gold{font-family:var(--font-mono);font-size:20px;font-weight:700;color:var(--gold-dark);}
+
+/* ── TASK WIDGET ── */
+.task-row {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 0; border-bottom:1.5px solid var(--paper-soft);
+}
+.task-row:last-child { border-bottom:none; }
+.task-row.task-done { opacity:.6; }
+.task-row-left { display:flex; align-items:center; gap:10px; flex:1; min-width:0; }
+.task-row-icon {
+  width:40px; height:40px; border-radius:10px;
+  border:2px solid var(--hero-blue);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; flex-shrink:0;
+  background:var(--paper);
+  box-shadow:2px 2px 0 var(--ink);
+}
+.task-row-info { flex:1; min-width:0; }
+.task-row-title { font-size:14px; font-weight:700; line-height:1.2; }
+.task-row-desc { font-size:11px; color:var(--ink-muted); font-weight:600; margin-top:2px; }
+.task-row-rewards { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+.task-rew-badge {
+  display:inline-flex; align-items:center;
+  padding:2px 7px; border-radius:10px;
+  font-size:10px; font-weight:700;
+  border:1.5px solid;
+}
+.task-rew-badge.xp   { color:var(--in-range-dark); border-color:var(--in-range-dark); background:var(--white); }
+.task-rew-badge.gold { color:var(--gold-dark); border-color:var(--gold-dark); background:var(--white); }
+.task-rew-badge.photo { color:var(--hero-blue-deep); border-color:var(--hero-blue); background:var(--white); }
+.task-check { font-size:22px; flex-shrink:0; }
+.task-complete-btn {
+  flex-shrink:0;
+  background:var(--power-yellow);
+  border:var(--border-thick);
+  border-radius:8px;
+  font-family:var(--font-burst);
+  font-size:12px; letter-spacing:1px;
+  padding:8px 12px;
+  cursor:pointer;
+  box-shadow:3px 3px 0 var(--ink);
+  transition:transform .1s, box-shadow .1s;
+  -webkit-tap-highlight-color:transparent;
+}
+.task-complete-btn:active { transform:translate(2px,2px); box-shadow:none; }
+
+
+.shop-locked { opacity:.5; filter:grayscale(.5); }
+.shop-locked .shop-item-icon { filter:grayscale(1); }
 </style>
 </head>
 <body>
@@ -216,7 +319,6 @@ body{
 <header class="app-header">
   <div>
     <div class="app-title">SOUMAYA</div>
-    <div class="app-tagline">Din styrka, varje dag</div>
   </div>
   <div class="header-right">
     <div class="header-time" id="headerTime"></div>
@@ -273,6 +375,18 @@ body{
         <div class="speech-bubble" id="groguHomeSpeech">…</div>
       </div>
     </div>
+    <!-- Dagliga uppgifter -->
+    <div class="card">
+      <div class="card-label">Dagens uppdrag</div>
+      <div id="tasksWidget"><div style="color:var(--ink-muted);font-size:13px;font-weight:600;text-align:center;padding:12px 0;">Laddar uppgifter...</div></div>
+    </div>
+
+    <!-- Achievements progress -->
+    <div class="card yellow">
+      <div class="card-label">Achievements</div>
+      <div id="achWidget"></div>
+    </div>
+
   </div>
 </div>
 
@@ -1259,31 +1373,30 @@ if (typeof module !== 'undefined') {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SOUMAYA — COMBAT SYSTEM
+// SOUMAYA RPG — KOMPLETT STRIDSSYSTEM v2
 // ═══════════════════════════════════════════════════════════════
 
-// ── LEVEL-SYSTEM ───────────────────────────────────────────────
 const LEVEL_TABLE = [
-  { level:1,  xpReq:0,     title:'Nykomling',    avatar:'grogu_avatar',       statPts:0 },
-  { level:2,  xpReq:500,   title:'Lärling',      avatar:'grogu_avatar',       statPts:2 },
-  { level:3,  xpReq:1200,  title:'Väktare',      avatar:'allen_avatar',       statPts:2 },
-  { level:4,  xpReq:2500,  title:'Försvarare',   avatar:'allen_avatar',       statPts:2 },
-  { level:5,  xpReq:4500,  title:'Krigare',      avatar:'omni_avatar',        statPts:2 },
-  { level:6,  xpReq:7500,  title:'Veteran',      avatar:'omni_avatar',        statPts:2 },
-  { level:7,  xpReq:12000, title:'Hjälte',       avatar:'invincible_avatar',  statPts:3 },
-  { level:8,  xpReq:18000, title:'Mästare',      avatar:'invincible_avatar',  statPts:3 },
-  { level:9,  xpReq:26000, title:'Champion',     avatar:'invincible_badge',   statPts:3 },
-  { level:10, xpReq:36000, title:'Legend',       avatar:'invincible_badge',   statPts:4 },
-  { level:11, xpReq:50000, title:'Övermänniska', avatar:'omni_badge',         statPts:4 },
-  { level:12, xpReq:68000, title:'INVINCIBLE',   avatar:'omni_badge',         statPts:5 },
+  { level:1,  xpReq:0,      title:'Nykomling',    avatar:'grogu_avatar',       statPts:0 },
+  { level:2,  xpReq:500,    title:'Lärling',      avatar:'grogu_avatar',       statPts:2 },
+  { level:3,  xpReq:1200,   title:'Väktare',      avatar:'allen_avatar',       statPts:2 },
+  { level:4,  xpReq:2500,   title:'Försvarare',   avatar:'allen_avatar',       statPts:2 },
+  { level:5,  xpReq:4500,   title:'Krigare',      avatar:'omni_avatar',        statPts:3 },
+  { level:6,  xpReq:7500,   title:'Veteran',      avatar:'omni_avatar',        statPts:3 },
+  { level:7,  xpReq:12000,  title:'Hjälte',       avatar:'invincible_avatar',  statPts:3 },
+  { level:8,  xpReq:18000,  title:'Mästare',      avatar:'invincible_avatar',  statPts:4 },
+  { level:9,  xpReq:26000,  title:'Champion',     avatar:'invincible_badge',   statPts:4 },
+  { level:10, xpReq:36000,  title:'Legend',       avatar:'invincible_badge',   statPts:4 },
+  { level:11, xpReq:50000,  title:'Övermänniska', avatar:'omni_badge',         statPts:5 },
+  { level:12, xpReq:68000,  title:'INVINCIBLE',   avatar:'omni_badge',         statPts:5 },
+  { level:13, xpReq:90000,  title:'Mytisk',       avatar:'omni_badge',         statPts:5 },
+  { level:14, xpReq:120000, title:'Kosmisk',      avatar:'invincible_badge',   statPts:6 },
+  { level:15, xpReq:160000, title:'Gudinna',      avatar:'invincible_badge',   statPts:6 },
 ];
 
 function getLevelData(xp) {
   let current = LEVEL_TABLE[0];
-  for (const l of LEVEL_TABLE) {
-    if (xp >= l.xpReq) current = l;
-    else break;
-  }
+  for (const l of LEVEL_TABLE) { if (xp >= l.xpReq) current = l; else break; }
   const nextIdx = LEVEL_TABLE.indexOf(current) + 1;
   const next = LEVEL_TABLE[nextIdx] || null;
   return { current, next, progress: next ? (xp - current.xpReq) / (next.xpReq - current.xpReq) : 1 };
@@ -1291,293 +1404,329 @@ function getLevelData(xp) {
 
 function getBaseStats(level) {
   return {
-    STY: 3 + Math.floor(level * 0.8),
-    SMI: 3 + Math.floor(level * 0.7),
-    KON: 3 + Math.floor(level * 0.9),
-    INT: 2 + Math.floor(level * 0.6),
+    STY: 3 + Math.floor(level * 0.9),
+    SMI: 3 + Math.floor(level * 0.8),
+    KON: 3 + Math.floor(level * 1.0),
+    INT: 2 + Math.floor(level * 0.7),
   };
 }
-
-function getMaxHp(kon, level) {
-  return 20 + kon * 3 + level * 5;
-}
-
+function getMaxHp(kon, level) { return 20 + kon * 4 + level * 6; }
 function getHeroAC(equipment) {
   let ac = 10;
-  if (equipment && equipment.armor) ac += equipment.armor.acBonus || 0;
-  if (equipment && equipment.accessory) ac += equipment.accessory.acBonus || 0;
+  if (equipment) Object.values(equipment).forEach(id => {
+    if (!id) return;
+    const item = SHOP_ITEMS.find(i => i.id === id);
+    if (item && item.acBonus) ac += item.acBonus;
+  });
   return ac;
 }
 
-// ── SHOP ITEMS ─────────────────────────────────────────────────
+// ── SHOP ITEMS ───────────────────────────────────────────────────
 const SHOP_ITEMS = [
-  // VAPEN
-  { id:'rusty_sword',   name:'Rostig svärd',     type:'weapon',    slot:'weapon',    cost:30,  icon:'🗡️',  desc:'En gammal svärd. Bättre än ingenting.',     dmgBonus:1, strBonus:0, special:null },
-  { id:'short_sword',   name:'Kortsvärd',         type:'weapon',    slot:'weapon',    cost:80,  icon:'⚔️',  desc:'Pålitlig och snabb.',                        dmgBonus:2, strBonus:1, special:null },
-  { id:'battle_axe',   name:'Stridsyxa',          type:'weapon',    slot:'weapon',    cost:150, icon:'🪓',  desc:'Tung men dödlig. Kraftslag +3 skada.',       dmgBonus:3, strBonus:2, special:'powerBonus' },
-  { id:'magic_staff',  name:'Magisk stav',         type:'weapon',    slot:'weapon',    cost:250, icon:'🪄',  desc:'Kanar INT till skada på Special.',           dmgBonus:2, intBonus:3, special:'intAttack' },
-  { id:'dual_blades',  name:'Dubbla dolkar',       type:'weapon',    slot:'weapon',    cost:300, icon:'🗡️',  desc:'Dubbel attack gör +2 skada per hugg.',      dmgBonus:1, agiBonus:2, special:'dualBonus' },
-  // RUSTNING
-  { id:'leather',      name:'Läderrustning',       type:'armor',     slot:'armor',     cost:60,  icon:'🧥',  desc:'Lätt och smidig. AC +2.',                    acBonus:2, konBonus:0 },
-  { id:'chainmail',    name:'Ringbrynja',           type:'armor',     slot:'armor',     cost:180, icon:'🛡️',  desc:'Gedigen skyddsrustning. AC +4.',              acBonus:4, konBonus:1 },
-  { id:'plate',        name:'Plattrustning',        type:'armor',     slot:'armor',     cost:400, icon:'🛡️',  desc:'Tung men maxskydd. AC +6, KON +2.',          acBonus:6, konBonus:2 },
-  // ACCESSOARER
-  { id:'lucky_charm',  name:'Lyckobringare',        type:'accessory', slot:'accessory', cost:50,  icon:'🍀',  desc:'Kritiska träffar på 19-20.',                 critBonus:1 },
-  { id:'swift_boots',  name:'Snabbhetsstövlar',     type:'accessory', slot:'accessory', cost:120, icon:'👢',  desc:'SMI +2, dodge-chans +10%.',                  agiBonus:2, dodgeBonus:10 },
-  { id:'power_ring',   name:'Kraftring',            type:'accessory', slot:'accessory', cost:200, icon:'💍',  desc:'STY +3.',                                    strBonus:3 },
-  { id:'mana_pendant', name:'Manahalsband',          type:'accessory', slot:'accessory', cost:180, icon:'📿',  desc:'INT +3, Special laddas snabbare.',           intBonus:3 },
+  // VAPEN T1
+  { id:'stick',          tier:1, minLevel:1,  name:'Käpp',               type:'weapon', slot:'weapon',    cost:20,   icon:'🪵', desc:'En enkel käpp. Bättre än ingenting.', dmgBonus:0 },
+  { id:'rusty_dagger',   tier:1, minLevel:1,  name:'Rostig dolk',        type:'weapon', slot:'weapon',    cost:40,   icon:'🗡️', desc:'Smutsig men vass. +1 skada.',        dmgBonus:1, special:'fastDraw' },
+  { id:'short_sword',    tier:1, minLevel:2,  name:'Kortsvärd',          type:'weapon', slot:'weapon',    cost:80,   icon:'⚔️', desc:'Pålitlig och snabb. +2 skada.',      dmgBonus:2, strBonus:1 },
+  { id:'war_hammer',     tier:1, minLevel:2,  name:'Stridsklubba',       type:'weapon', slot:'weapon',    cost:90,   icon:'🔨', desc:'Trubbig kraft. Kraftslag +2.',        dmgBonus:2, strBonus:1, special:'powerBonus' },
+  // VAPEN T2
+  { id:'battle_axe',     tier:2, minLevel:3,  name:'Stridsyxa',          type:'weapon', slot:'weapon',    cost:160,  icon:'🪓', desc:'Tung och dödlig. Kraftslag +4.',     dmgBonus:3, strBonus:2, special:'powerBonus' },
+  { id:'rapier',         tier:2, minLevel:3,  name:'Värja',              type:'weapon', slot:'weapon',    cost:150,  icon:'🤺', desc:'Elegant precision. Krit 18-20.',     dmgBonus:2, agiBonus:2, special:'sharpCrit' },
+  { id:'staff',          tier:2, minLevel:4,  name:'Magisk stav',        type:'weapon', slot:'weapon',    cost:200,  icon:'🪄', desc:'Kanar INT till skada.',              dmgBonus:2, intBonus:3, special:'intAttack' },
+  { id:'dual_blades',    tier:2, minLevel:4,  name:'Dubbla dolkar',      type:'weapon', slot:'weapon',    cost:220,  icon:'🔪', desc:'Dubbel +3 skada per slag.',         dmgBonus:1, agiBonus:2, special:'dualBonus' },
+  // VAPEN T3
+  { id:'greatsword',     tier:3, minLevel:6,  name:'Tvåhandssvärd',      type:'weapon', slot:'weapon',    cost:380,  icon:'🗡️', desc:'Massiv skada. d12 bashugg.',        dmgBonus:4, strBonus:3, special:'greatSword' },
+  { id:'shadow_blades',  tier:3, minLevel:6,  name:'Skuggdolkar',        type:'weapon', slot:'weapon',    cost:420,  icon:'🌑', desc:'Tre snabba slag med SMI.',          dmgBonus:2, agiBonus:4, special:'tripleStrike' },
+  { id:'warlock_tome',   tier:3, minLevel:7,  name:'Häxmästarboken',     type:'weapon', slot:'weapon',    cost:460,  icon:'📕', desc:'INT×2 skada vid Special. Läker 20%.', dmgBonus:2, intBonus:5, special:'lifeDrain' },
+  { id:'titan_maul',     tier:3, minLevel:8,  name:'Titanklubba',        type:'weapon', slot:'weapon',    cost:500,  icon:'🔱', desc:'STY +5. Avrättar under 10 HP.',     dmgBonus:5, strBonus:5, special:'executioner' },
+  // VAPEN T4
+  { id:'solar_blade',    tier:4, minLevel:10, name:'Solsvärd',           type:'weapon', slot:'weapon',    cost:900,  icon:'☀️', desc:'+2d6 eldskada vid varje hugg.',     dmgBonus:5, strBonus:3, special:'fireDmg' },
+  { id:'void_sickle',    tier:4, minLevel:10, name:'Tomrumsskäran',      type:'weapon', slot:'weapon',    cost:950,  icon:'🌀', desc:'Stjäl 25% av fiendeskada som HP.',  dmgBonus:4, intBonus:4, special:'voidSteal' },
+  { id:'invincible_fists',tier:4,minLevel:12, name:'Invincible-nävar',   type:'weapon', slot:'weapon',    cost:1500, icon:'💥', desc:'Alla attacker träffar. Krit 15-20.', dmgBonus:6, strBonus:6, special:'alwaysHit' },
+
+  // RUSTNING T1
+  { id:'cloth',          tier:1, minLevel:1,  name:'Tygdräkt',           type:'armor',  slot:'armor',     cost:30,   icon:'👕', desc:'Bättre än ingenting. AC +1.',        acBonus:1 },
+  { id:'leather',        tier:1, minLevel:1,  name:'Läderrustning',      type:'armor',  slot:'armor',     cost:70,   icon:'🧥', desc:'Lätt och smidig. AC +2.',            acBonus:2 },
+  { id:'hide',           tier:1, minLevel:2,  name:'Djurskinsrustning',  type:'armor',  slot:'armor',     cost:110,  icon:'🦺', desc:'Tjock hud. AC +3, KON +1.',         acBonus:3, konBonus:1 },
+  // RUSTNING T2
+  { id:'chainmail',      tier:2, minLevel:3,  name:'Ringbrynja',         type:'armor',  slot:'armor',     cost:200,  icon:'🛡️', desc:'Klassiskt skydd. AC +4, KON +1.',   acBonus:4, konBonus:1 },
+  { id:'scale',          tier:2, minLevel:4,  name:'Fjällrustning',      type:'armor',  slot:'armor',     cost:280,  icon:'🐲', desc:'Dragskalor. AC +5. Eldsmotstång.',  acBonus:5, konBonus:1, special:'fireRes' },
+  { id:'splint',         tier:2, minLevel:5,  name:'Splintpansar',       type:'armor',  slot:'armor',     cost:350,  icon:'⚙️', desc:'Mekanisk. AC +5, STY +1.',         acBonus:5, strBonus:1 },
+  // RUSTNING T3
+  { id:'plate',          tier:3, minLevel:6,  name:'Plattrustning',      type:'armor',  slot:'armor',     cost:500,  icon:'🛡️', desc:'Tung men ogenomtränglig. AC +6.',   acBonus:6, konBonus:2 },
+  { id:'mithril',        tier:3, minLevel:8,  name:'Mitrilsarken',       type:'armor',  slot:'armor',     cost:750,  icon:'💎', desc:'Lätt som fjäder. AC +7, SMI +1.',   acBonus:7, agiBonus:1 },
+  { id:'shadow_weave',   tier:3, minLevel:8,  name:'Skuggväv',           type:'armor',  slot:'armor',     cost:700,  icon:'🌑', desc:'Dodge +15%, AC +5.',                acBonus:5, special:'shadowDodge' },
+  // RUSTNING T4
+  { id:'dragonplate',    tier:4, minLevel:10, name:'Drakplåtrustning',   type:'armor',  slot:'armor',     cost:1200, icon:'🐉', desc:'Smidd av drakskal. AC +8, KON +3.', acBonus:8, konBonus:3 },
+  { id:'void_armor',     tier:4, minLevel:12, name:'Tomrumsrustning',    type:'armor',  slot:'armor',     cost:1600, icon:'🌀', desc:'Absorberar 20% av all skada. AC +7.', acBonus:7, special:'dmgAbsorb' },
+
+  // ACCESSOARER T1
+  { id:'lucky_coin',     tier:1, minLevel:1,  name:'Lyckömynt',          type:'accessory', slot:'accessory', cost:35,  icon:'🪙', desc:'Omslå en miss om dagen.',            special:'reroll' },
+  { id:'iron_ring',      tier:1, minLevel:1,  name:'Järnring',           type:'accessory', slot:'accessory', cost:50,  icon:'💍', desc:'STY +2.',                            strBonus:2 },
+  { id:'swift_boots',    tier:1, minLevel:2,  name:'Snabbhetsstövlar',   type:'accessory', slot:'accessory', cost:90,  icon:'👢', desc:'SMI +2.',                            agiBonus:2 },
+  // ACCESSOARER T2
+  { id:'lucky_charm',    tier:2, minLevel:3,  name:'Lyckobringare',      type:'accessory', slot:'accessory', cost:130, icon:'🍀', desc:'Kritisk träff på 18-20.',           special:'sharpCrit' },
+  { id:'power_ring',     tier:2, minLevel:3,  name:'Kraftring',          type:'accessory', slot:'accessory', cost:170, icon:'💍', desc:'STY +3.',                            strBonus:3 },
+  { id:'mana_pendant',   tier:2, minLevel:4,  name:'Manahalsband',       type:'accessory', slot:'accessory', cost:190, icon:'📿', desc:'INT +3.',                            intBonus:3 },
+  { id:'thorn_bracers',  tier:2, minLevel:4,  name:'Törnarmband',        type:'accessory', slot:'accessory', cost:210, icon:'🌹', desc:'Returnerar 3 skada vid varje träff.', special:'thorns' },
+  // ACCESSOARER T3
+  { id:'vampiric_ring',  tier:3, minLevel:6,  name:'Vampyrring',         type:'accessory', slot:'accessory', cost:380, icon:'🩸', desc:'Läker 15% av utdelad skada.',       special:'vampiric' },
+  { id:'berserker_helm', tier:3, minLevel:6,  name:'Bärsärkarhjälm',    type:'accessory', slot:'accessory', cost:420, icon:'🪖', desc:'Under 25% HP: dubbel STY.',          special:'berserk' },
+  { id:'evasion_cloak',  tier:3, minLevel:7,  name:'Undvikelsekappa',    type:'accessory', slot:'accessory', cost:450, icon:'🧣', desc:'25% chans att dodga helt.',          special:'evasion' },
+  { id:'arcane_focus',   tier:3, minLevel:8,  name:'Arkanfokus',         type:'accessory', slot:'accessory', cost:480, icon:'🔮', desc:'INT +5. Special +2d6 extra.',       intBonus:5, special:'arcaneFocus' },
+  // ACCESSOARER T4
+  { id:'ring_of_power',  tier:4, minLevel:10, name:'Kraftens Ring',      type:'accessory', slot:'accessory', cost:1000,icon:'💎', desc:'STY+6, SMI+3, INT+3.',              strBonus:6, agiBonus:3, intBonus:3 },
+  { id:'phoenix_feather',tier:4, minLevel:11, name:'Fenixfjäder',        type:'accessory', slot:'accessory', cost:1200,icon:'🔥', desc:'Återuppstå en gång med 30% HP.',    special:'phoenix' },
+  { id:'void_eye',       tier:4, minLevel:12, name:'Tomrumsögat',        type:'accessory', slot:'accessory', cost:1400,icon:'👁️', desc:'Alla anfall är kritiska.',          special:'allCrit' },
+
+  // DRYCKER
+  { id:'health_potion',  tier:1, minLevel:1,  name:'Hälsodryck',         type:'potion', slot:'potion',    cost:25,   icon:'🧪', desc:'Läker 30 HP under strid.',           healAmt:30 },
+  { id:'great_potion',   tier:2, minLevel:4,  name:'Stor hälsodryck',    type:'potion', slot:'potion',    cost:80,   icon:'💚', desc:'Läker 75 HP under strid.',           healAmt:75 },
+  { id:'elixir',         tier:3, minLevel:7,  name:'Eliksir',            type:'potion', slot:'potion',    cost:200,  icon:'✨', desc:'Läker fullt HP + STY +3 i 3 rundor.', healAmt:999, special:'elixirBuff' },
+  { id:'rage_potion',    tier:2, minLevel:3,  name:'Raseri-dryck',       type:'potion', slot:'potion',    cost:90,   icon:'🔴', desc:'+5 STY, -3 AC i 3 rundor.',          special:'rageBuff' },
+  { id:'shadow_potion',  tier:3, minLevel:6,  name:'Skuggelixir',        type:'potion', slot:'potion',    cost:160,  icon:'🌑', desc:'Nästa attack = automatisk krit.',   special:'critBuff' },
+
+  // RUNOR
+  { id:'rune_stone',     tier:2, minLevel:3,  name:'Runsten',            type:'rune',   slot:'rune',      cost:120,  icon:'🪨', desc:'+2 till alla slag.',                 special:'demonSlayer' },
+  { id:'rune_blood',     tier:3, minLevel:6,  name:'Blodruna',           type:'rune',   slot:'rune',      cost:350,  icon:'🩸', desc:'Strid börjar med +20 HP.',           special:'bloodRune' },
+  { id:'rune_storm',     tier:3, minLevel:7,  name:'Åskoruna',           type:'rune',   slot:'rune',      cost:400,  icon:'⚡', desc:'10% chans: blixta 2d10.',           special:'lightning' },
+  { id:'rune_void',      tier:4, minLevel:10, name:'Tomrumsruna',        type:'rune',   slot:'rune',      cost:800,  icon:'🌀', desc:'Kraftslag missar aldrig.',           special:'voidPower' },
 ];
 
-// ── ENEMIES ────────────────────────────────────────────────────
+// ── FIENDER — 5 ZONER ────────────────────────────────────────────
 const ENEMY_TEMPLATES = [
-  // LÄTTA
-  { id:'slime',        name:'Sockerblobbsen',    icon:'🟢', difficulty:'easy',   lvlOffset:-2,
-    flavor:'En klibbig klump socker som vältrar sig mot dig.',
-    stats:{STY:2,SMI:1,KON:2,INT:0}, hp:12, ac:8,
-    attacks:['klibbsmasch','sugkoppsgrepp','socker-stänk'],
-    deathLine:'*SPLAT* Sockerblobbsen exploderar i ett moln av klibbig smet. Äcklande men ofarligt.',
-    winLine:'Blobbsen absorberar dig. Du simmar i socker. Det är faktiskt inte så illa... nej, vänta, det är DET.',
-  },
-  { id:'sugar_goblin', name:'Sockergoblin',      icon:'👺', difficulty:'easy',   lvlOffset:-2,
-    flavor:'En liten grön varelse som bär på en påse med godis och skriker om insulin.',
-    stats:{STY:3,SMI:4,KON:2,INT:1}, hp:15, ac:10,
-    attacks:['godiskast','nagelbett','hyperaktivt rusningsdash'],
-    deathLine:'"Inga fler snacks för mig..." Goblinen rasar ihop i en hög med tomma godispåsar.',
-    winLine:'Goblinen stoppar godis i fickan och dansar. Du förlorade mot en varelse som är 40 cm hög.',
-  },
-  // MEDELSVÅRA  
-  { id:'insulin_troll', name:'Insulintrollet',   icon:'🧌', difficulty:'medium', lvlOffset:0,
-    flavor:'Ett stort och ilsket troll som hatar ordning och rutiner.',
-    stats:{STY:6,SMI:2,KON:7,INT:1}, hp:35, ac:12,
-    attacks:['klubbsmäll','magiska störningar','roparnas vrålet'],
-    deathLine:'"Rutiiiiner..." Trollet sjunker ner och somnar. Det verkar faktiskt lättat.',
-    winLine:'Trollet sätter ner dig mjukt. "Ingen rutin idag", muttrar det nöjt.',
-  },
-  { id:'burnout_wraith', name:'Utmattningsanden', icon:'👻', difficulty:'medium', lvlOffset:0,
-    flavor:'En genomskinlig ande gjord av stress och missade deadlines.',
-    stats:{STY:3,SMI:6,KON:3,INT:5}, hp:28, ac:13,
-    attacks:['energidränering','panikpuls','sömnlöshetshviskande'],
-    deathLine:'"Vila... äntligen..." Anden löses upp i ett mjukt ljus. Du känner dig oväntat uppfräschad.',
-    winLine:'Anden suger ut din energi. Du vaknar upp i sängen, minns ingenting, med 3 missade larm.',
-  },
-  // SVÅRA
-  { id:'hypo_demon',   name:'Hypodemon',         icon:'😈', difficulty:'hard',   lvlOffset:2,
-    flavor:'En eldröd demon med låga blodsockerkurvor som vapen.',
-    stats:{STY:8,SMI:7,KON:6,INT:4}, hp:55, ac:15,
-    attacks:['blodsockerchock','yrselvirveln','skakningars dans'],
-    deathLine:'"Nästa gång... kommer jag i 3-snåret på natten..." Demonen försvinner i ett rött moln.',
-    winLine:'Demonen pekar på dig. "Du glömde ta mellismålet." Och så är den borta. Du svimmar.',
-  },
-  { id:'cortisol_knight', name:'Kortisolriddaren', icon:'⚔️', difficulty:'hard', lvlOffset:2,
-    flavor:'En riddare klädd i stresshormonernas rustning. Varje slag höjer din puls.',
-    stats:{STY:9,SMI:5,KON:8,INT:3}, hp:60, ac:16,
-    attacks:['stresslanserande','panikparaden','överbelastningsstöten'],
-    deathLine:'"Utan stress... finns det ingen styrka..." Riddaren demonterar sig själv runt till en mjuk kudde.',
-    winLine:'Riddaren justerar din kalender, lägger till 47 möten och rider iväg. Du kan inte andas.',
-  },
-  // LEGENDARISKA
-  { id:'hba1c_dragon',  name:'HbA1c-draken',     icon:'🐉', difficulty:'legendary', lvlOffset:5,
-    flavor:'En uråldrig drake vars fjäll är gjorda av tre månaders genomsnittsvärden. Legendarisk. Fruktad.',
-    stats:{STY:14,SMI:8,KON:15,INT:10}, hp:120, ac:18,
-    attacks:['genomsnittseldsprutning','trendkurvsklorna','långsiktig skadevållan'],
-    deathLine:'"Ditt... HbA1c... är faktiskt... rätt bra..." Draken kraschar i ett regn av guldmynt och labbrapporter.',
-    winLine:'"Ditt HbA1c behöver lite arbete," säger draken och äter dig. Bokstavligen.',
-  },
-  { id:'omni_shadow',   name:'Omni-Mans skugga',  icon:'🦸', difficulty:'legendary', lvlOffset:5,
-    flavor:'En mörk spegelbild av Omni-Man. Lika stark. Inget medlidande.',
-    stats:{STY:16,SMI:12,KON:14,INT:8}, hp:150, ac:19,
-    attacks:['supersonisk knytnäve','gravitationskross','ögonlasrar'],
-    deathLine:'"Du är starkare än jag trodde." Skuggan ler och försvinner in i dimensionsväggen.',
-    winLine:'"Du är inte redo." Det är de sista orden du hör innan du träffar marken.',
-  },
+
+  // ZON 1 (lvl 1-4)
+  { id:'sugar_slime',   name:'Sockerblobben',     icon:'🟢', zone:1, minLevel:1, maxLevel:4,
+    flavor:'En klibbig klump socker som rullar mot dig.',
+    lore:'Uppstod ur ett övergett godispaket på parkeringshuset.',
+    stats:{STY:2,SMI:1,KON:2,INT:0}, hp:14, ac:8,
+    attacks:['Sockerblobben klibbsmachar!','Sockerblobben försöker omfamna dig!','Sockerblobben kastar klibbar!'],
+    deathLine:'"...söttttt..." SPLAT. Sockerblobben exploderar i karamellrök.',
+    winLine:'"Du smakar gott." Blobben absorberar dig sakta.',
+    xpReward:45, goldReward:12 },
+
+  { id:'sugar_goblin',  name:'Sockergoblinen',    icon:'👺', zone:1, minLevel:1, maxLevel:4,
+    flavor:'En liten grön varelse som skriker om glykosindex.',
+    lore:'Lever i källaren och äter bara korvbröd och läsk.',
+    stats:{STY:3,SMI:4,KON:2,INT:2}, hp:18, ac:10,
+    attacks:['Goblinen kastar en godispåse!','Goblinen nappar med tänder!','Goblinen hyperventilerar och ruschar!'],
+    deathLine:'"Inga fler snacks..." Goblinen kraschar i tomma godispåsar.',
+    winLine:'Goblinen stoppar en kola i fickan. "Du var tråkig." Sen springer den.',
+    xpReward:55, goldReward:15 },
+
+  { id:'calorie_rat',   name:'Kalorieråttan',     icon:'🐀', zone:1, minLevel:1, maxLevel:4,
+    flavor:'En onaturligt stor råtta med en miniräknare.',
+    lore:'Muterade efter år i sjukhusmatsalens magasin.',
+    stats:{STY:2,SMI:6,KON:2,INT:3}, hp:15, ac:12,
+    attacks:['Råttan nafsar!','Råttan springer cirklar!','Råttan kastar miniräknaren!'],
+    deathLine:'"Den... totala kalorimängden..." Råttan kollapsar.',
+    winLine:'"Din insulindos är FEL!" Råttan springer iväg med ditt snacks.',
+    xpReward:50, goldReward:13 },
+
+  { id:'lazy_golem',    name:'Latmasksgolemen',   icon:'🪨', zone:1, minLevel:2, maxLevel:5,
+    flavor:'En golem gjord av soffkuddar. Rör sig i slow motion.',
+    lore:'Skapades av ackumulerad couch-potato-energi.',
+    stats:{STY:5,SMI:1,KON:8,INT:0}, hp:40, ac:11,
+    attacks:['Golemen faller mot dig!','Golemen kastar en fjärrkontroll!','Golemen sätter sig på dig!'],
+    deathLine:'"...hade kunnat se på film..." Golemen löses upp i sofffjädrar.',
+    winLine:'"Orkar inte..." Golemen kollar Netflix. Du är fortfarande där.',
+    xpReward:75, goldReward:22 },
+
+  // ZON 2 (lvl 3-7)
+  { id:'burnout_wraith',name:'Utmattningsanden',  icon:'👻', zone:2, minLevel:3, maxLevel:7,
+    flavor:'En ande gjord av missade deadlines och kall kaffe.',
+    lore:'Spöket av en produktivitetsguru som gick in i väggen.',
+    stats:{STY:3,SMI:7,KON:3,INT:6}, hp:35, ac:13,
+    attacks:['Anden dränerar din energi!','Anden skickar paniknotiser!','Anden visar din att-göra-lista!'],
+    deathLine:'"Vila... äntligen..." Anden löses upp i ett mjukt ljus.',
+    winLine:'Anden visar dig 47 olästa mail. Du svimmar.',
+    xpReward:100, goldReward:30 },
+
+  { id:'cortisol_knight',name:'Kortisolriddaren', icon:'⚔️', zone:2, minLevel:4, maxLevel:8,
+    flavor:'En riddare i stresshormonernas rustning.',
+    lore:'Har aldrig semester. Aldrig.',
+    stats:{STY:8,SMI:5,KON:8,INT:3}, hp:55, ac:15,
+    attacks:['Riddaren lansar!','Riddaren skrämmer med deadlines!','Riddaren kör en stressad svängning!'],
+    deathLine:'"Utan stress... finns inget liv..." Riddaren tar av hjälmen. Under finns ett leende.',
+    winLine:'Riddaren lägger 47 möten i din kalender och rider iväg.',
+    xpReward:120, goldReward:38 },
+
+  { id:'insulin_troll', name:'Insulintrollet',    icon:'🧌', zone:2, minLevel:4, maxLevel:8,
+    flavor:'Trollet vaktar insulinförrådet med religiös hängivenhet.',
+    lore:'Har aldrig låtit någon ta mer än sin dos.',
+    stats:{STY:9,SMI:2,KON:10,INT:1}, hp:65, ac:14,
+    attacks:['Trollet svänger den gigantiska sprutan!','Trollet klämmer dig!','Trollet ryter och skakar marken!'],
+    deathLine:'"Rutiiiiner..." Trollet sjunker ihop och somnar omedelbart.',
+    winLine:'Trollet sprutar insulin på dig. "Nästa gång tar du ordning på värdena."',
+    xpReward:130, goldReward:42 },
+
+  { id:'anxiety_mimic', name:'Ångesthärmen',      icon:'🎭', zone:2, minLevel:5, maxLevel:9,
+    flavor:'Kopierar dina rörelser och attackerar med dina egna svagheter.',
+    lore:'Kanske från djupet av ditt eget sinne.',
+    stats:{STY:7,SMI:9,KON:6,INT:8}, hp:60, ac:16,
+    attacks:['Ångesthärmen speglar ditt hugg!','Ångesthärmen anfaller med din tvekan!','Ångesthärmen kopierar din bästa attack!'],
+    deathLine:'"Du vinner... den här gången..." Mimiken löses upp och lämnar en spegel.',
+    winLine:'"Du kan inte slå dig själv. Du är redan besegrad inifrån."',
+    xpReward:160, goldReward:50 },
+
+  // ZON 3 (lvl 6-10)
+  { id:'hypo_demon',    name:'Hypodemon',          icon:'😈', zone:3, minLevel:6, maxLevel:10,
+    flavor:'En demon av lågt blodsocker. Vaknar alltid i 3-snåret.',
+    lore:'Äldst av stridsdemonerna.',
+    stats:{STY:10,SMI:9,KON:8,INT:6}, hp:80, ac:16,
+    attacks:['Demonen utlöser blodsockerchock!','Demonen virvlar fram yrselstorm!','Demonen viskar om glömt kvällsmål!'],
+    deathLine:'"Nästa gång... 3 på natten..." Demonen exploderar i rött moln.',
+    winLine:'"Du glömde mellismålet." Och så är det för sent.',
+    xpReward:200, goldReward:65 },
+
+  { id:'hba1c_dragon',  name:'HbA1c-Draken',      icon:'🐉', zone:3, minLevel:7, maxLevel:11,
+    flavor:'En drake vars fjäll är gjorda av tre månaders genomsnittsvärden.',
+    lore:'Gammal som diabetes själv.',
+    stats:{STY:12,SMI:7,KON:14,INT:10}, hp:110, ac:17,
+    attacks:['Draken sprutar labbrapporter i eld!','Draken sveper med genomsnittskurvornas klor!','Draken öser medicinsk terminologi!'],
+    deathLine:'"Ditt HbA1c... är faktiskt... rätt bra..." Draken kraschar i ett regn av guldmynt.',
+    winLine:'"Ditt HbA1c behöver lite arbete," säger draken och sväljer dig.',
+    xpReward:250, goldReward:80 },
+
+  { id:'spike_elemental',name:'Toppelementalen',  icon:'📈', zone:3, minLevel:7, maxLevel:11,
+    flavor:'Gjord av blodsockertoppar. Lever i gränslandet mellan hyper och hypo.',
+    lore:'Ingen vet om den är ond eller bara kaotisk.',
+    stats:{STY:11,SMI:8,KON:9,INT:9}, hp:95, ac:15,
+    attacks:['Elementalen skjuter en sockerpik!','Elementalen utlöser insulinras!','Elementalen skapar kaotisk glykoskurva!'],
+    deathLine:'"...stabiliserat..." Elementalen löses upp och lämnar en kurva som faktiskt ser bra ut.',
+    winLine:'"Instabilt. Alltid instabilt." Elementalen försvinner i en nedåtgående graf.',
+    xpReward:240, goldReward:78 },
+
+  // ZON 4 (lvl 9-13)
+  { id:'cortisol_lord', name:'Kortisolherren',     icon:'💀', zone:4, minLevel:9,  maxLevel:13,
+    flavor:'Herren över alla stresshormoner. Har aldrig sovit.',
+    lore:'Uppstod ur ackumulerade år av kronisk stress.',
+    stats:{STY:14,SMI:10,KON:14,INT:8}, hp:140, ac:18,
+    attacks:['Kortisolherren brinner av stresshormoneld!','Kortisolherren utlöser katastroftänkande!','Kortisolherren kastar adrenalinbultar!'],
+    deathLine:'"...första gången på 20 år... att jag är trött..." Herren kollapsar i ett moln av lugn.',
+    winLine:'"Du kan inte vinna mot stress. Stress är livet."',
+    xpReward:350, goldReward:110 },
+
+  { id:'omni_shadow',   name:'Omni-Mans Skugga',  icon:'🦸', zone:4, minLevel:9,  maxLevel:13,
+    flavor:'En mörk spegelbild av Omni-Man. Lika stark. Utan medkänsla.',
+    lore:'Uppstod när Omni-Man frågade sig om han bryr sig.',
+    stats:{STY:16,SMI:13,KON:14,INT:9}, hp:160, ac:19,
+    attacks:['Skuggan slår med supersonisk knytnäve!','Skuggan krossar med gravitationsvåg!','Skuggan swepar med ögonlasrar!'],
+    deathLine:'"Du är starkare än jag trodde." Skuggan ler för första gången.',
+    winLine:'"Du är inte redo." Och sedan träffar du marken.',
+    xpReward:400, goldReward:130 },
+
+  { id:'neuropathy_lich',name:'Neuropatilichen',  icon:'💀', zone:4, minLevel:10, maxLevel:14,
+    flavor:'En odöd varelse av neuropatisk smärta.',
+    lore:'Skapad av år av obehandlad neuropati. Har väntat länge.',
+    stats:{STY:13,SMI:8,KON:18,INT:14}, hp:170, ac:17,
+    attacks:['Lichen sänder nervsmärtsvågor!','Lichen suger livskraft!','Lichen kallar på odöda nervceller!'],
+    deathLine:'"Smärtan... tar slut... äntligen..." Lichen faller isär.',
+    winLine:'"Smärtan följer dig hem." Lichen är borta. Men du vet att den har rätt.',
+    xpReward:420, goldReward:140 },
+
+  // ZON 5 (lvl 12+)
+  { id:'insulin_god',   name:'Insulinguden',       icon:'⚡', zone:5, minLevel:12, maxLevel:99,
+    flavor:'Guden över blodsocker. Bestämmer om du lever eller dör sedan 2019.',
+    lore:'Urgammal. Allsmäktig.',
+    stats:{STY:18,SMI:15,KON:20,INT:18}, hp:220, ac:21,
+    attacks:['Guden utlöser gudomlig blodsockerdom!','Guden sänder insulinblixtar!','Guden kallar på alla hormoner!'],
+    deathLine:'"...du förtjänar detta..." Guden kraschar i gudomligt ljus. Alla sensorer visar grönt.',
+    winLine:'"Ingen människa kan besegra mig." Guden tar dig till Olympen. Permanent.',
+    xpReward:600, goldReward:200 },
+
+  { id:'allen_dark',    name:'Den Mörke Allen',    icon:'👾', zone:5, minLevel:12, maxLevel:99,
+    flavor:'Vad händer om Allen the Alien väljer fel sida.',
+    lore:'Från en dimension där Allen aldrig fick sin uppgift.',
+    stats:{STY:17,SMI:18,KON:16,INT:15}, hp:200, ac:20,
+    attacks:['Den Mörke Allen slår med alienisk precision!','Den Mörke Allen teleporterar bakom dig!','Den Mörke Allen aktiverar kosmisk kraft!'],
+    deathLine:'"...i en annan dimension var jag hjälten..." Den Mörke Allen försvinner med ett leende.',
+    winLine:'"Du är värdig. Men nästa gång vinner jag."',
+    xpReward:580, goldReward:190 },
+
+  { id:'diabetes_itself',name:'Diabetes Incarnata',icon:'🌑', zone:5, minLevel:14, maxLevel:99,
+    flavor:'Sjukdomen personifierad. Den som startade allt 2019.',
+    lore:'Inte ett monster. Bara sanningen om vad kroppen kan göra.',
+    stats:{STY:20,SMI:18,KON:22,INT:20}, hp:280, ac:22,
+    attacks:['Diabetes Incarnata angriper med kronisk förödelse!','Diabetes Incarnata utlöser komplikationsörveln!','Diabetes Incarnata: "Du vet att jag aldrig försvinner."'],
+    deathLine:'"...du hanterar mig bättre och bättre..." Diabetes Incarnata drar sig tillbaka. Men försvinner inte.',
+    winLine:'"Jag är alltid här." Och det är sant.',
+    xpReward:800, goldReward:250 },
 ];
 
+// ── FIENDEZONSVAL ────────────────────────────────────────────────
 function getEnemiesForLevel(heroLevel) {
-  return ENEMY_TEMPLATES.map(e => ({
-    ...e,
-    adjustedLevel: Math.max(1, heroLevel + e.lvlOffset),
-    scaledStats: {
-      STY: e.stats.STY + Math.floor(heroLevel * 0.4),
-      SMI: e.stats.SMI + Math.floor(heroLevel * 0.3),
-      KON: e.stats.KON + Math.floor(heroLevel * 0.4),
-      INT: e.stats.INT + Math.floor(heroLevel * 0.2),
-    },
-    scaledHp: e.hp + heroLevel * 4,
-    scaledAc: e.ac + Math.floor(heroLevel * 0.3),
-  }));
+  return ENEMY_TEMPLATES
+    .filter(e => heroLevel >= e.minLevel)
+    .map(e => {
+      const lvlDiff = Math.max(0, heroLevel - e.minLevel);
+      const scale = 1 + lvlDiff * 0.12;
+      return {
+        ...e,
+        scaledStats: {
+          STY: Math.round(e.stats.STY * scale),
+          SMI: Math.round(e.stats.SMI * scale),
+          KON: Math.round(e.stats.KON * scale),
+          INT: Math.round(e.stats.INT * scale),
+        },
+        scaledHp:   Math.round(e.hp * scale),
+        scaledAc:   Math.min(24, e.ac + Math.floor(lvlDiff * 0.2)),
+        scaledXp:   Math.round((e.xpReward  || 100) * (1 + heroLevel * 0.05)),
+        scaledGold: Math.round((e.goldReward ||  30) * (1 + heroLevel * 0.05)),
+      };
+    });
 }
 
 // ── TÄRNINGSSLAG ────────────────────────────────────────────────
 function roll(sides) { return Math.floor(Math.random() * sides) + 1; }
-function rollStr(expr) {
-  // "2d6+3" → { total, rolls, expr }
-  const m = expr.match(/(\d+)d(\d+)([+-]\d+)?/);
-  if (!m) return { total: parseInt(expr) || 0, rolls: [], expr };
-  const num = parseInt(m[1]), sides = parseInt(m[2]), mod = parseInt(m[3] || 0);
-  const rolls = Array.from({length:num}, () => roll(sides));
-  return { total: rolls.reduce((a,b)=>a+b,0) + mod, rolls, expr };
+function roll2(n, sides) {
+  const rolls = Array.from({length:n}, () => roll(sides));
+  return { total: rolls.reduce((a,b)=>a+b,0), rolls };
 }
 
-// ── COMBAT ACTIONS ──────────────────────────────────────────────
+// ── COMBAT ACTIONS ───────────────────────────────────────────────
 const COMBAT_ACTIONS = [
-  {
-    id: 'slash',
-    name: 'Hugg',
-    icon: '⚔️',
-    desc: 'd8 skada + STY',
-    hitRoll: 'd20+STY',
-    dmgRoll: 'd8+STY',
-    dialog: {
-      attempt: [
-        'Soumaya sveper svärdet i en snabb båge!',
-        'Soumaya kastar sig framåt med svärdet!',
-        'Med ett krigsrop hugger Soumaya!',
-      ],
-      hit: [
-        'Träff! Klingan biter djupt!',
-        'Perfekt träff — precis i sömmen!',
-        'Svärdet skär igenom försvaret!',
-      ],
-      miss: [
-        'Miss! Motståndaren duckar undan!',
-        'Svärdet sveper förbi i tomma luften.',
-        'Motståndaren parerar hugget!',
-      ],
-      crit: [
-        '⚡ KRITISK TRÄFF! Förödande slag!',
-        '⚡ KRITISK! Svärdet träffar en svag punkt!',
-      ],
-    },
-  },
-  {
-    id: 'double',
-    name: 'Dubbel',
-    icon: '🌪️',
-    desc: '2×d6 + SMI/2 (–2 träff)',
-    hitRoll: 'd20+SMI-2',
-    dmgRoll: 'd6+SMI/2',
-    hits: 2,
-    dialog: {
-      attempt: [
-        'Soumaya attackerar med blixtsnabb dubbel!',
-        'Två slag i rad — snabbt som tanken!',
-        'Soumaya virvlar runt och slår två gånger!',
-      ],
-      hit: ['Båda slagen landar!', 'En träff! Det andra hugget snuddar förbi.', 'Snabbt och precist!'],
-      miss: ['Ingen av attackerna träffar!', 'Motståndaren duckar båda slagen!'],
-      crit: ['⚡ DUBBEL KRITISK! Förödande!'],
-    },
-  },
-  {
-    id: 'power',
-    name: 'Kraftslag',
-    icon: '💥',
-    desc: 'd12+STY×2 (–3 träff)',
-    hitRoll: 'd20+STY-3',
-    dmgRoll: 'd12+STY*2',
-    dialog: {
-      attempt: [
-        'Soumaya samlar all kraft i ett enda monumentalt slag!',
-        'Med ett rytande drar Soumaya tillbaka armen...',
-        'Soumaya laddar upp det tyngsta hugget hon kan!',
-      ],
-      hit: ['BOOM! Kraftslaget landar med full kraft!', 'Trembling! Motståndaren flyger bakåt!'],
-      miss: ['Kraftslaget missar! Soumaya snubblar framåt!', 'För tungt — motståndaren sidostegar lätt.'],
-      crit: ['⚡⚡ KATASTROFALT KRAFTSLAG! Marken skakar!'],
-    },
-  },
-  {
-    id: 'defend',
-    name: 'Försvar',
-    icon: '🛡️',
-    desc: '+4 AC denna rund, d4+STY skada',
-    hitRoll: 'd20+STY',
-    dmgRoll: 'd4+STY',
-    acBonus: 4,
-    dialog: {
-      attempt: [
-        'Soumaya höjer skölden och letar ett öppning...',
-        'Defensivt läge — Soumaya väntar på rätt ögonblick.',
-        'Soumaya tar en steg tillbaka och samlar sig.',
-      ],
-      hit: ['Soumaya utnyttjar öppningen och slår!', 'Kontring! En solid träff!'],
-      miss: ['Soumaya förblir i defensivt läge.', 'Inget bra läge att slå till.'],
-    },
-  },
-  {
-    id: 'special',
-    name: 'Special',
-    icon: '✨',
-    desc: 'Beror på vapen',
-    dialog: {
-      attempt: [
-        'Soumaya aktiverar sin specialförmåga!',
-        'En lysande energi omger Soumaya!',
-      ],
-      hit: ['Specialattacken träffar!'],
-      miss: ['Specialattacken missar...'],
-      crit: ['⚡ SPECIAL KRITISK!'],
-    },
-  },
+  { id:'slash',   name:'Hugg',      icon:'⚔️', desc:'d8+STY skada',        hitRoll:'d20+STY',
+    dialog:{ attempt:['Soumaya sveper svärdet!','Med ett krigsrop hugger Soumaya!','Soumaya kastar sig fram!'], hit:['Klingan biter djupt!','Perfekt träff!','Svärdet skär igenom!'], miss:['Motståndaren duckar!','Svärdet sveper förbi!'], crit:['⚡ KRITISK! Förödande slag!'] } },
+  { id:'double',  name:'Dubbel',    icon:'🌪️', desc:'2×d6+SMI (-2 träff)', hitRoll:'d20+SMI-2',
+    dialog:{ attempt:['Blixtsnabb dubbel!','Två slag i rad!'], hit:['Båda slagen landar!'], miss:['Ingen träff!'], crit:['⚡ DUBBEL KRITISK!'] } },
+  { id:'power',   name:'Kraftslag', icon:'💥', desc:'d12+STY×2 (-3 träff)', hitRoll:'d20+STY-3',
+    dialog:{ attempt:['Soumaya laddar allt!','Full kraft!'], hit:['BOOM! Full träff!'], miss:['Kraftslaget missar!'], crit:['⚡⚡ KATASTROFALT!'] } },
+  { id:'defend',  name:'Försvar',   icon:'🛡️', desc:'+4 AC, d4+STY kontring', hitRoll:'d20+STY',
+    dialog:{ attempt:['Soumaya tar defensivt läge!'], hit:['Kontring!'], miss:['Defensivt läge kvar.'] } },
+  { id:'special', name:'Special',   icon:'✨', desc:'Beror på vapen',       hitRoll:'varierar',
+    dialog:{ attempt:['Specialförmåga aktiverad!'], hit:['Specialattacken träffar!'], miss:['Specialattacken missar...'], crit:['⚡ SPECIAL KRITISK!'] } },
 ];
 
-// ── ENEMY ATTACK ────────────────────────────────────────────────
 function enemyAttackDialog(enemy, hit, dmg) {
   const atk = enemy.attacks[Math.floor(Math.random() * enemy.attacks.length)];
-  if (!hit) return `${enemy.name} försöker med ${atk}... men missar! Soumaya undviker knappt.`;
-  return `${enemy.name} slår med ${atk} och gör ${dmg} skada! 💢`;
+  return hit ? atk + ' ' + dmg + ' skada! 💢' : atk.replace('!','') + ' — men missar!';
 }
 
-// ── REWARD CALCULATOR ───────────────────────────────────────────
-function calcCombatReward(difficulty, heroLevel, won) {
-  const xpTable = { easy:40, medium:80, hard:150, legendary:300 };
-  const goldTable = { easy:15, medium:35, hard:70, legendary:150 };
-  const base = xpTable[difficulty] || 80;
-  const goldBase = goldTable[difficulty] || 35;
-  if (won) {
-    return {
-      xp: Math.round(base * (1 + heroLevel * 0.1)),
-      gold: Math.round(goldBase * (1 + heroLevel * 0.05)),
-    };
-  } else {
-    return {
-      xp: -Math.round(base * 0.3),
-      gold: 0,
-    };
-  }
+function calcCombatReward(enemy, heroLevel, won) {
+  const base = enemy.scaledXp   || enemy.xpReward  || 100;
+  const gold = enemy.scaledGold || enemy.goldReward || 30;
+  return won ? { xp: base, gold } : { xp: -Math.round(base * 0.25), gold: 0 };
 }
 
-// ── GOLD FROM ACHIEVEMENTS ──────────────────────────────────────
-function goldFromAchievement(achievement) {
-  const tierGold = { bronze:10, silver:25, gold:50, platinum:100, invincible:250 };
-  return tierGold[achievement.tier] || 10;
+function goldFromAchievement(a) {
+  return { bronze:10, silver:25, gold:60, platinum:120, invincible:300 }[a.tier] || 10;
 }
 
-// ── INIT HERO ───────────────────────────────────────────────────
 function initHero(level) {
   const stats = getBaseStats(level);
-  return {
-    stats,
-    maxHp: getMaxHp(stats.KON, level),
-    equipment: { weapon: null, armor: null, accessory: null },
-  };
+  return { stats, maxHp: getMaxHp(stats.KON, level), equipment:{weapon:null,armor:null,accessory:null,potion:null,rune:null} };
 }
 
-// Export
 if (typeof module !== 'undefined') {
-  module.exports = { LEVEL_TABLE, SHOP_ITEMS, ENEMY_TEMPLATES, COMBAT_ACTIONS, getLevelData, getBaseStats, getMaxHp, getHeroAC, getEnemiesForLevel, roll, rollStr, calcCombatReward, goldFromAchievement, initHero };
+  module.exports = { LEVEL_TABLE, SHOP_ITEMS, ENEMY_TEMPLATES, COMBAT_ACTIONS, getLevelData, getBaseStats, getMaxHp, getHeroAC, getEnemiesForLevel, roll, roll2, calcCombatReward, goldFromAchievement, initHero };
 } else {
-  window.LEVEL_TABLE = LEVEL_TABLE;
-  window.SHOP_ITEMS = SHOP_ITEMS;
-  window.ENEMY_TEMPLATES = ENEMY_TEMPLATES;
-  window.COMBAT_ACTIONS = COMBAT_ACTIONS;
-  window.getLevelData = getLevelData;
-  window.getBaseStats = getBaseStats;
-  window.getMaxHp = getMaxHp;
-  window.getHeroAC = getHeroAC;
+  window.LEVEL_TABLE = LEVEL_TABLE; window.SHOP_ITEMS = SHOP_ITEMS;
+  window.ENEMY_TEMPLATES = ENEMY_TEMPLATES; window.COMBAT_ACTIONS = COMBAT_ACTIONS;
+  window.getLevelData = getLevelData; window.getBaseStats = getBaseStats;
+  window.getMaxHp = getMaxHp; window.getHeroAC = getHeroAC;
   window.getEnemiesForLevel = getEnemiesForLevel;
-  window.roll = roll;
-  window.rollStr = rollStr;
+  window.roll = roll; window.roll2 = roll2;
   window.calcCombatReward = calcCombatReward;
   window.goldFromAchievement = goldFromAchievement;
   window.initHero = initHero;
@@ -1614,7 +1763,7 @@ function load() { try { const s=localStorage.getItem('soumaya_state'); if(s) sta
 function heroLevelData() { return getLevelData(state.totalXP||0); }
 function heroStats() {
   const ld=heroLevelData(), base=getBaseStats(ld.current.level), eq=state.equipped||{};
-  [eq.weapon,eq.armor,eq.accessory].forEach(id=>{
+  Object.values(eq).forEach(id=>{
     if(!id) return;
     const item=SHOP_ITEMS.find(i=>i.id===id); if(!item) return;
     if(item.strBonus) base.STY+=item.strBonus;
@@ -1627,7 +1776,7 @@ function heroStats() {
 function heroMaxHp() { const ld=heroLevelData(); return getMaxHp(heroStats().KON,ld.current.level); }
 function heroAC() {
   let ac=10+Math.floor(heroStats().SMI/3), eq=state.equipped||{};
-  [eq.weapon,eq.armor,eq.accessory].forEach(id=>{
+  Object.values(eq).forEach(id=>{
     if(!id) return;
     const item=SHOP_ITEMS.find(i=>i.id===id); if(item&&item.acBonus) ac+=item.acBonus;
   });
@@ -1872,6 +2021,121 @@ function renderWalkPage(){const today=todayStr();const walkedToday=state.walkLog
 function todayStr(ts){const d=ts?new Date(ts):new Date();return d.toISOString().split('T')[0];}
 function renderStreak(){const days=['Mån','Tis','Ons','Tor','Fre','Lör','Sön'],today=new Date();const row=document.getElementById('streakRow');if(!row)return;row.innerHTML='';for(let i=6;i>=0;i--){const d=new Date(today);d.setDate(d.getDate()-i);const str=d.toISOString().split('T')[0],isToday=i===0;const hasFood=state.foodLog.some(f=>todayStr(f.time)===str),hasWalk=state.walkLog.some(w=>todayStr(w.time)===str);const done=hasFood&&hasWalk;const div=document.createElement('div');div.className='streak-day'+(done?' done':isToday?' today':'');div.innerHTML='<span>'+days[(d.getDay()+6)%7]+'</span><div class="day-dot"></div>';row.appendChild(div);}let streak=0;const d=new Date();while(streak<365){const s=d.toISOString().split('T')[0];if(state.foodLog.some(f=>todayStr(f.time)===s)&&state.walkLog.some(w=>todayStr(w.time)===s)){streak++;d.setDate(d.getDate()-1);}else break;}const sc=document.getElementById('streakCount');if(sc)sc.textContent=streak;const st=document.getElementById('streakText');if(st)st.textContent=streak>0?'dagar streak 🔥':'– starta idag!';}
 function renderRings(){const today=todayStr();const foodToday=state.foodLog.filter(f=>todayStr(f.time)===today).length;const walkToday=state.walkLog.filter(w=>todayStr(w.time)===today).reduce((a,w)=>a+w.minutes,0);const glucoseToday=state.glucoseHistory.filter(g=>todayStr(g.time)===today).length;const rings=[{label:'Måltider',val:foodToday,max:4,color:'#2DD881',unit:'/4'},{label:'Promenad',val:walkToday,max:30,color:'#169ee7',unit:'min'},{label:'Mätningar',val:glucoseToday,max:6,color:'#E63946',unit:'/6'}];const C=2*Math.PI*30;const row=document.getElementById('ringsRow');if(!row)return;row.innerHTML=rings.map(r=>{const pct=Math.min(1,r.val/r.max),offset=C*(1-pct);return '<div class="ring-wrap"><div style="position:relative;width:72px;height:72px;"><svg class="ring-svg" viewBox="0 0 72 72"><circle class="ring-track" cx="36" cy="36" r="30"/><circle class="ring-fill" cx="36" cy="36" r="30" stroke="'+r.color+'" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"/></svg><div class="ring-center"><div class="ring-val" style="color:'+r.color+'">'+r.val+'</div><div class="ring-unit">'+r.unit+'</div></div></div><div class="ring-label">'+r.label+'</div></div>';}).join('');}
+
+// ═══════════════════════════════════════════════════
+// UPPGIFTER (TASKS)
+// ═══════════════════════════════════════════════════
+let cachedTasks = [];
+
+async function fetchTasks() {
+  try {
+    const res = await fetch('/api/tasks');
+    if (res.ok) cachedTasks = await res.json();
+  } catch(e) { console.warn('Tasks:', e); }
+  return cachedTasks;
+}
+
+async function completeTask(taskId) {
+  const task = cachedTasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  // Kolla om kräver foton
+  if (task.requirePhotos) {
+    showToast('📷 Foto krävs — logga via Mat-sidan!');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/tasks/'+taskId+'/complete', { method:'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      // Ge XP och guld
+      if (data.xpReward) {
+        state.totalXP = (state.totalXP||0) + data.xpReward;
+        const newLevel = getLevelData(state.totalXP).current.level;
+        const oldLevel = getLevelData(state.totalXP - data.xpReward).current.level;
+        if (newLevel > oldLevel) showToast('🎉 LEVEL UP! Nivå '+newLevel+'!');
+      }
+      if (data.goldReward) {
+        state.gold = (state.gold||0) + data.goldReward;
+      }
+      save();
+      showToast((task.reward || 'Uppgift klar!') + (data.xpReward ? ' +'+data.xpReward+' XP' : '') + (data.goldReward ? ' +'+data.goldReward+' 🪙' : ''));
+      renderTasksWidget();
+      renderHome();
+    }
+  } catch(e) { showToast('Kunde inte slutföra uppgiften'); }
+}
+
+function renderTasksWidget() {
+  const el = document.getElementById('tasksWidget'); if (!el) return;
+  const today = new Date().toISOString().split('T')[0];
+  const activeTasks = cachedTasks.filter(t => t.active && (t.type === 'daily' || t.type === 'once' || t.type === 'weekly'));
+  const visibleTasks = activeTasks.filter(t => {
+    if (t.type === 'once' && t.completions && Object.keys(t.completions).length > 0) return false;
+    return true;
+  });
+
+  if (!visibleTasks.length) {
+    el.innerHTML = '<div style="color:var(--ink-muted);font-size:13px;font-weight:600;text-align:center;padding:12px 0;">Inga uppgifter idag</div>';
+    return;
+  }
+
+  el.innerHTML = visibleTasks.map(t => {
+    const doneToday = t.completions && t.completions[today];
+    const diffColor = {easy:'var(--in-range-dark)',normal:'var(--hero-blue)',hard:'var(--pulse-red-deep)'}[t.difficulty||'normal'];
+    return '<div class="task-row '+(doneToday?'task-done':'')+'">' +
+      '<div class="task-row-left">' +
+        '<div class="task-row-icon" style="border-color:'+diffColor+';">'+( t.icon||'⭐')+'</div>' +
+        '<div class="task-row-info">' +
+          '<div class="task-row-title">'+(doneToday?'<s>':'')+t.title+(doneToday?'</s>':'')+'</div>' +
+          (t.description ? '<div class="task-row-desc">'+t.description+'</div>' : '') +
+          '<div class="task-row-rewards">' +
+            (t.xpReward ? '<span class="task-rew-badge xp">+'+t.xpReward+' XP</span>' : '') +
+            (t.goldReward ? '<span class="task-rew-badge gold">+'+t.goldReward+' 🪙</span>' : '') +
+            (t.requirePhotos ? '<span class="task-rew-badge photo">📷 foto</span>' : '') +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      (doneToday
+        ? '<div class="task-check">✅</div>'
+        : '<button class="task-complete-btn" data-tid="'+t.id+'" onclick="completeTask(this.dataset.tid)">KLAR!</button>') +
+    '</div>';
+  }).join('');
+}
+
+function renderAchievementsWidget() {
+  const el = document.getElementById('achWidget'); if (!el) return;
+  if (typeof ACHIEVEMENTS === 'undefined') return;
+  const unlocked = new Set(state.unlockedAchievements || []);
+  const total = ACHIEVEMENTS.length;
+  const done = unlocked.size;
+  const pct = Math.round(done/total*100);
+
+  // Hitta nästa att låsa upp
+  const next = ACHIEVEMENTS.filter(a => !unlocked.has(a.id)).slice(0, 3);
+
+  el.innerHTML =
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">' +
+      '<div style="flex:1;">' +
+        '<div style="font-family:var(--font-burst);font-size:13px;color:var(--ink-muted);letter-spacing:1px;">FRAMSTEG</div>' +
+        '<div class="xp-bar-wrap" style="margin:4px 0;">' +
+          '<div class="xp-bar-fill" style="width:'+pct+'%;background:linear-gradient(90deg,var(--power-yellow-deep),var(--in-range));">' +
+            '<span class="xp-bar-text">'+pct+'%</span>' +
+          '</div>' +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--ink-muted);font-weight:600;">'+done+' / '+total+' upplåsta</div>' +
+      '</div>' +
+    '</div>' +
+    (next.length ? '<div style="font-size:11px;font-weight:700;color:var(--ink-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Nästan där:</div>' +
+    next.map(a => '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--paper-soft);">'+
+      '<span style="font-size:18px;">'+a.icon+'</span>'+
+      '<div style="flex:1;"><div style="font-size:12px;font-weight:700;">'+a.title+'</div><div style="font-size:10px;color:var(--ink-muted);">'+a.desc+'</div></div>'+
+      '<span style="font-family:var(--font-mono);font-size:11px;color:var(--in-range-dark);font-weight:700;">+'+a.xp+' XP</span>'+
+    '</div>').join('') : '');
+}
+
+
 function renderHome(){setAvatars();const last=state.glucoseHistory[state.glucoseHistory.length-1];if(last){renderGlucoseCard(last.val);const t=new Date(last.time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});const gt=document.getElementById('glucoseTime');if(gt)gt.textContent=(state.cgmConnected?'xDrip · ':'Manuell · ')+t;}else renderGlucoseCard(null);const gsp=document.getElementById('groguHomeSpeech');const lastFood=state.foodLog[0];const gCtx=!lastFood||Date.now()-lastFood.time>4*3600000?'hungry':Date.now()-lastFood.time<2*3600000?'eating':'default';if(gsp)gsp.textContent=groguLine(gCtx);renderStreak();renderRings();const ms=document.getElementById('morningStatus');if(ms){const today=todayStr();const meals=state.foodLog.filter(f=>todayStr(f.time)===today).length;const walked=state.walkLog.some(w=>todayStr(w.time)===today);if(meals===0&&!walked)ms.textContent='Inget loggat än idag — dags att börja! 💪';else if(meals>0&&walked)ms.textContent=meals+' måltid'+(meals>1?'er':'')+' · Promenad klar · Bra jobbat! ⚡';else if(meals>0)ms.textContent=meals+' måltid'+(meals>1?'er':'')+' loggad · Glöm inte promenaden!';else ms.textContent='Promenad klar! Glöm inte att logga mat 🍽️';}}
 
 // ═══════════════════════════════════════════════════
@@ -1899,10 +2163,50 @@ function diffLabel(d){return {easy:'⭐ Lätt',medium:'⭐⭐ Medel',hard:'⭐�
 function renderCombatTab(){
   const el=document.getElementById('heroTabCombat'); if(!el) return;
   if(state.activeCombat){renderActiveCombat(); return;}
-  const canFight=canFightToday(),ld=heroLevelData(),enemies=getEnemiesForLevel(ld.current.level);
-  if(!canFight){const last=(state.combatLog||[])[0];el.innerHTML='<div class="card paper" style="text-align:center;padding:20px;"><div style="font-size:40px;margin-bottom:8px;">'+(last&&last.won?'🏆':'💀')+'</div><div class="burst burst-sm" style="margin-bottom:6px;">DAGENS STRID AVKLARAD</div><div style="font-size:13px;color:var(--ink-muted);font-weight:600;">Kom tillbaka imorgon!</div>'+(last?'<div style="margin-top:12px;font-family:var(--font-script);font-size:16px;color:var(--ink-soft);">'+last.summary+'</div>':'')+'</div>'+renderCombatHistory();return;}
-  el.innerHTML='<div class="card dark" style="text-align:center;padding:16px;margin-bottom:12px;"><div class="burst burst-sm" style="color:var(--power-yellow);letter-spacing:2px;margin-bottom:6px;">VÄLJ MOTSTÅNDARE</div><div style="font-size:12px;color:rgba(255,255,255,.6);font-weight:600;">En strid per dag. Välj noggrant.</div></div><div class="enemy-select-grid">'+enemies.map(e=>'<div class="enemy-card" onclick="startCombat(\''+e.id+'\')"><div class="enemy-card-icon">'+e.icon+'</div><div class="enemy-card-name">'+e.name+'</div><div class="enemy-card-diff '+e.difficulty+'">'+diffLabel(e.difficulty)+'</div><div style="font-size:10px;color:var(--ink-muted);margin-top:3px;font-weight:600;">HP: '+e.scaledHp+' · AC: '+e.scaledAc+'</div><div style="font-size:9px;font-family:var(--font-script);color:var(--ink-muted);margin-top:3px;line-height:1.3;">'+e.flavor+'</div></div>').join('')+'</div>'+renderCombatHistory();
+  const canFight=canFightToday(), ld=heroLevelData(), heroLvl=ld.current.level;
+  const allEnemies=getEnemiesForLevel(heroLvl);
+
+  if(!canFight){
+    const last=(state.combatLog||[])[0];
+    el.innerHTML='<div class="card paper" style="text-align:center;padding:20px;"><div style="font-size:40px;margin-bottom:8px;">'+(last&&last.won?'🏆':'💀')+'</div><div class="burst burst-sm" style="margin-bottom:6px;">DAGENS STRID AVKLARAD</div><div style="font-size:13px;color:var(--ink-muted);font-weight:600;">Kom tillbaka imorgon!</div>'+(last?'<div style="margin-top:12px;font-family:var(--font-script);font-size:16px;color:var(--ink-soft);">'+last.summary+'</div>':'')+'</div>'+renderCombatHistory();
+    return;
+  }
+
+  // Bygg zonat fiendeväljare
+  const zones = [
+    {z:1, name:'Sockerfältet',        icon:'🍬', color:'var(--in-range-dark)'},
+    {z:2, name:'Stressdalen',         icon:'😤', color:'var(--high)'},
+    {z:3, name:'Blodsockerbergen',    icon:'⛰️', color:'var(--pulse-red-deep)'},
+    {z:4, name:'Hormonernas Kammare', icon:'💀', color:'#7c3aed'},
+    {z:5, name:'Olympen',             icon:'⚡', color:'#b8860b'},
+  ];
+
+  let html = '<div class="card dark" style="text-align:center;padding:14px;margin-bottom:12px;"><div class="burst burst-sm" style="color:var(--power-yellow);letter-spacing:2px;margin-bottom:4px;">VÄLJ MOTSTÅNDARE</div><div style="font-size:11px;color:rgba(255,255,255,.6);font-weight:600;">En strid per dag. Nivå '+heroLvl+'.</div></div>';
+
+  zones.forEach(zone => {
+    const zoneEnemies = allEnemies.filter(e => e.zone === zone.z);
+    if(!zoneEnemies.length) return;
+    html += '<div style="margin-bottom:14px;">';
+    html += '<div class="section-head" style="color:'+zone.color+';">'+zone.icon+' '+zone.name+'</div>';
+    html += '<div class="enemy-select-grid">';
+    zoneEnemies.forEach(e => {
+      const diffColors={easy:'var(--in-range-dark)',medium:'var(--high)',hard:'var(--pulse-red-deep)',legendary:'#7c3aed'};
+      const diffLabels={easy:'⭐ Lätt',medium:'⭐⭐ Medel',hard:'⭐⭐⭐ Svår',legendary:'💀 Legendar'};
+      html += '<div class="enemy-card" data-eid="'+e.id+'" onclick="startCombat(this.dataset.eid)">'+
+        '<div class="enemy-card-icon">'+e.icon+'</div>'+
+        '<div class="enemy-card-name">'+e.name+'</div>'+
+        '<div class="enemy-card-diff" style="color:'+diffColors[e.difficulty||'medium']+';">'+diffLabels[e.difficulty||'medium']+'</div>'+
+        '<div style="font-size:10px;color:var(--ink-muted);margin-top:2px;font-weight:600;">HP: '+e.scaledHp+' · AC: '+e.scaledAc+'</div>'+
+        '<div style="font-size:9px;font-family:var(--font-script);color:var(--ink-muted);margin-top:3px;line-height:1.3;">'+e.flavor+'</div>'+
+        '<div style="font-size:9px;color:var(--ink-muted);margin-top:2px;font-weight:600;">XP: +'+e.scaledXp+' · 🪙 '+e.scaledGold+'</div>'+
+      '</div>';
+    });
+    html += '</div></div>';
+  });
+  html += renderCombatHistory();
+  el.innerHTML = html;
 }
+
 function renderCombatHistory(){const log=(state.combatLog||[]).slice(0,5);if(!log.length)return '';return '<div class="section-head">Stridhistorik</div><div class="card">'+log.map(l=>'<div class="log-item"><div class="log-icon">'+(l.won?'🏆':'💀')+'</div><div class="log-main"><div class="log-title">'+l.enemy+'</div><div class="log-meta">'+l.date+'</div></div><div style="font-size:11px;font-weight:700;color:'+(l.won?'var(--in-range-dark)':'var(--pulse-red-deep)')+';">'+(l.won?'+':'')+l.xpDelta+' XP</div></div>').join('')+'</div>';}
 function startCombat(enemyId){
   const ld=heroLevelData(),enemies=getEnemiesForLevel(ld.current.level),et=enemies.find(e=>e.id===enemyId); if(!et) return;
@@ -1910,64 +2214,206 @@ function startCombat(enemyId){
   state.activeCombat={enemyId,enemyName:et.name,enemyIcon:et.icon,enemyDiff:et.difficulty,enemyHp:et.scaledHp,enemyMaxHp:et.scaledHp,enemyStats:et.scaledStats,enemyAc:et.scaledAc,enemyAttacks:et.attacks,enemyDeathLine:et.deathLine,enemyWinLine:et.winLine,heroHp:maxHp,heroMaxHp:maxHp,heroAc:heroAC(),heroStats:stats,log:[{type:'system',text:'⚔️ Striden börjar! '+et.name+' tar positionen. '+et.flavor}],done:false,defendBonus:0};
   save(); renderActiveCombat();
 }
+
 function renderActiveCombat(){
   const el=document.getElementById('heroTabCombat'); if(!el) return;
   const c=state.activeCombat; if(!c){renderCombatTab(); return;}
-  const hp=Math.max(0,Math.round(c.heroHp/c.heroMaxHp*100)),ep=Math.max(0,Math.round(c.enemyHp/c.enemyMaxHp*100));
-  const hcls=hp<25?'crit':hp<50?'low':'',ecls=ep<25?'crit':ep<50?'low':'';
+
+  const hp=Math.max(0,Math.round(c.heroHp/c.heroMaxHp*100));
+  const ep=Math.max(0,Math.round(c.enemyHp/c.enemyMaxHp*100));
+  const hcls=hp<25?'crit':hp<50?'low':'';
+  const ecls=ep<25?'crit':ep<50?'low':'';
   const weaponItem=state.equipped&&state.equipped.weapon?SHOP_ITEMS.find(i=>i.id===state.equipped.weapon):null;
-  el.innerHTML=
-    '<div style="display:flex;gap:10px;margin-bottom:12px;">'+
-      '<div class="combatant-card"><div class="combatant-name">SOUMAYA</div><div class="hp-bar"><div class="hp-fill '+hcls+'" style="width:'+hp+'%;"></div></div><div style="font-family:var(--font-mono);font-size:12px;font-weight:700;margin-bottom:6px;">'+c.heroHp+' / '+c.heroMaxHp+' HP</div><div style="display:flex;flex-wrap:wrap;gap:3px;"><span class="stat-chip">STY '+c.heroStats.STY+'</span><span class="stat-chip">SMI '+c.heroStats.SMI+'</span><span class="stat-chip">AC '+c.heroAc+'</span></div></div>'+
-      '<div style="display:flex;align-items:center;font-size:24px;font-family:var(--font-burst);">VS</div>'+
-      '<div class="combatant-card"><div class="combatant-name">'+c.enemyIcon+' '+c.enemyName+'</div><div class="hp-bar"><div class="hp-fill '+ecls+'" style="width:'+ep+'%;"></div></div><div style="font-family:var(--font-mono);font-size:12px;font-weight:700;margin-bottom:6px;">'+c.enemyHp+' / '+c.enemyMaxHp+' HP</div><div style="display:flex;flex-wrap:wrap;gap:3px;"><span class="stat-chip">STY '+c.enemyStats.STY+'</span><span class="stat-chip">AC '+c.enemyAc+'</span></div></div>'+
+
+  el.innerHTML =
+    // ── Combatants ──
+    '<div class="combat-vs-row">'+
+      '<div class="combatant-card">'+
+        '<div class="combatant-name">⚔️ SOUMAYA</div>'+
+        '<div class="hp-label">'+c.heroHp+' / '+c.heroMaxHp+' HP</div>'+
+        '<div class="hp-bar"><div class="hp-fill '+hcls+'" style="width:'+hp+'%;"></div></div>'+
+        '<div class="stat-chips">'+
+          '<span class="stat-chip">STY '+c.heroStats.STY+'</span>'+
+          '<span class="stat-chip">SMI '+c.heroStats.SMI+'</span>'+
+          '<span class="stat-chip">AC '+c.heroAc+'</span>'+
+        '</div>'+
+      '</div>'+
+      '<div class="vs-badge">VS</div>'+
+      '<div class="combatant-card enemy-card-combat">'+
+        '<div class="combatant-name">'+c.enemyIcon+' '+c.enemyName+'</div>'+
+        '<div class="hp-label">'+c.enemyHp+' / '+c.enemyMaxHp+' HP</div>'+
+        '<div class="hp-bar"><div class="hp-fill '+ecls+'" style="width:'+ep+'%;"></div></div>'+
+        '<div class="stat-chips">'+
+          '<span class="stat-chip">STY '+c.enemyStats.STY+'</span>'+
+          '<span class="stat-chip">AC '+c.enemyAc+'</span>'+
+        '</div>'+
+      '</div>'+
     '</div>'+
-    '<div class="combat-log" id="combatLogEl">'+c.log.slice(-8).map(l=>'<div class="combat-log-line '+l.type+'">'+l.text+'</div>').join('')+'</div>'+
-    (c.done?renderCombatResult(c):renderActionButtons(weaponItem));
-  const logEl=document.getElementById('combatLogEl'); if(logEl) logEl.scrollTop=logEl.scrollHeight;
+
+    // ── Stridslogg ──
+    '<div class="combat-log" id="combatLogEl">'+
+      (c.log.length===0?'<div class="combat-log-empty">Striden börjar...</div>':
+      c.log.slice(-10).map(l=>'<div class="combat-log-line '+l.type+'">'+
+        (l.type==='hero'?'🗡️ ':l.type==='enemy'?'💢 ':l.type==='system'?'⚡ ':l.type==='dice'?'🎲 ':'')+
+        l.text+'</div>').join(''))+
+    '</div>'+
+
+    // ── Actions eller resultat ──
+    (c.done ? renderCombatResult(c) : renderCombatActions(c, weaponItem));
+
+  const logEl=document.getElementById('combatLogEl');
+  if(logEl) logEl.scrollTop=logEl.scrollHeight;
 }
-function renderActionButtons(weaponItem){return '<div class="action-grid">'+COMBAT_ACTIONS.map(a=>{const dis=a.id==='special'&&!weaponItem?'style="opacity:.3;pointer-events:none;"':'';return '<div class="action-btn" onclick="doAction(\''+a.id+'\')" '+dis+'><div class="action-btn-icon">'+a.icon+'</div><div class="action-btn-name">'+a.name+'</div><div class="action-btn-desc">'+(a.id==='special'&&weaponItem?weaponItem.desc:a.desc)+'</div></div>';}).join('')+'</div><button class="btn btn-ghost btn-sm" onclick="fleeCombat()" style="font-size:12px;">🏃 Fly (0 XP)</button>';}
-function renderCombatResult(c){const won=c.heroHp>0,reward=calcCombatReward(c.enemyDiff,heroLevelData().current.level,won);return '<div class="card '+(won?'green':'red')+'" style="text-align:center;padding:16px;"><div style="font-size:44px;margin-bottom:8px;">'+(won?'🏆':'💀')+'</div><div class="burst burst-md" style="margin-bottom:6px;">'+(won?'SEGER!':'NEDERLAG...')+'</div><div style="font-family:var(--font-script);font-size:16px;margin-bottom:12px;line-height:1.5;">'+(won?c.enemyDeathLine:c.enemyWinLine)+'</div><div style="font-family:var(--font-mono);font-size:18px;font-weight:700;color:'+(won?'var(--in-range-dark)':'var(--pulse-red-deep)')+';">'+(won?'+':'')+reward.xp+' XP</div>'+(won?'<div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--gold-dark);">+'+reward.gold+' 🪙</div>':'')+'<br><button class="btn '+(won?'btn-green':'btn-red')+' btn-sm" onclick="endCombat()" style="margin-top:8px;">FORTSÄTT</button></div>';}
+
+function renderCombatActions(c, weaponItem){
+  const actions = COMBAT_ACTIONS.map(a=>{
+    const isSpecial = a.id==='special';
+    const disabled = isSpecial && !weaponItem;
+    const desc = isSpecial && weaponItem ? weaponItem.desc : a.desc;
+    const color = {slash:'btn-action-red', double:'btn-action-blue', power:'btn-action-orange', defend:'btn-action-green', special:'btn-action-purple'}[a.id]||'';
+    return '<button class="combat-action-btn '+color+(disabled?' disabled':'')+'" '+(disabled?'disabled':'')+' onclick="doAction(\''+a.id+'\')">'+
+      '<div class="cab-icon">'+a.icon+'</div>'+
+      '<div class="cab-name">'+a.name+'</div>'+
+      '<div class="cab-dice">'+a.hitRoll+'</div>'+
+      '<div class="cab-desc">'+desc+'</div>'+
+    '</button>';
+  }).join('');
+  return '<div class="combat-actions-grid">'+actions+'</div>'+
+    '<button class="btn btn-ghost btn-sm flee-btn" onclick="fleeCombat()">🏃 Fly undan — inga XP</button>';
+}
+
+function renderCombatResult(c){
+  const won=c.heroHp>0;
+  const reward=calcCombatReward(c.enemyDiff,heroLevelData().current.level,won);
+  return '<div class="combat-result '+(won?'win':'loss')+'">'+
+    '<div class="result-icon">'+(won?'🏆':'💀')+'</div>'+
+    '<div class="result-title">'+(won?'SEGER!':'NEDERLAG...')+'</div>'+
+    '<div class="result-flavor">'+(won?c.enemyDeathLine:c.enemyWinLine)+'</div>'+
+    '<div class="result-rewards">'+
+      '<span class="result-xp">'+(won?'+':'')+reward.xp+' XP</span>'+
+      (won?'<span class="result-gold">+'+reward.gold+' 🪙</span>':'')+
+    '</div>'+
+    '<button class="btn '+(won?'btn-green':'btn-red')+'" onclick="endCombat()" style="margin-top:12px;">FORTSÄTT</button>'+
+  '</div>';
+}
+
+function renderActionButtons(weaponItem){ return renderCombatActions(null, weaponItem); }
+
+
 function doAction(actionId){
   const c=state.activeCombat; if(!c||c.done) return;
   const action=COMBAT_ACTIONS.find(a=>a.id===actionId); if(!action) return;
   const stats=c.heroStats;
   const weaponItem=state.equipped&&state.equipped.weapon?SHOP_ITEMS.find(i=>i.id===state.equipped.weapon):null;
-  let logs=[],totalDmg=0; c.defendBonus=0;
-  logs.push({type:'hero',text:rnd(action.dialog.attempt)});
+  let logs=[]; let totalDmg=0; c.defendBonus=0;
+
+  logs.push({type:'hero', text:'Soumaya väljer: '+action.icon+' '+action.name.toUpperCase()});
+
   if(actionId==='defend'){
-    c.defendBonus=4; const hitRoll=roll(20)+stats.STY; const hit=hitRoll>=c.enemyAc; const dmg=hit?roll(4)+stats.STY:0;
-    if(hit){totalDmg=dmg;logs.push({type:'hero',text:'🛡️ Försvar +4 AC. Kontring: '+dmg+' skada! [d20+STY='+hitRoll+']'});}
-    else logs.push({type:'system',text:'🛡️ Försvar aktivt (+4 AC).'});
+    c.defendBonus=4;
+    const d20=roll(20); const hitRoll=d20+stats.STY; const hit=hitRoll>=c.enemyAc;
+    logs.push({type:'dice', text:'Träffslag: [d20='+d20+'] + STY'+stats.STY+' = '+hitRoll+' mot AC'+c.enemyAc+' → '+(hit?'TRÄFF!':'Miss')});
+    if(hit){
+      const dmgDie=roll(4); const dmg=dmgDie+stats.STY;
+      logs.push({type:'dice', text:'Skadeslag: [d4='+dmgDie+'] + STY'+stats.STY+' = '+dmg+' skada'});
+      totalDmg=dmg;
+      logs.push({type:'hero', text:'🛡️ Defensivt läge (+4 AC). Kontring: '+dmg+' skada!'});
+    }else{
+      logs.push({type:'hero', text:'🛡️ Defensivt läge (+4 AC). Inget svar möjligt.'});
+    }
+
   }else if(actionId==='double'){
     let total=0;
-    for(let i=0;i<2;i++){const hitRoll=roll(20)+Math.floor(stats.SMI/2)-2;const hit=hitRoll>=c.enemyAc;const dmg=hit?roll(6)+Math.floor(stats.SMI/2)+(weaponItem&&weaponItem.special==='dualBonus'?2:0):0;total+=dmg;logs.push({type:'hero',text:'Slag '+(i+1)+': '+(hit?'TRÄFF! '+dmg+' skada':'miss')+' ['+hitRoll+']'});}
+    for(let i=0;i<2;i++){
+      const d20=roll(20); const hitRoll=d20+Math.floor(stats.SMI/2)-2; const hit=hitRoll>=c.enemyAc;
+      logs.push({type:'dice', text:'Slag '+(i+1)+': [d20='+d20+'] + SMI/2-2 = '+hitRoll+' mot AC'+c.enemyAc+' → '+(hit?'TRÄFF!':'Miss')});
+      if(hit){
+        const dmgDie=roll(6); const bonus=Math.floor(stats.SMI/2)+(weaponItem&&weaponItem.special==='dualBonus'?2:0);
+        const dmg=dmgDie+bonus;
+        logs.push({type:'dice', text:'  Skada: [d6='+dmgDie+'] + '+bonus+' = '+dmg});
+        total+=dmg;
+      }
+    }
     totalDmg=total;
+    if(total>0) logs.push({type:'hero', text:'Dubbelhugg landar — '+total+' total skada!'});
+    else logs.push({type:'hero', text:'Båda huggen missar!'});
+
   }else if(actionId==='power'){
-    const hitRoll=roll(20)+stats.STY-3;const isCrit=hitRoll>=20;const hit=hitRoll>=c.enemyAc;
-    if(isCrit){totalDmg=(roll(12)+stats.STY*2+(weaponItem&&weaponItem.special==='powerBonus'?3:0))*2;logs.push({type:'hero',text:rnd(action.dialog.crit||action.dialog.hit)+' KRITISK! Skada: '+totalDmg});}
-    else if(hit){totalDmg=roll(12)+stats.STY*2+(weaponItem&&weaponItem.special==='powerBonus'?3:0);logs.push({type:'hero',text:rnd(action.dialog.hit)+' Skada: '+totalDmg+' ['+hitRoll+']'});}
-    else logs.push({type:'hero',text:rnd(action.dialog.miss)+' ['+hitRoll+' vs AC'+c.enemyAc+']'});
+    const d20=roll(20); const hitRoll=d20+stats.STY-3; const isCrit=d20===20; const hit=isCrit||hitRoll>=c.enemyAc;
+    logs.push({type:'dice', text:'Träffslag: [d20='+d20+'] + STY'+stats.STY+'-3 = '+hitRoll+' mot AC'+c.enemyAc+' → '+(isCrit?'⚡ KRITISK!':hit?'TRÄFF!':'Miss')});
+    if(hit){
+      const dmgDie=roll(12); const bonus=stats.STY*2+(weaponItem&&weaponItem.special==='powerBonus'?3:0);
+      let dmg=dmgDie+bonus; if(isCrit) dmg*=2;
+      logs.push({type:'dice', text:'Skadeslag: [d12='+dmgDie+'] × '+(isCrit?'2 (KRITISK)':'1')+' + '+bonus+' = '+dmg});
+      totalDmg=dmg;
+      logs.push({type:'hero', text:(isCrit?'⚡⚡ FÖRÖDANDE KRITISK! ':'')+dmg+' skada!'});
+    }else{
+      logs.push({type:'hero', text:'Kraftslaget sveper förbi — för tungt!'});
+    }
+
   }else if(actionId==='special'){
-    if(!weaponItem){logs.push({type:'system',text:'Inget vapen utrustat!'});}
-    else{const mod=weaponItem.special==='intAttack'?stats.INT:stats.STY;const hitRoll=roll(20)+mod;const hit=hitRoll>=c.enemyAc;if(hit){totalDmg=roll(10)+mod+(weaponItem.dmgBonus||0);logs.push({type:'hero',text:rnd(action.dialog.hit)+' Special: '+totalDmg+' skada!'});}else logs.push({type:'hero',text:rnd(action.dialog.miss)+' ['+hitRoll+']'});}
-  }else{
-    const hitRoll=roll(20)+stats.STY;const isCrit=hitRoll>=20;const hit=hitRoll>=c.enemyAc;
-    if(isCrit){totalDmg=(roll(8)+stats.STY+(weaponItem?weaponItem.dmgBonus||0:0))*2;logs.push({type:'hero',text:rnd(action.dialog.crit||['⚡ KRITISK!'])+' '+totalDmg+' skada!'});}
-    else if(hit){totalDmg=roll(8)+stats.STY+(weaponItem?weaponItem.dmgBonus||0:0);logs.push({type:'hero',text:rnd(action.dialog.hit)+' Skada: '+totalDmg+' [d20+STY='+hitRoll+']'});}
-    else logs.push({type:'hero',text:rnd(action.dialog.miss)+' ['+hitRoll+' vs AC'+c.enemyAc+']'});
+    if(!weaponItem){logs.push({type:'system', text:'Inget vapen utrustat för Special!'});}
+    else{
+      const mod=weaponItem.special==='intAttack'?stats.INT:stats.STY;
+      const d20=roll(20); const hitRoll=d20+mod; const isCrit=d20===20; const hit=isCrit||hitRoll>=c.enemyAc;
+      logs.push({type:'dice', text:'Special ['+weaponItem.name+']: [d20='+d20+'] + mod'+mod+' = '+hitRoll+' mot AC'+c.enemyAc+' → '+(isCrit?'⚡ KRITISK!':hit?'TRÄFF!':'Miss')});
+      if(hit){
+        const dmgDie=roll(10); let dmg=dmgDie+mod+(weaponItem.dmgBonus||0); if(isCrit) dmg*=2;
+        logs.push({type:'dice', text:'Skadeslag: [d10='+dmgDie+'] + '+mod+' = '+dmg+(isCrit?' (KRITISK)':'')});
+        totalDmg=dmg;
+        logs.push({type:'hero', text:'✨ Specialattack: '+dmg+' skada!'});
+      }else{
+        logs.push({type:'hero', text:'Specialattacken missar sitt mål.'});
+      }
+    }
+
+  }else{ // slash
+    const d20=roll(20); const hitRoll=d20+stats.STY; const isCrit=d20===20; const hit=isCrit||hitRoll>=c.enemyAc;
+    logs.push({type:'dice', text:'Träffslag: [d20='+d20+'] + STY'+stats.STY+' = '+hitRoll+' mot AC'+c.enemyAc+' → '+(isCrit?'⚡ KRITISK!':hit?'TRÄFF!':'Miss')});
+    if(hit){
+      const dmgDie=roll(8); const bonus=stats.STY+(weaponItem?weaponItem.dmgBonus||0:0);
+      let dmg=dmgDie+bonus; if(isCrit) dmg*=2;
+      logs.push({type:'dice', text:'Skadeslag: [d8='+dmgDie+'] + '+bonus+(isCrit?' × 2 KRITISK':'')+' = '+dmg});
+      totalDmg=dmg;
+      logs.push({type:'hero', text:rnd(action.dialog.hit)+' ('+dmg+' skada)'});
+    }else{
+      logs.push({type:'hero', text:rnd(action.dialog.miss)});
+    }
   }
+
   c.enemyHp=Math.max(0,c.enemyHp-totalDmg);
-  if(c.enemyHp<=0){c.done=true;logs.push({type:'system',text:'💥 '+c.enemyName+' är besegrad!'});c.log.push(...logs);state.activeCombat=c;endCombatFlow(true);save();renderActiveCombat();return;}
-  logs.push({type:'enemy',text:'— '+c.enemyName+' svarar! —'});
-  const eHitRoll=roll(20)+c.enemyStats.STY,effAc=c.heroAc+c.defendBonus,eHit=eHitRoll>=effAc;
-  const eDmg=eHit?Math.max(1,roll(8)+Math.floor(c.enemyStats.STY/2)):0;
-  if(eHit){c.heroHp=Math.max(0,c.heroHp-eDmg);logs.push({type:'enemy',text:enemyAttackDialog(c,true,eDmg)+' ['+eHitRoll+']'});}
-  else logs.push({type:'enemy',text:enemyAttackDialog(c,false,0)+' ['+eHitRoll+' vs AC'+effAc+']'});
+  if(totalDmg>0) logs.push({type:'system', text:c.enemyName+' har nu '+c.enemyHp+' HP kvar.'});
+
+  if(c.enemyHp<=0){
+    c.done=true;
+    logs.push({type:'system', text:'💥 '+c.enemyName+' är besegrad!'});
+    c.log.push(...logs); state.activeCombat=c; endCombatFlow(true); save(); renderActiveCombat(); return;
+  }
+
+  // ── Fienden svarar ──
+  logs.push({type:'enemy', text:'━━━ '+c.enemyName.toUpperCase()+' ATTACKERAR ━━━'});
+  const eD20=roll(20); const eHitRoll=eD20+c.enemyStats.STY; const effAc=c.heroAc+c.defendBonus; const eHit=eHitRoll>=effAc;
+  logs.push({type:'dice', text:'[d20='+eD20+'] + STY'+c.enemyStats.STY+' = '+eHitRoll+' mot din AC'+effAc+(c.defendBonus>0?' (+4 försvar)':'')+' → '+(eHit?'TRÄFF!':'Miss')});
+  if(eHit){
+    const eDmgDie=roll(8); const eDmg=Math.max(1,eDmgDie+Math.floor(c.enemyStats.STY/2));
+    logs.push({type:'dice', text:'Skadeslag: [d8='+eDmgDie+'] + '+Math.floor(c.enemyStats.STY/2)+' = '+eDmg});
+    c.heroHp=Math.max(0,c.heroHp-eDmg);
+    logs.push({type:'enemy', text:enemyAttackDialog(c,true,eDmg)});
+    logs.push({type:'system', text:'Du har '+c.heroHp+' HP kvar.'});
+  }else{
+    logs.push({type:'enemy', text:enemyAttackDialog(c,false,0)});
+  }
   c.log.push(...logs); c.defendBonus=0;
-  if(c.heroHp<=0){c.done=true;c.log.push({type:'system',text:'💀 Soumaya faller...'});endCombatFlow(false);}
+
+  if(c.heroHp<=0){
+    c.done=true;
+    c.log.push({type:'system', text:'💀 Soumaya faller i strid...'});
+    endCombatFlow(false);
+  }
   state.activeCombat=c; save(); renderActiveCombat();
 }
+
+
 function endCombatFlow(won){
   const c=state.activeCombat; if(!c) return;
   const ld=heroLevelData(),reward=calcCombatReward(c.enemyDiff,ld.current.level,won);
@@ -1986,10 +2432,70 @@ function fleeCombat(){state.activeCombat=null; state.lastFightDate=new Date().to
 
 function renderShopTab(){
   const el=document.getElementById('heroTabShop'); if(!el) return;
-  const gold=state.gold||0,inventory=state.inventory||[],equipped=state.equipped||{};
-  const groups=[{label:'⚔️ Vapen',items:SHOP_ITEMS.filter(i=>i.type==='weapon')},{label:'🛡️ Rustning',items:SHOP_ITEMS.filter(i=>i.type==='armor')},{label:'💍 Accessoarer',items:SHOP_ITEMS.filter(i=>i.type==='accessory')}];
-  el.innerHTML='<div class="card gold" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin-bottom:4px;"><div class="burst burst-sm">DIN KASSA</div><div style="font-family:var(--font-mono);font-size:22px;font-weight:700;color:var(--gold-dark);">🪙 '+gold+'</div></div>'+groups.map(g=>'<div class="section-head">'+g.label+'</div><div class="shop-grid">'+g.items.map(item=>{const owned=inventory.includes(item.id),isEq=Object.values(equipped).includes(item.id),canAff=gold>=item.cost;let btn='';if(isEq)btn='<button class="btn btn-ghost btn-xs" onclick="unequipItem(\''+item.id+'\')" style="margin-top:6px;">Ta av</button>';else if(owned)btn='<button class="btn btn-blue btn-xs" onclick="equipItem(\''+item.id+'\')" style="margin-top:6px;">Utrusta</button>';else btn='<button class="btn btn-gold btn-xs" onclick="buyItem(\''+item.id+'\')" '+(canAff?'':'disabled')+' style="margin-top:6px;">Köp 🪙'+item.cost+'</button>';return '<div class="shop-item '+(owned?'owned':'')+' '+(isEq?'equipped-badge':'')+'"><div class="shop-item-icon">'+item.icon+'</div><div class="shop-item-name">'+item.name+'</div><div class="shop-item-desc">'+item.desc+'</div>'+btn+'</div>';}).join('')+'</div>').join('');
+  const gold=state.gold||0;
+  const inventory=state.inventory||[];
+  const equipped=state.equipped||{};
+  const heroLvl=heroLevelData().current.level;
+  const shopFilter=state.shopFilter||'weapon';
+
+  const categories=[
+    {key:'weapon',    label:'⚔️ Vapen'},
+    {key:'armor',     label:'🛡️ Rustning'},
+    {key:'accessory', label:'💍 Accessoarer'},
+    {key:'potion',    label:'🧪 Drycker'},
+    {key:'rune',      label:'🪨 Runor'},
+  ];
+
+  let tabs='<div class="filter-tabs" style="margin-bottom:12px;">';
+  categories.forEach(c=>{
+    tabs+='<div class="filter-tab'+(shopFilter===c.key?' active':'')+'" data-sf="'+c.key+'" onclick="setShopFilter(this.dataset.sf,this)">'+c.label+'</div>';
+  });
+  tabs+='</div>';
+
+  const items=SHOP_ITEMS.filter(i=>i.type===shopFilter);
+  const tiers=[1,2,3,4];
+  let shopHtml='';
+  tiers.forEach(tier=>{
+    const tierItems=items.filter(i=>i.tier===tier);
+    if(!tierItems.length) return;
+    const tierLabels={1:'⭐ Tier 1 — Nybörjare',2:'⭐⭐ Tier 2 — Veteran',3:'⭐⭐⭐ Tier 3 — Mästare',4:'💎 Tier 4 — Legend'};
+    shopHtml+='<div class="section-head">'+tierLabels[tier]+'</div>';
+    shopHtml+='<div class="shop-grid">';
+    tierItems.forEach(item=>{
+      const owned=inventory.includes(item.id);
+      const isEq=Object.values(equipped).includes(item.id);
+      const canAff=gold>=item.cost;
+      const locked=heroLvl<(item.minLevel||1);
+      let btn='';
+      if(locked) btn='<div style="font-size:11px;color:var(--ink-muted);font-weight:700;margin-top:6px;">🔒 Kräver Nivå '+(item.minLevel||1)+'</div>';
+      else if(isEq) btn='<button class="btn btn-ghost btn-xs" data-iid="'+item.id+'" onclick="unequipItem(this.dataset.iid)" style="margin-top:6px;">Ta av</button>';
+      else if(owned) btn='<button class="btn btn-blue btn-xs" data-iid="'+item.id+'" onclick="equipItem(this.dataset.iid)" style="margin-top:6px;">Utrusta</button>';
+      else btn='<button class="btn btn-gold btn-xs" data-iid="'+item.id+'" onclick="buyItem(this.dataset.iid)" '+(canAff&&!locked?'':'disabled')+' style="margin-top:6px;">Köp 🪙'+item.cost+'</button>';
+      shopHtml+='<div class="shop-item '+(owned?'owned':'')+' '+(isEq?'equipped-badge':'')+' '+(locked?'shop-locked':'')+'">'+
+        '<div class="shop-item-icon">'+item.icon+'</div>'+
+        '<div class="shop-item-name">'+item.name+'</div>'+
+        '<div class="shop-item-desc">'+item.desc+'</div>'+
+        btn+
+      '</div>';
+    });
+    shopHtml+='</div>';
+  });
+
+  el.innerHTML=
+    '<div class="card gold" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin-bottom:8px;">'+
+      '<div><div class="burst burst-sm">DIN KASSA</div><div style="font-size:11px;color:var(--ink-muted);font-weight:600;">Nivå '+heroLvl+'</div></div>'+
+      '<div style="font-family:var(--font-mono);font-size:22px;font-weight:700;color:var(--gold-dark);">🪙 '+gold+'</div>'+
+    '</div>'+
+    tabs+shopHtml;
 }
+
+function setShopFilter(filter, el){
+  state.shopFilter=filter;
+  // Spara inte till server, bara lokal state
+  renderShopTab();
+}
+
+
 function buyItem(itemId){const item=SHOP_ITEMS.find(i=>i.id===itemId);if(!item)return;if((state.gold||0)<item.cost){showToast('Inte tillräckligt med guld!');return;}state.gold-=item.cost;state.inventory=state.inventory||[];if(!state.inventory.includes(itemId))state.inventory.push(itemId);save();renderShopTab();renderHeroProfile();showToast('Köpte '+item.name+'! -'+item.cost+' 🪙');}
 function equipItem(itemId){const item=SHOP_ITEMS.find(i=>i.id===itemId);if(!item)return;state.equipped=state.equipped||{};state.equipped[item.slot]=itemId;save();renderShopTab();renderHeroProfile();showToast(item.name+' utrustad!');}
 function unequipItem(itemId){const item=SHOP_ITEMS.find(i=>i.id===itemId);if(!item)return;state.equipped=state.equipped||{};if(state.equipped[item.slot]===itemId)state.equipped[item.slot]=null;save();renderShopTab();renderHeroProfile();showToast(item.name+' avtagen.');}
@@ -2054,6 +2560,7 @@ load();
 state.appOpens=(state.appOpens||0)+1;
 loadSettings(); updateClock(); setInterval(updateClock,10000); updateGoldDisplay();
 if(state.cgmConnected) pollXDrip();
+fetchTasks().then(()=>{ renderTasksWidget(); renderAchievementsWidget(); });
 renderHome();
 if('serviceWorker'in navigator){navigator.serviceWorker.register('sw.js').catch(e=>console.log('SW:',e));}
 setupPush(); startReminders(); setTimeout(runAchievementCheck,600);

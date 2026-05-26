@@ -244,7 +244,14 @@ app.post('/api/tasks', adminAuth, (req, res) => {
     description: req.body.description || '',
     type: req.body.type || 'daily',
     reward: req.body.reward || '',
+    xpReward: parseInt(req.body.xpReward) || 0,
+    goldReward: parseInt(req.body.goldReward) || 0,
+    requirePhotos: req.body.requirePhotos === true || req.body.requirePhotos === 'true',
+    photoCount: parseInt(req.body.photoCount) || 1,
+    icon: req.body.icon || '⭐',
+    difficulty: req.body.difficulty || 'normal',
     active: true,
+    completions: {},   // { 'YYYY-MM-DD': true } för dagliga
     createdAt: Date.now()
   };
   tasks.push(task);
@@ -258,6 +265,17 @@ app.put('/api/tasks/:id', adminAuth, (req, res) => {
   Object.assign(task, req.body);
   writeJSON(TASKS_FILE, tasks);
   res.json({ ok: true, task });
+});
+
+// Markera uppgift som slutförd (från appen, ej admin)
+app.post('/api/tasks/:id/complete', (req, res) => {
+  const task = tasks.find(t => t.id === req.params.id);
+  if (!task) return res.status(404).json({ error: 'Hittades ej' });
+  const today = new Date().toISOString().split('T')[0];
+  if (!task.completions) task.completions = {};
+  task.completions[today] = true;
+  writeJSON(TASKS_FILE, tasks);
+  res.json({ ok: true, xpReward: task.xpReward || 0, goldReward: task.goldReward || 0 });
 });
 
 app.delete('/api/tasks/:id', adminAuth, (req, res) => {

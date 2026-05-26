@@ -170,7 +170,21 @@ tr:hover td { background: #1a1a1a; }
   .nav-item { justify-content: center; padding: 14px; }
   .grid-4 { grid-template-columns: 1fr 1fr; }
 }
-</style>
+
+    .pcbtn { padding:7px 14px; border:2px solid #D9CEB8; border-radius:8px; background:#fff; font-weight:700; font-size:12px; cursor:pointer; transition:all .15s; }
+    .pcbtn.active { background:#169ee7; color:white; border-color:#003E7A; }
+    .task-item { border:2px solid #eee; border-radius:10px; padding:14px; margin-bottom:10px; background:#fff; }
+    .task-item.inactive { opacity:.5; background:#f9f9f9; }
+    .task-meta-row { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0; }
+    .task-badge { display:inline-flex; align-items:center; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; border:1.5px solid; }
+    .task-badge.xp { color:#1a8a4a; border-color:#1a8a4a; background:#E8FBF0; }
+    .task-badge.gold { color:#b8860b; border-color:#b8860b; background:#FFFBE0; }
+    .task-badge.photo { color:#0072D6; border-color:#0072D6; background:#EBF6FD; }
+    .task-badge.type { color:#666; border-color:#ccc; background:#f5f5f5; }
+    .task-badge.hard { color:#E63946; border-color:#E63946; background:#FDECEA; }
+    .task-completed-today { color:#1a8a4a; font-size:12px; font-weight:700; margin-top:6px; }
+
+    </style>
 </head>
 <body>
 
@@ -312,36 +326,91 @@ tr:hover td { background: #1a1a1a; }
     <div class="page-title">Uppgifter</div>
     <div class="card">
       <div class="card-title">Skapa ny uppgift</div>
+
       <div class="grid-2">
         <div class="form-group">
           <label class="form-label">Titel</label>
           <input type="text" class="form-input" id="taskTitle" placeholder="T.ex. Drick 2L vatten">
         </div>
         <div class="form-group">
+          <label class="form-label">Ikon (emoji)</label>
+          <input type="text" class="form-input" id="taskIcon" placeholder="⭐" value="⭐" style="font-size:22px;text-align:center;">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
           <label class="form-label">Typ</label>
           <select class="form-select" id="taskType">
-            <option value="daily">Daglig</option>
-            <option value="once">Engång</option>
+            <option value="daily">🔁 Daglig</option>
+            <option value="once">1️⃣ Engång</option>
+            <option value="weekly">📅 Veckovis</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Svårighetsgrad</label>
+          <select class="form-select" id="taskDifficulty">
+            <option value="easy">⭐ Enkel</option>
+            <option value="normal" selected>⭐⭐ Normal</option>
+            <option value="hard">⭐⭐⭐ Svår</option>
           </select>
         </div>
       </div>
+
       <div class="form-group">
-        <label class="form-label">Beskrivning (valfritt)</label>
-        <textarea class="form-textarea" id="taskDesc" placeholder="Mer info om uppgiften..."></textarea>
+        <label class="form-label">Beskrivning</label>
+        <textarea class="form-textarea" id="taskDesc" placeholder="Beskriv uppgiften..." rows="2"></textarea>
       </div>
-      <div class="form-group">
-        <label class="form-label">Belöning (visas i appen)</label>
-        <input type="text" class="form-input" id="taskReward" placeholder="T.ex. +50 XP, Allen hejar extra!">
+
+      <div style="background:#f8f5ef;border:1.5px solid #D9CEB8;border-radius:8px;padding:14px;margin-bottom:14px;">
+        <div style="font-weight:700;font-size:12px;margin-bottom:10px;color:#666;text-transform:uppercase;letter-spacing:1px;">💰 Belöningar</div>
+        <div class="grid-2" style="margin-bottom:10px;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">XP</label>
+            <input type="number" class="form-input" id="taskXP" placeholder="50" min="0" max="500" value="50">
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Guld 🪙</label>
+            <input type="number" class="form-input" id="taskGold" placeholder="10" min="0" max="200" value="10">
+          </div>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Textstämpel vid genomförande (valfritt)</label>
+          <input type="text" class="form-input" id="taskReward" placeholder="T.ex. Allen är stolt! 💪">
+        </div>
       </div>
-      <button class="btn btn-primary" onclick="createTask()">SKAPA UPPGIFT</button>
+
+      <div style="background:#EBF6FD;border:1.5px solid #169ee7;border-radius:8px;padding:14px;margin-bottom:16px;">
+        <div style="font-weight:700;font-size:12px;margin-bottom:10px;color:#0072D6;text-transform:uppercase;letter-spacing:1px;">📷 Fotokrav</div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:14px;margin-bottom:10px;">
+          <input type="checkbox" id="taskRequirePhotos" onchange="togglePhotoCount()" style="width:18px;height:18px;">
+          Kräv foton för att slutföra
+        </label>
+        <div id="photoCountRow" style="display:none;">
+          <label class="form-label">Antal foton som krävs</label>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="pcbtn active" data-val="1" onclick="setPhotoCount(1,this)">1 foto</button>
+            <button type="button" class="pcbtn" data-val="2" onclick="setPhotoCount(2,this)">2 (innan + efter)</button>
+          </div>
+          <input type="hidden" id="taskPhotoCount" value="1">
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="createTask()" style="width:100%;">✅ SKAPA UPPGIFT</button>
     </div>
 
     <div class="card">
-      <div class="card-title">Aktiva uppgifter</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div class="card-title" style="margin:0;">Alla uppgifter</div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-ghost task-filter active" onclick="filterTasksAdmin('all',this)" style="font-size:11px;padding:4px 10px;">Alla</button>
+          <button class="btn btn-sm btn-ghost task-filter" onclick="filterTasksAdmin('daily',this)" style="font-size:11px;padding:4px 10px;">Dagliga</button>
+          <button class="btn btn-sm btn-ghost task-filter" onclick="filterTasksAdmin('once',this)" style="font-size:11px;padding:4px 10px;">Engång</button>
+        </div>
+      </div>
       <div id="tasksList"></div>
     </div>
   </section>
-
   <!-- ══ ACHIEVEMENTS ══ -->
   <section class="page-section" id="sec-achievements">
     <div class="page-title">Achievements</div>
@@ -663,24 +732,43 @@ async function showWalkMap(walkId) {
 // UPPGIFTER
 // ══════════════════════════════════════════
 async function loadTasks() {
-  try {
     const res = await fetch('/api/tasks', { headers: apiHeaders() });
-    const tasks = await res.json();
+    let tasks = await res.json();
+    const today = new Date().toISOString().split('T')[0];
+    if (taskFilter !== 'all') tasks = tasks.filter(t => t.type === taskFilter);
     const el = document.getElementById('tasksList');
-    if (!tasks.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px 0;">Inga uppgifter skapade</div>'; return; }
-    el.innerHTML = tasks.map(t => `
-      <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #1a1a1a;">
-        <div style="flex:1;">
-          <div style="font-weight:700;font-size:14px;">${t.title}</div>
-          ${t.description ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">${t.description}</div>` : ''}
-          ${t.reward ? `<div style="font-size:12px;color:var(--primary);margin-top:2px;">🏆 ${t.reward}</div>` : ''}
+    if (!tasks.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px 0;">Inga uppgifter</div>'; return; }
+    el.innerHTML = tasks.map(t => {
+      const completedToday = t.completions && t.completions[today];
+      const diffColors = {easy:'#2DD881',normal:'#169ee7',hard:'#E63946'};
+      const diffLabels = {easy:'⭐ Enkel',normal:'⭐⭐ Normal',hard:'⭐⭐⭐ Svår'};
+      const typeLabels = {daily:'🔁 Daglig',once:'1️⃣ Engång',weekly:'📅 Veckovis'};
+      return `<div class="task-item ${t.active ? '' : 'inactive'}">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="font-size:24px;">${t.icon || '⭐'}</span>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:14px;">${t.title}</div>
+            ${t.description ? `<div style="font-size:12px;color:#666;margin-top:2px;">${t.description}</div>` : ''}
+          </div>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer;">
+            <input type="checkbox" ${t.active ? 'checked' : ''} onchange="toggleTaskActive('${t.id}', this.checked)">
+            Aktiv
+          </label>
         </div>
-        <span class="badge badge-blue">${t.type === 'daily' ? 'Daglig' : 'Engång'}</span>
-        <button class="btn-ghost btn btn-sm" onclick="deleteTask('${t.id}')" style="color:var(--red);border-color:var(--red);">Ta bort</button>
-      </div>
-    `).join('');
-  } catch(e) {}
-}
+        <div class="task-meta-row">
+          <span class="task-badge type">${typeLabels[t.type] || t.type}</span>
+          ${t.xpReward ? `<span class="task-badge xp">+${t.xpReward} XP</span>` : ''}
+          ${t.goldReward ? `<span class="task-badge gold">+${t.goldReward} 🪙</span>` : ''}
+          ${t.requirePhotos ? `<span class="task-badge photo">📷 ${t.photoCount} foto</span>` : ''}
+          ${t.difficulty && t.difficulty !== 'normal' ? `<span class="task-badge hard">${diffLabels[t.difficulty]||t.difficulty}</span>` : ''}
+        </div>
+        ${completedToday ? '<div class="task-completed-today">✅ Slutförd idag</div>' : ''}
+        ${t.reward ? `<div style="font-size:11px;color:#666;font-style:italic;margin-top:4px;">"${t.reward}"</div>` : ''}
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn btn-sm btn-ghost" onclick="deleteTask('${t.id}')" style="color:#E63946;border-color:#E63946;font-size:11px;padding:5px 10px;">🗑️ Ta bort</button>
+        </div>
+      </div>`;
+    }).join('');
 
 async function createTask() {
   const title = document.getElementById('taskTitle').value.trim();
@@ -701,6 +789,16 @@ async function createTask() {
     document.getElementById('taskReward').value = '';
     loadTasks();
   } catch(e) {}
+}
+
+
+async function toggleTaskActive(id, active) {
+  await fetch(`/api/tasks/${id}`, {
+    method: 'PUT',
+    headers: { ...apiHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ active })
+  });
+  loadTasks();
 }
 
 async function deleteTask(id) {
