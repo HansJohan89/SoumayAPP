@@ -180,6 +180,14 @@ tr:hover td{background:#1a1a1a}
   <!-- DASHBOARD -->
   <section class="page-section active" id="sec-dashboard">
     <div class="page-title">Dashboard</div>
+    <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center;">
+      <button class="btn btn-ghost" onclick="exportData()" style="font-size:13px;">💾 Exportera backup</button>
+      <label class="btn btn-ghost" style="font-size:13px;cursor:pointer;">
+        📂 Importera backup
+        <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(this)">
+      </label>
+      <div id="importStatus" style="font-size:12px;color:var(--muted);"></div>
+    </div>
     <div class="grid-4" id="dashStats"></div>
     <div class="grid-2">
       <div class="card"><div class="card-title">Senaste blodsocker</div><div id="dashGlucose"><div style="color:var(--muted);font-size:13px;">Laddar...</div></div></div>
@@ -496,6 +504,55 @@ function showAdminToast(msg) {
   t.textContent = msg;
   t.style.opacity = '1';
   setTimeout(() => { t.style.opacity = '0'; }, 2500);
+}
+
+
+// ════════════════════════════════════════════════════════
+// EXPORT / IMPORT
+// ════════════════════════════════════════════════════════
+async function exportData() {
+  try {
+    const res = await fetch('/api/admin/export', { headers: apiHeaders() });
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'soumaya-backup-' + new Date().toISOString().split('T')[0] + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showAdminToast('✅ Backup exporterad!');
+  } catch(e) { showAdminToast('❌ Export misslyckades: ' + e.message); }
+}
+
+async function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const statusEl = document.getElementById('importStatus');
+  statusEl.textContent = 'Importerar...';
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!confirm('Importera backup från ' + (data.exportedAt || '?') + '?\nDetta skriver ÖVER all nuvarande data!')) {
+      statusEl.textContent = '';
+      return;
+    }
+    const res = await fetch('/api/admin/import', {
+      method: 'POST',
+      headers: apiHeaders(true),
+      body: JSON.stringify(data),
+    });
+    const d = await res.json();
+    if (d.ok) {
+      statusEl.textContent = '✅ Import klar! Måltider: ' + d.counts.meals + ', Promenader: ' + d.counts.walks;
+      showAdminToast('✅ Backup importerad!');
+      loadDashboard();
+    } else {
+      statusEl.textContent = '❌ ' + (d.error || 'Okänt fel');
+    }
+  } catch(e) {
+    statusEl.textContent = '❌ Fel: ' + e.message;
+  }
+  input.value = '';
 }
 
 async function doLogin() {

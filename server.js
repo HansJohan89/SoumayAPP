@@ -526,6 +526,120 @@ app.delete('/api/tasks/:id', adminAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+
+// ── EXPORT / IMPORT ──────────────────────────────────────────
+app.get('/api/admin/export', adminAuth, (req, res) => {
+  const exportData = {
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    meals,
+    walks,
+    tasks,
+    glucoseLog,
+    pendingApprovals,
+    pendingRewards,
+    subscriptions,
+  };
+  res.setHeader('Content-Disposition', 'attachment; filename="soumaya-backup-' + new Date().toISOString().split('T')[0] + '.json"');
+  res.setHeader('Content-Type', 'application/json');
+  res.json(exportData);
+});
+
+app.post('/api/admin/import', adminAuth, (req, res) => {
+  try {
+    const d = req.body;
+    if (!d || !d.version) return res.status(400).json({ error: 'Ogiltig backup-fil' });
+    if (d.meals)            { meals = d.meals;                       writeJSON(MEALS_FILE, meals); }
+    if (d.walks)            { walks = d.walks;                       writeJSON(WALKS_FILE, walks); }
+    if (d.tasks)            { tasks = d.tasks;                       writeJSON(TASKS_FILE, tasks); }
+    if (d.glucoseLog)       { glucoseLog = d.glucoseLog;             writeJSON(GLUCOSE_FILE, glucoseLog); }
+    if (d.pendingApprovals) { pendingApprovals = d.pendingApprovals; writeJSON(APPROVALS_FILE, pendingApprovals); }
+    if (d.pendingRewards)   { pendingRewards = d.pendingRewards;     writeJSON(REWARDS_FILE, pendingRewards); }
+    res.json({ ok: true, message: 'Import klar', counts: {
+      meals: meals.length, walks: walks.length, tasks: tasks.length,
+      glucose: glucoseLog.length, approvals: pendingApprovals.length,
+    }});
+  } catch(e) {
+    res.status(500).json({ error: 'Import misslyckades: ' + e.message });
+  }
+});
+
+
+// ── UPPGIFTSFOTON ────────────────────────────────────────────
+// Ladda upp ett foto till en specifik uppgift
+app.post('/api/tasks/:id/photos', upload.single('image'), (req, res) => {
+  const task = tasks.find(t => t.id === req.params.id);
+  if (!task) return res.status(404).json({ error: 'Uppgift hittades ej' });
+
+  const today = new Date().toISOString().split('T')[0];
+  if (!task.photoSubmissions) task.photoSubmissions = {};
+  if (!task.photoSubmissions[today]) task.photoSubmissions[today] = [];
+
+  const fileUrl = req.file ? '/uploads/meals/' + req.file.filename : req.body.url;
+  if (!fileUrl) return res.status(400).json({ error: 'Ingen bild skickades' });
+
+  task.photoSubmissions[today].push({
+    url: fileUrl,
+    uploadedAt: Date.now(),
+  });
+
+  const submitted = task.photoSubmissions[today].length;
+  const required = task.photoCount || 1;
+
+  // Om alla foton är uppladdade → skapa pending approval automatiskt
+  if (submitted >= required) {
+    // Kolla om det redan finns en pending approval för idag
+    const existing = pendingApprovals.find(a =>
+      a.taskId === task.id && a.date === today && a.status === 'pending'
+    );
+    if (!existing) {
+      const approvalId = crypto.randomUUID();
+      pendingApprovals.push({
+        id: approvalId,
+        type: 'task',
+        taskId: task.id,
+        taskTitle: task.title,
+        taskIcon: task.icon || '⭐',
+        xpReward: task.xpReward || 0,
+        goldReward: task.goldReward || 0,
+        photoUrls: task.photoSubmissions[today].map(p => p.url),
+        submittedAt: Date.now(),
+        status: 'pending',
+        date: today,
+      });
+      if (!task.completions) task.completions = {};
+      task.completions[today] = { status: 'pending', approvalId };
+      writeJSON(APPROVALS_FILE, pendingApprovals);
+    }
+  }
+
+  writeJSON(TASKS_FILE, tasks);
+  res.json({
+    ok: true,
+    submitted,
+    required,
+    complete: submitted >= required,
+    photos: task.photoSubmissions[today],
+  });
+});
+
+// Hämta foton för en uppgift idag
+app.get('/api/tasks/:id/photos', (req, res) => {
+  const task = tasks.find(t => t.id === req.params.id);
+  if (!task) return res.status(404).json({ error: 'Uppgift hittades ej' });
+  const today = new Date().toISOString().split('T')[0];
+  const photos = (task.photoSubmissions && task.photoSubmissions[today]) || [];
+  const required = task.photoCount || 1;
+  const comp = task.completions && task.completions[today];
+  res.json({
+    photos,
+    submitted: photos.length,
+    required,
+    complete: photos.length >= required,
+    status: comp ? (comp.status || 'approved') : 'none',
+  });
+});
+
 // ── ADMIN DASHBOARD ──────────────────────────────────────────
 app.get('/api/admin/dashboard', adminAuth, (req, res) => {
   const today = new Date().toISOString().split('T')[0];
