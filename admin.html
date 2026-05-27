@@ -360,8 +360,10 @@ tr:hover td{background:#1a1a1a}
 // ════════════════════════════════════════════════════════
 let adminToken = sessionStorage.getItem('adminToken');
 
-function apiHeaders() {
-  return { 'x-admin-token': adminToken, 'Content-Type': 'application/json' };
+function apiHeaders(withBody) {
+  const h = { 'x-admin-token': adminToken };
+  if (withBody) h['Content-Type'] = 'application/json';
+  return h;
 }
 
 async function doLogin() {
@@ -434,8 +436,9 @@ async function loadDashboard() {
 
     // Senaste glukos
     const gRes = await fetch('/api/glucose', { headers: apiHeaders() });
-    const gData = await gRes.json();
-    const recent = (gData || []).slice(-5).reverse();
+    const gRaw = await gRes.json();
+    const gData = Array.isArray(gRaw) ? gRaw : [];
+    const recent = gData.slice(-5).reverse();
     document.getElementById('dashGlucose').innerHTML = recent.length
       ? '<table><thead><tr><th>Tid</th><th>Värde</th><th>Källa</th></tr></thead><tbody>' +
         recent.map(g => {
@@ -583,7 +586,7 @@ async function createTask() {
   try {
     await fetch('/api/tasks', {
       method: 'POST',
-      headers: apiHeaders(),
+      headers: apiHeaders(true),
       body: JSON.stringify({
         title,
         icon: document.getElementById('taskIcon').value.trim() || '⭐',
@@ -611,7 +614,7 @@ async function toggleTaskActive(id, active) {
   try {
     await fetch('/api/tasks/' + id, {
       method: 'PUT',
-      headers: apiHeaders(),
+      headers: apiHeaders(true),
       body: JSON.stringify({ active })
     });
     loadTasks();
@@ -641,7 +644,7 @@ async function sendQuickPush(type) {
   try {
     const res = await fetch('/api/admin/push', {
       method: 'POST',
-      headers: apiHeaders(),
+      headers: apiHeaders(true),
       body: JSON.stringify(msg)
     });
     const d = await res.json();
@@ -658,7 +661,7 @@ async function sendCustomPush() {
   try {
     const res = await fetch('/api/admin/push', {
       method: 'POST',
-      headers: apiHeaders(),
+      headers: apiHeaders(true),
       body: JSON.stringify({ title, body })
     });
     const d = await res.json();

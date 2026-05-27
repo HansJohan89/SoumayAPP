@@ -89,28 +89,40 @@ app.get('/admin', (req, res) => {
 });
 
 // ── AUTH ─────────────────────────────────────────────────────
-const adminSessions = new Set();
+// Stateless token: base64(timestamp) + "." + hmac
+// Överlever server-restart utan att användaren behöver logga in igen
+function makeToken() {
+  const ts = Date.now().toString();
+  const sig = require('crypto').createHmac('sha256', ADMIN_PASSWORD).update(ts).digest('hex').slice(0,16);
+  return Buffer.from(ts).toString('base64') + '.' + sig;
+}
+function validToken(token) {
+  if (!token) return false;
+  try {
+    const [tsPart, sig] = token.split('.');
+    const ts = Buffer.from(tsPart, 'base64').toString();
+    const expected = require('crypto').createHmac('sha256', ADMIN_PASSWORD).update(ts).digest('hex').slice(0,16);
+    if (sig !== expected) return false;
+    // Token gäller i 30 dagar
+    return (Date.now() - parseInt(ts)) < 30 * 24 * 3600 * 1000;
+  } catch(e) { return false; }
+}
 
 function adminAuth(req, res, next) {
   const token = req.headers['x-admin-token'] || req.query.token;
-  if (token && adminSessions.has(token)) return next();
+  if (validToken(token)) return next();
   res.status(401).json({ error: 'Ej autentiserad' });
 }
 
 app.post('/api/admin/login', (req, res) => {
   if (req.body.password === ADMIN_PASSWORD) {
-    const token = crypto.randomBytes(32).toString('hex');
-    adminSessions.add(token);
-    res.json({ ok: true, token });
+    res.json({ ok: true, token: makeToken() });
   } else {
     res.status(401).json({ error: 'Fel lösenord' });
   }
 });
 
-app.post('/api/admin/logout', adminAuth, (req, res) => {
-  adminSessions.delete(req.headers['x-admin-token']);
-  res.json({ ok: true });
-});
+app.post('/api/admin/logout', (req, res) => { res.json({ ok: true }); });
 
 // ── VAPID ────────────────────────────────────────────────────
 app.get('/api/vapid-public-key', (req, res) => res.json({ key: VAPID_PUBLIC }));
