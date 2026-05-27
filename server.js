@@ -34,6 +34,8 @@ const TASKS_FILE     = path.join(DATA_DIR, 'tasks.json');
 const GLUCOSE_FILE   = path.join(DATA_DIR, 'glucose.json');
 const APPROVALS_FILE = path.join(DATA_DIR, 'approvals.json');
 const REWARDS_FILE   = path.join(DATA_DIR, 'rewards.json');
+const SETTINGS_FILE  = path.join(DATA_DIR, 'notif_settings.json');
+const SCHEDULED_FILE = path.join(DATA_DIR, 'scheduled_push.json');
 
 function readJSON(file, def) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch(e) { return def; }
@@ -49,6 +51,18 @@ let tasks           = readJSON(TASKS_FILE, []);
 let glucoseLog      = readJSON(GLUCOSE_FILE, []);
 let pendingApprovals = readJSON(APPROVALS_FILE, []);
 let pendingRewards  = readJSON(REWARDS_FILE, []);
+
+const DEFAULT_NOTIF_SETTINGS = {
+  mealTimes: ['07:30','12:00','18:00'],   // Tider för matpåminnelse
+  walkTime: '10:00',                       // Tid för promenadpåminnelse
+  mealGraceMins: 60,    // Skicka inte om hon ätit inom X min
+  walkGraceMins: 30,    // Skicka inte matnotis om hon promenerat inom X min
+  skipWalkIfDoneToday: true,
+  mealEnabled: true,
+  walkEnabled: true,
+};
+let notifSettings = readJSON(SETTINGS_FILE, DEFAULT_NOTIF_SETTINGS);
+let scheduledPush = readJSON(SCHEDULED_FILE, []);
 
 // ── MULTER ───────────────────────────────────────────────────
 const storage = multer.diskStorage({
@@ -530,7 +544,7 @@ app.delete('/api/tasks/:id', adminAuth, (req, res) => {
 // ── EXPORT / IMPORT ──────────────────────────────────────────
 app.get('/api/admin/export', adminAuth, (req, res) => {
   const exportData = {
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     meals,
     walks,
@@ -539,6 +553,8 @@ app.get('/api/admin/export', adminAuth, (req, res) => {
     pendingApprovals,
     pendingRewards,
     subscriptions,
+    notifSettings,
+    scheduledPush,
   };
   res.setHeader('Content-Disposition', 'attachment; filename="soumaya-backup-' + new Date().toISOString().split('T')[0] + '.json"');
   res.setHeader('Content-Type', 'application/json');
@@ -555,6 +571,8 @@ app.post('/api/admin/import', adminAuth, (req, res) => {
     if (d.glucoseLog)       { glucoseLog = d.glucoseLog;             writeJSON(GLUCOSE_FILE, glucoseLog); }
     if (d.pendingApprovals) { pendingApprovals = d.pendingApprovals; writeJSON(APPROVALS_FILE, pendingApprovals); }
     if (d.pendingRewards)   { pendingRewards = d.pendingRewards;     writeJSON(REWARDS_FILE, pendingRewards); }
+    if (d.notifSettings)    { notifSettings = d.notifSettings;       writeJSON(SETTINGS_FILE, notifSettings); }
+    if (d.scheduledPush)    { scheduledPush = d.scheduledPush;       writeJSON(SCHEDULED_FILE, scheduledPush); }
     res.json({ ok: true, message: 'Import klar', counts: {
       meals: meals.length, walks: walks.length, tasks: tasks.length,
       glucose: glucoseLog.length, approvals: pendingApprovals.length,
@@ -677,24 +695,133 @@ app.get('/api/admin/dashboard', adminAuth, (req, res) => {
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
 app.get('/admin.html', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
 
+
+// ── NOTIS-INSTÄLLNINGAR ───────────────────────────────────────
+app.get('/api/admin/notif-settings', adminAuth, (req, res) => {
+  res.json(notifSettings);
+});
+
+app.post('/api/admin/notif-settings', adminAuth, (req, res) => {
+  notifSettings = { ...DEFAULT_NOTIF_SETTINGS, ...req.body };
+  writeJSON(SETTINGS_FILE, notifSettings);
+  res.json({ ok: true, notifSettings });
+});
+
+// ── SCHEMALAGDA CUSTOM-NOTISER ────────────────────────────────
+app.get('/api/admin/scheduled-push', adminAuth, (req, res) => {
+  res.json(scheduledPush);
+});
+
+app.post('/api/admin/scheduled-push', adminAuth, (req, res) => {
+  const { title, body, time, repeat, date } = req.body;
+  if (!title || !body || !time) return res.status(400).json({ error: 'Saknar title/body/time' });
+  const item = {
+    id: crypto.randomUUID(),
+    title,
+    body,
+    time,           // "HH:MM"
+    repeat,         // 'daily' | 'once'
+    date: date || null,  // för once: 'YYYY-MM-DD'
+    active: true,
+    lastSent: null,
+    createdAt: Date.now(),
+  };
+  scheduledPush.push(item);
+  writeJSON(SCHEDULED_FILE, scheduledPush);
+  res.json({ ok: true, item });
+});
+
+app.delete('/api/admin/scheduled-push/:id', adminAuth, (req, res) => {
+  scheduledPush = scheduledPush.filter(s => s.id !== req.params.id);
+  writeJSON(SCHEDULED_FILE, scheduledPush);
+  res.json({ ok: true });
+});
+
+app.put('/api/admin/scheduled-push/:id', adminAuth, (req, res) => {
+  const item = scheduledPush.find(s => s.id === req.params.id);
+  if (!item) return res.status(404).json({ error: 'Hittades ej' });
+  Object.assign(item, req.body);
+  writeJSON(SCHEDULED_FILE, scheduledPush);
+  res.json({ ok: true, item });
+});
+
 // ── SCHEMALAGDA PÅMINNELSER ──────────────────────────────────
-let lastFood = 0, lastWalk = 0, lastGluc = 0;
+function nowHHMM() {
+  const d = new Date();
+  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+function todayStr2() { return new Date().toISOString().split('T')[0]; }
+function minsSince(ts) { return ts ? (Date.now() - ts) / 60000 : Infinity; }
+
+// Kör varje minut
 setInterval(async () => {
-  const now = Date.now(), h = new Date().getHours();
-  if (h < 7 || h >= 22) return;
-  if (now - lastFood > 4*3600000) {
-    await pushToAll('Dags att äta! 🐸', '*stirrar intensivt* ...mat?', 'food');
-    lastFood = now;
+  const hm = nowHHMM();
+  const today = todayStr2();
+  const now = Date.now();
+
+  // ── Senaste aktivitet ──────────────────────────────────────
+  const todayMeals = meals.filter(m => {
+    const d = new Date(m.createdAt || 0).toISOString().split('T')[0];
+    return d === today;
+  });
+  const lastMealTs = todayMeals.length
+    ? Math.max(...todayMeals.map(m => m.createdAt || 0)) : 0;
+
+  const todayWalks = walks.filter(w => {
+    const d = new Date(w.startTime || 0).toISOString().split('T')[0];
+    return d === today && !w.active;
+  });
+  const lastWalkTs = todayWalks.length
+    ? Math.max(...todayWalks.map(w => w.endTime || 0)) : 0;
+  const walkedToday = todayWalks.length > 0;
+
+  const s = notifSettings;
+
+  // ── Matpåminnelse ──────────────────────────────────────────
+  if (s.mealEnabled && (s.mealTimes || []).includes(hm)) {
+    const minsSinceMeal = minsSince(lastMealTs);
+    const minsSinceWalk = minsSince(lastWalkTs);
+    let skip = false;
+    if (minsSinceMeal < (s.mealGraceMins || 60)) skip = true;
+    if (!skip && s.walkGraceMins > 0 && minsSinceWalk < s.walkGraceMins) skip = true;
+    if (!skip) {
+      await pushToAll('Dags att äta! 🐸', '*stirrar intensivt* ...mat?', 'food');
+      console.log('Push: matpåminnelse', hm);
+    } else {
+      console.log('Skip matpåminnelse', hm, '— ätit:', Math.round(minsSinceMeal), 'min sedan, promenad:', Math.round(minsSinceWalk), 'min sedan');
+    }
   }
-  if (h === 10 && now - lastWalk > 20*3600000) {
-    await pushToAll('Dags för promenad! 💪', 'Allen väntar på dig!', 'walk');
-    lastWalk = now;
+
+  // ── Promenadpåminnelse ─────────────────────────────────────
+  if (s.walkEnabled && hm === (s.walkTime || '10:00')) {
+    if (s.skipWalkIfDoneToday && walkedToday) {
+      console.log('Skip promenadpåminnelse — redan promenerat idag');
+    } else {
+      await pushToAll('Dags för promenad! 💪', 'Allen väntar på dig!', 'walk');
+      console.log('Push: promenadpåminnelse', hm);
+    }
   }
-  if (now - lastGluc > 3*3600000) {
-    await pushToAll('Mät blodsockret!', 'Håller koll. — Omni-Man', 'glucose');
-    lastGluc = now;
+
+  // ── Schemalagda custom-notiser ─────────────────────────────
+  for (const item of scheduledPush) {
+    if (!item.active) continue;
+    if (item.time !== hm) continue;
+    if (item.repeat === 'once') {
+      const targetDate = item.date || today;
+      if (targetDate !== today) continue;
+      if (item.lastSent) continue; // redan skickad
+    }
+    if (item.repeat === 'daily' && item.lastSent) {
+      const lastSentDay = new Date(item.lastSent).toISOString().split('T')[0];
+      if (lastSentDay === today) continue; // redan skickad idag
+    }
+    await pushToAll(item.title, item.body, 'custom');
+    item.lastSent = now;
+    console.log('Push: schemalagd', item.title, hm);
   }
-}, 30*60*1000);
+  writeJSON(SCHEDULED_FILE, scheduledPush);
+
+}, 60*1000); // var 60:e sekund
 
 // ── STARTA ───────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {

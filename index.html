@@ -595,22 +595,26 @@ body{
       <canvas id="glucoseChart" style="width:100%;height:80px;"></canvas>
     </div>
   </div>
-  <div class="card">
-    <div class="card-label">Manuell loggning</div>
-    <div class="companion-row" style="margin-bottom:10px;">
-      <div class="companion-img" style="width:100px;">
-        <img id="omniGlucoseImg" style="width:100%;height:auto;object-fit:contain;" alt=""></div>
-      <div style="flex:1;">
-        <div class="companion-name" style="color:var(--pulse-red-deep);">OMNI-MAN</div>
-        <div class="speech-bubble" style="font-size:13px;">Mät. Logga. Kontrollera. Varje gång.</div>
+  <details style="margin-bottom:12px;">
+    <summary style="padding:10px 14px;background:var(--paper-soft);border:var(--border);border-radius:8px;font-size:12px;font-weight:700;color:var(--ink-muted);cursor:pointer;text-transform:uppercase;letter-spacing:1px;list-style:none;">
+      ▸ Manuell loggning (backup om xDrip är nere)
+    </summary>
+    <div class="card" style="margin-top:8px;margin-bottom:0;">
+      <div class="companion-row" style="margin-bottom:10px;">
+        <div class="companion-img" style="width:90px;flex-shrink:0;">
+          <img id="omniGlucoseImg" style="width:100%;height:auto;object-fit:contain;" alt=""></div>
+        <div style="flex:1;">
+          <div class="companion-name" style="color:var(--pulse-red-deep);">OMNI-MAN</div>
+          <div class="speech-bubble" style="font-size:13px;">Endast om xDrip inte fungerar.</div>
+        </div>
       </div>
+      <div class="input-group">
+        <label class="input-label">Blodsocker (mmol/L)</label>
+        <input type="number" class="input-field input-big" id="manualGlucose" placeholder="6.4" min="1" max="30" step="0.1" style="color:var(--in-range-dark);">
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="logManualGlucose()">LOGGA MANUELLT</button>
     </div>
-    <div class="input-group">
-      <label class="input-label">Blodsocker (mmol/L)</label>
-      <input type="number" class="input-field input-big" id="manualGlucose" placeholder="6.4" min="1" max="30" step="0.1" style="color:var(--in-range-dark);">
-    </div>
-    <button class="btn btn-primary btn-sm" onclick="logManualGlucose()">LOGGA BLODSOCKER</button>
-  </div>
+  </details>
   <div class="section-head">Senaste mätningar</div>
   <div class="card"><div id="glucoseLog"><div style="color:var(--ink-muted);text-align:center;padding:16px 0;font-weight:600;">Inga mätningar än</div></div></div>
 </div>
@@ -669,21 +673,7 @@ body{
       <input type="number" class="input-field" id="highTarget" value="8.0" min="6" max="15" step="0.1" style="width:80px;text-align:center;padding:8px;" onchange="saveSettings()">
     </div>
   </div>
-  <div class="card">
-    <div class="card-label">Påminnelser</div>
-    <div class="setting-row">
-      <div><div class="setting-label">Matpåminnelse</div><div class="setting-sub">Var 4:e timme</div></div>
-      <label class="toggle"><input type="checkbox" id="toggleFoodReminder" checked onchange="saveSettings()"><span class="toggle-slider"></span></label>
-    </div>
-    <div class="setting-row">
-      <div><div class="setting-label">Blodsockerpåminnelse</div><div class="setting-sub">Var 3:e timme</div></div>
-      <label class="toggle"><input type="checkbox" id="toggleGlucoseReminder" checked onchange="saveSettings()"><span class="toggle-slider"></span></label>
-    </div>
-    <div class="setting-row">
-      <div><div class="setting-label">Promenadpåminnelse</div><div class="setting-sub">Daglig kl 10:00</div></div>
-      <label class="toggle"><input type="checkbox" id="toggleWalkReminder" checked onchange="saveSettings()"><span class="toggle-slider"></span></label>
-    </div>
-  </div>
+
   <div class="card paper">
     <div class="card-label">Om appen</div>
     <div style="font-family:var(--font-script);font-size:18px;line-height:1.6;color:var(--ink-soft);">Byggd med kärlek.<br>Grogu, Allen &amp; Omni-Man hejar alltid på dig. 💪</div>
@@ -2977,15 +2967,37 @@ function updateAchBadge(){}
 // ═══════════════════════════════════════════════════
 // INSTÄLLNINGAR
 // ═══════════════════════════════════════════════════
-function saveSettings(){state.settings={lowTarget:parseFloat(document.getElementById('lowTarget').value)||4,highTarget:parseFloat(document.getElementById('highTarget').value)||8,foodInterval:4,glucoseReminder:document.getElementById('toggleGlucoseReminder').checked,foodReminder:document.getElementById('toggleFoodReminder').checked,walkReminder:document.getElementById('toggleWalkReminder').checked};save();showToast('Inställningar sparade!');}
-function loadSettings(){const s=state.settings;const lt=document.getElementById('lowTarget');if(lt)lt.value=s.lowTarget;const ht=document.getElementById('highTarget');if(ht)ht.value=s.highTarget;const gr=document.getElementById('toggleGlucoseReminder');if(gr)gr.checked=s.glucoseReminder;const fr=document.getElementById('toggleFoodReminder');if(fr)fr.checked=s.foodReminder;const wr=document.getElementById('toggleWalkReminder');if(wr)wr.checked=s.walkReminder;}
+function saveSettings(){
+  state.settings={
+    lowTarget: parseFloat(document.getElementById('lowTarget').value)||4,
+    highTarget: parseFloat(document.getElementById('highTarget').value)||8,
+  };
+  save();
+  showToast('Inställningar sparade!');
+}
+function loadSettings(){
+  const s=state.settings||{};
+  const lt=document.getElementById('lowTarget'); if(lt) lt.value=s.lowTarget||4;
+  const ht=document.getElementById('highTarget'); if(ht) ht.value=s.highTarget||8;
+}
 
 // ═══════════════════════════════════════════════════
 // PUSH, KLOCKA, AVATARS
 // ═══════════════════════════════════════════════════
 function urlBase64ToUint8Array(b){const p='='.repeat((4-b.length%4)%4);const base64=(b+p).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(base64);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));}
 async function setupPush(){if(!('serviceWorker'in navigator)||!('PushManager'in window))return;try{const perm=await Notification.requestPermission();if(perm!=='granted')return;const reg=await navigator.serviceWorker.ready;const res=await fetch('/api/vapid-public-key');const{key}=await res.json();let sub=await reg.pushManager.getSubscription();if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(key)});await fetch('/api/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(sub.toJSON())});}catch(e){console.warn('Push:',e.message);}}
-function startReminders(){setInterval(()=>{const h=new Date().getHours();if(h<7||h>=22)return;const last=state.glucoseHistory[state.glucoseHistory.length-1];if(last&&state.settings.glucoseReminder){if(last.val<state.settings.lowTarget)showToast('⚠️ LÅGT BLODSOCKER!');else if(last.val>state.settings.highTarget*1.5)showToast('⚠️ HÖGT BLODSOCKER!');}},5*60*1000);}
+function startReminders(){
+  // Kolla lågt/högt blodsocker lokalt (kritiska varningar)
+  setInterval(()=>{
+    const last=state.glucoseHistory[state.glucoseHistory.length-1];
+    if(!last) return;
+    const low=state.settings.lowTarget||4;
+    const high=state.settings.highTarget||8;
+    if(last.val<low) showToast('⚠️ LÅGT BLODSOCKER! '+last.val.toFixed(1)+' mmol/L');
+    else if(last.val>high*1.5) showToast('⚠️ HÖGT BLODSOCKER! '+last.val.toFixed(1)+' mmol/L');
+  }, 5*60*1000);
+  // Alla påminnelser (mat, promenad) sköts av servern via push
+}
 let toastTimeout;
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>t.classList.remove('show'),2800);}
 function updateClock(){const now=new Date();const ht=document.getElementById('headerTime');if(ht)ht.textContent=now.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});const hd=document.getElementById('headerDate');if(hd)hd.textContent=now.toLocaleDateString('sv-SE',{weekday:'short',day:'numeric',month:'short'});}

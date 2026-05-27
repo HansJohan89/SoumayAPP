@@ -165,6 +165,10 @@ tr:hover td{background:#1a1a1a}
       <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
       Push-notiser
     </div>
+    <div class="nav-item" onclick="goTo('notif',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      Notis-schema
+    </div>
     <div class="nav-item" onclick="goTo('achievements',this)">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
       Achievements
@@ -400,6 +404,87 @@ tr:hover td{background:#1a1a1a}
     <div id="approvalsList"><div style="color:var(--muted);font-size:13px;">Laddar...</div></div>
   </section>
 
+
+  <!-- NOTIS-SCHEMA -->
+  <section class="page-section" id="sec-notif">
+    <div class="page-title">Notis-schema</div>
+
+    <!-- Matpåminnelser -->
+    <div class="card">
+      <div class="card-title">🍽️ Matpåminnelser</div>
+      <div class="form-group">
+        <label class="form-label">Tider (HH:MM — en per rad, max 5)</label>
+        <textarea class="form-textarea" id="mealTimesInput" rows="5" placeholder="07:30&#10;12:00&#10;18:00"></textarea>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Hoppa över om hon ätit inom (minuter)</label>
+          <input type="number" class="form-input" id="mealGraceMins" value="60" min="0" max="240">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hoppa över om hon promenerat inom (minuter, 0 = av)</label>
+          <input type="number" class="form-input" id="walkGraceMins" value="30" min="0" max="120">
+        </div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;margin-bottom:14px;">
+        <input type="checkbox" id="mealEnabled" style="width:16px;height:16px;"> Matpåminnelser aktiva
+      </label>
+    </div>
+
+    <!-- Promenadpåminnelse -->
+    <div class="card">
+      <div class="card-title">🚶 Promenadpåminnelse</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Tid (HH:MM)</label>
+          <input type="time" class="form-input" id="walkTime" value="10:00">
+        </div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;margin-bottom:14px;">
+        <input type="checkbox" id="walkEnabled" style="width:16px;height:16px;"> Promenadpåminnelse aktiv
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;margin-bottom:14px;">
+        <input type="checkbox" id="skipWalkIfDoneToday" style="width:16px;height:16px;"> Hoppa över om hon redan promenerat idag
+      </label>
+      <button class="btn btn-primary" onclick="saveNotifSettings()" style="width:100%;">💾 SPARA INSTÄLLNINGAR</button>
+      <div id="notifSaveStatus" style="margin-top:8px;font-size:13px;color:var(--muted);"></div>
+    </div>
+
+    <!-- Schemalagda custom-notiser -->
+    <div class="card">
+      <div class="card-title">📅 Schemalagda notiser</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Titel</label>
+          <input type="text" class="form-input" id="schedTitle" placeholder="Kvällspåminnelse">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tid (HH:MM)</label>
+          <input type="time" class="form-input" id="schedTime" value="21:00">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Meddelande</label>
+        <textarea class="form-textarea" id="schedBody" rows="2" placeholder="Kom ihåg att logga kvällsmålet!"></textarea>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Upprepning</label>
+          <select class="form-select" id="schedRepeat" onchange="toggleSchedDate()">
+            <option value="daily">🔁 Varje dag</option>
+            <option value="once">1️⃣ Engång</option>
+          </select>
+        </div>
+        <div class="form-group" id="schedDateRow" style="display:none;">
+          <label class="form-label">Datum</label>
+          <input type="date" class="form-input" id="schedDate">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="createScheduled()" style="width:100%;margin-bottom:14px;">➕ LÄGG TILL</button>
+      <div id="scheduledList"></div>
+    </div>
+  </section>
+
 <!-- BILD-MODAL -->
 <div id="photoModal" onclick="closePhotoModal()">
   <div class="modal" onclick="event.stopPropagation()">
@@ -555,6 +640,142 @@ async function importData(input) {
   input.value = '';
 }
 
+
+// ════════════════════════════════════════════════════════
+// NOTIS-INSTÄLLNINGAR
+// ════════════════════════════════════════════════════════
+async function loadNotifSettings() {
+  try {
+    const [sRes, schRes] = await Promise.all([
+      fetch('/api/admin/notif-settings', { headers: apiHeaders() }),
+      fetch('/api/admin/scheduled-push', { headers: apiHeaders() }),
+    ]);
+    const s = await sRes.json();
+    const sched = await schRes.json();
+
+    // Fyll i formuläret
+    document.getElementById('mealTimesInput').value = (s.mealTimes || []).join('\n');
+    document.getElementById('mealGraceMins').value = s.mealGraceMins ?? 60;
+    document.getElementById('walkGraceMins').value = s.walkGraceMins ?? 30;
+    document.getElementById('walkTime').value = s.walkTime || '10:00';
+    document.getElementById('mealEnabled').checked = s.mealEnabled !== false;
+    document.getElementById('walkEnabled').checked = s.walkEnabled !== false;
+    document.getElementById('skipWalkIfDoneToday').checked = s.skipWalkIfDoneToday !== false;
+
+    renderScheduledList(sched);
+  } catch(e) { console.error('loadNotifSettings:', e); }
+}
+
+async function saveNotifSettings() {
+  const timesRaw = document.getElementById('mealTimesInput').value;
+  const mealTimes = timesRaw.split('\n')
+    .map(t => t.trim())
+    .filter(t => /^\d{2}:\d{2}$/.test(t))
+    .slice(0, 5);
+
+  const settings = {
+    mealTimes,
+    mealGraceMins: parseInt(document.getElementById('mealGraceMins').value) || 60,
+    walkGraceMins: parseInt(document.getElementById('walkGraceMins').value) || 0,
+    walkTime: document.getElementById('walkTime').value || '10:00',
+    mealEnabled: document.getElementById('mealEnabled').checked,
+    walkEnabled: document.getElementById('walkEnabled').checked,
+    skipWalkIfDoneToday: document.getElementById('skipWalkIfDoneToday').checked,
+  };
+
+  try {
+    const res = await fetch('/api/admin/notif-settings', {
+      method: 'POST',
+      headers: apiHeaders(true),
+      body: JSON.stringify(settings),
+    });
+    const d = await res.json();
+    const el = document.getElementById('notifSaveStatus');
+    if (d.ok) {
+      el.textContent = '✅ Sparat! Matpåminnelser: ' + (d.notifSettings.mealTimes || []).join(', ');
+      el.style.color = 'var(--green)';
+      showAdminToast('✅ Notis-inställningar sparade!');
+    }
+  } catch(e) {
+    document.getElementById('notifSaveStatus').textContent = '❌ ' + e.message;
+  }
+}
+
+function toggleSchedDate() {
+  const repeat = document.getElementById('schedRepeat').value;
+  document.getElementById('schedDateRow').style.display = repeat === 'once' ? 'block' : 'none';
+}
+
+async function createScheduled() {
+  const title = document.getElementById('schedTitle').value.trim();
+  const body  = document.getElementById('schedBody').value.trim();
+  const time  = document.getElementById('schedTime').value;
+  const repeat = document.getElementById('schedRepeat').value;
+  const date  = document.getElementById('schedDate').value;
+
+  if (!title || !body || !time) { alert('Fyll i titel, meddelande och tid'); return; }
+
+  try {
+    await fetch('/api/admin/scheduled-push', {
+      method: 'POST',
+      headers: apiHeaders(true),
+      body: JSON.stringify({ title, body, time, repeat, date: repeat === 'once' ? date : null }),
+    });
+    document.getElementById('schedTitle').value = '';
+    document.getElementById('schedBody').value = '';
+    showAdminToast('✅ Notis schemalagd!');
+    loadNotifSettings();
+  } catch(e) { alert('Fel: ' + e.message); }
+}
+
+async function deleteScheduled(id) {
+  if (!confirm('Ta bort schemalagd notis?')) return;
+  await fetch('/api/admin/scheduled-push/' + id, { method: 'DELETE', headers: apiHeaders() });
+  loadNotifSettings();
+}
+
+async function toggleScheduled(id, active) {
+  await fetch('/api/admin/scheduled-push/' + id, {
+    method: 'PUT',
+    headers: apiHeaders(true),
+    body: JSON.stringify({ active }),
+  });
+  loadNotifSettings();
+}
+
+function renderScheduledList(items) {
+  const el = document.getElementById('scheduledList');
+  if (!items || !items.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;">Inga schemalagda notiser</div>';
+    return;
+  }
+  el.innerHTML = items.map(item => {
+    const lastSent = item.lastSent
+      ? new Date(item.lastSent).toLocaleString('sv-SE', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+      : 'Aldrig';
+    return '<div class="task-item ' + (item.active ? '' : 'inactive') + '" style="margin-bottom:8px;">' +
+      '<div style="display:flex;align-items:flex-start;gap:8px;">' +
+        '<div style="flex:1;">' +
+          '<div style="font-weight:700;font-size:14px;">' + item.title + '</div>' +
+          '<div style="font-size:12px;color:var(--muted);margin-top:2px;">' + item.body + '</div>' +
+          '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">' +
+            '<span class="badge badge-blue">🕐 ' + item.time + '</span>' +
+            '<span class="badge badge-purple">' + (item.repeat === 'daily' ? '🔁 Dagligen' : '1️⃣ ' + (item.date || 'Engång')) + '</span>' +
+            '<span class="badge ' + (item.active ? 'badge-green' : 'badge-red') + '">' + (item.active ? 'Aktiv' : 'Pausad') + '</span>' +
+            '<span style="font-size:11px;color:var(--muted);">Senast skickad: ' + lastSent + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-shrink:0;">' +
+          '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;">' +
+            '<input type="checkbox" ' + (item.active ? 'checked' : '') + ' data-sid="' + item.id + '" onchange="toggleScheduled(this.dataset.sid,this.checked)"> På' +
+          '</label>' +
+          '<button class="btn btn-red btn-sm" data-sid="' + item.id + '" onclick="deleteScheduled(this.dataset.sid)">🗑️</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
 async function doLogin() {
   const pw = document.getElementById('passwordInput').value;
   if (!pw) return;
@@ -604,6 +825,7 @@ function goTo(page, el) {
     push:         loadPush,
     achievements: loadAchievements,
     approvals:    loadApprovals,
+    notif:        loadNotifSettings,
   };
   if (loaders[page]) loaders[page]();
 }
