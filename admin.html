@@ -157,6 +157,10 @@ tr:hover td{background:#1a1a1a}
       <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
       Uppgifter
     </div>
+    <div class="nav-item" onclick="goTo('approvals',this)" id="nav-approvals">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Godkänn foton <span id="approvalsBadge" style="background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px;display:none;"></span>
+    </div>
     <div class="nav-item" onclick="goTo('push',this)">
       <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
       Push-notiser
@@ -232,6 +236,43 @@ tr:hover td{background:#1a1a1a}
             <option value="normal" selected>⭐⭐ Normal</option>
             <option value="hard">⭐⭐⭐ Svår</option>
           </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hur slutförs uppgiften?</label>
+          <select class="form-select" id="taskCompletionType" onchange="showCompletionFields()">
+            <option value="manual">🖐 Manuellt (knapptryckning)</option>
+            <option value="distance">🚶 Automatiskt — gångavstånd (km)</option>
+            <option value="minutes">⏱ Automatiskt — promenadminuter</option>
+            <option value="glucose_tir">🩸 Automatiskt — blodsocker i mål (min)</option>
+            <option value="combo">🎯 Kombination (manuell + datakrav)</option>
+          </select>
+        </div>
+        <div id="completionFields" style="display:none;background:#1a1a2e;border:1.5px solid var(--blue);border-radius:8px;padding:14px;margin-bottom:14px;">
+          <div id="distanceField" style="display:none;">
+            <label class="form-label">Målsträcka (km)</label>
+            <input type="number" class="form-input" id="taskTargetDistance" placeholder="5.0" min="0.1" max="50" step="0.1">
+          </div>
+          <div id="minutesField" style="display:none;">
+            <label class="form-label">Målminuter promenad</label>
+            <input type="number" class="form-input" id="taskTargetMinutes" placeholder="30" min="1" max="300">
+          </div>
+          <div id="tirField" style="display:none;">
+            <label class="form-label">Minuter i målzonen (4–8 mmol/L)</label>
+            <input type="number" class="form-input" id="taskTargetTIR" placeholder="120" min="30" max="1440">
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">Ex: 120 = 2 timmar i blodsockermål</div>
+          </div>
+          <div id="comboField" style="display:none;">
+            <div class="grid-2">
+              <div>
+                <label class="form-label">Minsta km (0 = valfritt)</label>
+                <input type="number" class="form-input" id="taskComboKm" placeholder="0" min="0" step="0.1">
+              </div>
+              <div>
+                <label class="form-label">Minsta promenadmin (0 = valfritt)</label>
+                <input type="number" class="form-input" id="taskComboMin" placeholder="0" min="0">
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="form-group">
@@ -344,6 +385,13 @@ tr:hover td{background:#1a1a1a}
 
 </main>
 
+
+  <!-- GODKÄNN FOTON -->
+  <section class="page-section" id="sec-approvals">
+    <div class="page-title">Godkänn foton</div>
+    <div id="approvalsList"><div style="color:var(--muted);font-size:13px;">Laddar...</div></div>
+  </section>
+
 <!-- BILD-MODAL -->
 <div id="photoModal" onclick="closePhotoModal()">
   <div class="modal" onclick="event.stopPropagation()">
@@ -364,6 +412,90 @@ function apiHeaders(withBody) {
   const h = { 'x-admin-token': adminToken };
   if (withBody) h['Content-Type'] = 'application/json';
   return h;
+}
+
+
+// ════════════════════════════════════════════════════════
+// GODKÄNN FOTON
+// ════════════════════════════════════════════════════════
+async function loadApprovals() {
+  try {
+    const res = await fetch('/api/admin/approvals', { headers: apiHeaders() });
+    const data = await res.json();
+    const el = document.getElementById('approvalsList');
+
+    // Uppdatera badge
+    const badge = document.getElementById('approvalsBadge');
+    if (badge) {
+      if (data.length > 0) { badge.textContent = data.length; badge.style.display = 'inline'; }
+      else badge.style.display = 'none';
+    }
+
+    if (!data.length) {
+      el.innerHTML = '<div class="card" style="text-align:center;padding:32px;"><div style="font-size:40px;margin-bottom:12px;">✅</div><div style="font-size:16px;font-weight:700;">Inga väntande godkännanden</div></div>';
+      return;
+    }
+
+    el.innerHTML = data.map(a => {
+      const type = a.type === 'meal' ? '🍽️ Måltid' : '📋 Uppgift';
+      const title = a.mealName || a.taskTitle || 'Okänd';
+      const time = new Date(a.submittedAt).toLocaleString('sv-SE', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+      const photos = (a.photoUrls || []).map(url =>
+        '<img src="' + url + '" style="width:120px;height:120px;object-fit:cover;border-radius:6px;cursor:pointer;border:1.5px solid var(--border2);" data-url="'+url+'" onclick="openPhoto(this.dataset.url)">'
+      ).join('');
+      return '<div class="card" style="margin-bottom:16px;">' +
+        '<div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:12px;">' +
+          '<div>' +
+            '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">' + type + ' · ' + time + '</div>' +
+            '<div style="font-size:18px;font-weight:700;margin-bottom:6px;">' + title + '</div>' +
+            '<div style="display:flex;gap:6px;">' +
+              (a.xpReward ? '<span class="badge badge-green">+' + a.xpReward + ' XP</span>' : '') +
+              (a.goldReward ? '<span class="badge badge-yellow">+' + a.goldReward + ' 🪙</span>' : '') +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        (photos ? '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">' + photos + '</div>' : '') +
+        '<div style="margin-bottom:8px;">' +
+          '<label class="form-label">Kommentar till Soumaya (valfritt)</label>' +
+          '<input type="text" class="form-input approval-note" data-aid="' + a.id + '" placeholder="Bra jobbat! / Försök igen...">' +
+        '</div>' +
+        '<div style="display:flex;gap:10px;">' +
+          '<button class="btn" style="flex:1;background:var(--green);color:#000;font-weight:700;" data-aid="' + a.id + '" onclick="decideApproval(this.dataset.aid,\'approve\')">✅ GODKÄNN</button>' +
+          '<button class="btn btn-red" style="flex:1;" data-aid="' + a.id + '" onclick="decideApproval(this.dataset.aid,\'reject\')">❌ AVVISA</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) { console.error('Approvals:', e); }
+}
+
+async function decideApproval(id, action) {
+  const noteEl = document.querySelector('.approval-note[data-aid="' + id + '"]');
+  const note = noteEl ? noteEl.value : '';
+  try {
+    const res = await fetch('/api/admin/approvals/' + id, {
+      method: 'POST',
+      headers: apiHeaders(true),
+      body: JSON.stringify({ action, note })
+    });
+    const d = await res.json();
+    if (d.ok) {
+      showAdminToast(action === 'approve' ? '✅ Godkänt — belöning skickad!' : '❌ Avvisat');
+      loadApprovals();
+    }
+  } catch(e) { console.error('Decide:', e); }
+}
+
+function showAdminToast(msg) {
+  let t = document.getElementById('adminToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'adminToast';
+    t.style.cssText = 'position:fixed;top:20px;right:20px;background:#222;color:#FFE600;padding:12px 20px;border-radius:8px;font-weight:700;z-index:9999;border:2px solid #FFE600;transition:opacity .3s;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  setTimeout(() => { t.style.opacity = '0'; }, 2500);
 }
 
 async function doLogin() {
@@ -414,6 +546,7 @@ function goTo(page, el) {
     tasks:        loadTasks,
     push:         loadPush,
     achievements: loadAchievements,
+    approvals:    loadApprovals,
   };
   if (loaders[page]) loaders[page]();
 }
@@ -498,7 +631,7 @@ async function loadMeals() {
       data.map(m => {
         const t = new Date(m.createdAt||m.time||Date.now()).toLocaleString('sv-SE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
         const pics = [m.beforeImage, m.afterImage].filter(Boolean).map(url =>
-          '<img src="' + url + '" style="width:40px;height:40px;object-fit:cover;border-radius:4px;cursor:pointer;" onclick="openPhoto(\'' + url + '\')">'
+          '<img src="' + url + '" data-url="' + url + '" onclick="openPhoto(this.dataset.url)" style="width:120px;height:120px;object-fit:cover;border-radius:6px;cursor:pointer;border:1.5px solid var(--border2);">'
         ).join(' ');
         return '<tr><td>' + t + '</td><td>' + (m.name||'?') + '</td><td>' + (m.carbs||0) + 'g</td><td>' + (m.mealType||'?') + '</td><td>' + (pics||'—') + '</td></tr>';
       }).join('') + '</tbody></table>';
@@ -534,6 +667,20 @@ function setTaskFilter(filter, btn) {
   loadTasks();
 }
 
+function showCompletionFields() {
+  const type = document.getElementById('taskCompletionType').value;
+  const container = document.getElementById('completionFields');
+  const fields = ['distanceField','minutesField','tirField','comboField'];
+  const map = {distance:'distanceField', minutes:'minutesField', glucose_tir:'tirField', combo:'comboField'};
+  fields.forEach(f => document.getElementById(f).style.display = 'none');
+  if (map[type]) {
+    container.style.display = 'block';
+    document.getElementById(map[type]).style.display = 'block';
+  } else {
+    container.style.display = 'none';
+  }
+}
+
 function togglePhotoCount() {
   const cb = document.getElementById('taskRequirePhotos');
   document.getElementById('photoCountRow').style.display = cb.checked ? 'block' : 'none';
@@ -554,7 +701,9 @@ async function loadTasks() {
     const el = document.getElementById('tasksList');
     if (!tasks.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;">Inga uppgifter</div>'; return; }
     el.innerHTML = tasks.map(t => {
-      const doneToday = t.completions && t.completions[today];
+      const comp = t.completions && t.completions[today];
+      const doneToday = comp && (comp.status === 'approved' || comp === true);
+      const pendingToday = comp && comp.status === 'pending';
       return '<div class="task-item ' + (t.active ? '' : 'inactive') + '">' +
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
           '<span style="font-size:22px;">' + (t.icon||'⭐') + '</span>' +
@@ -567,10 +716,12 @@ async function loadTasks() {
         '</div>' +
         '<div class="task-meta">' +
           '<span class="badge badge-blue">' + (t.type==='daily'?'🔁 Daglig':t.type==='once'?'1️⃣ Engång':'📅 Veckovis') + '</span>' +
+          (t.completionType && t.completionType!=='manual' ? '<span class="badge badge-purple">' + {distance:'🚶 Km',minutes:'⏱ Min',glucose_tir:'🩸 TIR',combo:'🎯 Kombo'}[t.completionType] + '</span>' : '') +
           (t.xpReward ? '<span class="badge badge-green">+' + t.xpReward + ' XP</span>' : '') +
           (t.goldReward ? '<span class="badge badge-yellow">+' + t.goldReward + ' 🪙</span>' : '') +
-          (t.requirePhotos ? '<span class="badge badge-purple">📷 ' + t.photoCount + ' foto</span>' : '') +
+          (t.requirePhotos ? '<span class="badge badge-purple">📷 kräver godkännande</span>' : '') +
           (doneToday ? '<span class="badge badge-green">✅ Klar idag</span>' : '') +
+          (pendingToday ? '<span class="badge badge-yellow">🕐 Väntar godkännande</span>' : '') +
         '</div>' +
         '<div style="display:flex;gap:8px;margin-top:8px;">' +
           '<button class="btn btn-red btn-sm" onclick="deleteTask(\'' + t.id + '\')">🗑️ Ta bort</button>' +
@@ -593,6 +744,10 @@ async function createTask() {
         description: document.getElementById('taskDesc').value.trim(),
         type: document.getElementById('taskType').value,
         difficulty: document.getElementById('taskDifficulty').value,
+        completionType: document.getElementById('taskCompletionType').value,
+        targetDistance: parseFloat(document.getElementById('taskTargetDistance').value) || 0,
+        targetMinutes: parseInt(document.getElementById('taskTargetMinutes').value) || 0,
+        targetTIR: parseInt(document.getElementById('taskTargetTIR').value) || 0,
         xpReward: parseInt(document.getElementById('taskXP').value) || 0,
         goldReward: parseInt(document.getElementById('taskGold').value) || 0,
         reward: document.getElementById('taskReward').value.trim(),
@@ -600,12 +755,14 @@ async function createTask() {
         photoCount: parseInt(document.getElementById('taskPhotoCount').value) || 1,
       })
     });
-    ['taskTitle','taskDesc','taskReward'].forEach(id => document.getElementById(id).value = '');
+    ['taskTitle','taskDesc','taskReward','taskTargetDistance','taskTargetMinutes','taskTargetTIR'].forEach(id => { const e=document.getElementById(id); if(e) e.value=''; });
     document.getElementById('taskIcon').value = '⭐';
     document.getElementById('taskXP').value = '50';
     document.getElementById('taskGold').value = '10';
     document.getElementById('taskRequirePhotos').checked = false;
     document.getElementById('photoCountRow').style.display = 'none';
+    document.getElementById('taskCompletionType').value = 'manual';
+    document.getElementById('completionFields').style.display = 'none';
     loadTasks();
   } catch(e) { alert('Fel: ' + e.message); }
 }
@@ -739,14 +896,19 @@ function closePhotoModal() {
 // INIT
 // ════════════════════════════════════════════════════════
 if (adminToken) {
-  // Verifiera att token fortfarande är giltig (servern kan ha bytt lösenord)
   fetch('/api/admin/dashboard', { headers: { 'x-admin-token': adminToken } })
     .then(r => {
       if (r.ok) {
         document.getElementById('loginScreen').style.display = 'none';
         loadDashboard();
+        // Kolla pending approvals och visa badge
+        fetch('/api/admin/approvals', { headers: { 'x-admin-token': adminToken } })
+          .then(r2 => r2.json())
+          .then(data => {
+            const badge = document.getElementById('approvalsBadge');
+            if (badge && data.length > 0) { badge.textContent = data.length; badge.style.display = 'inline'; }
+          }).catch(()=>{});
       } else {
-        // Token ogiltig - rensa och visa login
         sessionStorage.removeItem('adminToken');
         adminToken = null;
       }

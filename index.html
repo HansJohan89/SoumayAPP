@@ -358,6 +358,15 @@ body{
   text-orientation:mixed;
 }
 
+
+.task-row.task-pending { opacity:.8; }
+.task-pending-badge {
+  flex-shrink:0; font-size:11px; font-weight:700;
+  color:var(--high); border:1.5px solid var(--high);
+  border-radius:8px; padding:6px 8px; text-align:center;
+}
+.task-rew-badge.auto { color:var(--hero-blue); border-color:var(--hero-blue); }
+
 </style>
 </head>
 <body>
@@ -2085,40 +2094,87 @@ async function completeTask(taskId) {
   const task = cachedTasks.find(t => t.id === taskId);
   if (!task) return;
 
-  // Kolla om kräver foton
+  // Samla foto-URLs om uppgiften kräver det
+  let photoUrls = [];
   if (task.requirePhotos) {
-    showToast('📷 Foto krävs — logga via Mat-sidan!');
-    return;
+    // Hämta senaste måltids-bilder från foodLog
+    const lastMeal = state.foodLog && state.foodLog[0];
+    if (lastMeal && lastMeal.complete) {
+      showToast('📋 Skickar till admin för godkännande…');
+    } else {
+      showToast('📷 Logga en måltid med foton först!');
+      return;
+    }
   }
 
   try {
-    const res = await fetch('/api/tasks/'+taskId+'/complete', { method:'POST' });
+    const res = await fetch('/api/tasks/'+taskId+'/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photoUrls })
+    });
     const data = await res.json();
     if (data.ok) {
-      // Ge XP och guld
+      if (data.status === 'pending') {
+        showToast('🕐 Skickat! Väntar på admin-godkännande');
+        await fetchTasks();
+        renderTasksWidget();
+        return;
+      }
       if (data.xpReward) {
+        const oldLevel = getLevelData(state.totalXP||0).current.level;
         state.totalXP = (state.totalXP||0) + data.xpReward;
         const newLevel = getLevelData(state.totalXP).current.level;
-        const oldLevel = getLevelData(state.totalXP - data.xpReward).current.level;
         if (newLevel > oldLevel) showToast('🎉 LEVEL UP! Nivå '+newLevel+'!');
       }
-      if (data.goldReward) {
-        state.gold = (state.gold||0) + data.goldReward;
-      }
+      if (data.goldReward) state.gold = (state.gold||0) + data.goldReward;
       save();
       showToast((task.reward || 'Uppgift klar!') + (data.xpReward ? ' +'+data.xpReward+' XP' : '') + (data.goldReward ? ' +'+data.goldReward+' 🪙' : ''));
+      await fetchTasks();
       renderTasksWidget();
       renderHome();
     }
   } catch(e) { showToast('Kunde inte slutföra uppgiften'); }
 }
 
+// Hämta och applicera pending rewards från servern
+async function claimPendingRewards() {
+  try {
+    const res = await fetch('/api/rewards/claim', { method: 'POST' });
+    const data = await res.json();
+    const rewards = data.rewards || [];
+    if (!rewards.length) return;
+    let totalXP = 0, totalGold = 0;
+    rewards.forEach(r => {
+      totalXP += r.xpReward || 0;
+      totalGold += r.goldReward || 0;
+    });
+    if (totalXP > 0) {
+      const oldLevel = getLevelData(state.totalXP||0).current.level;
+      state.totalXP = (state.totalXP||0) + totalXP;
+      const newLevel = getLevelData(state.totalXP).current.level;
+      if (newLevel > oldLevel) showToast('🎉 LEVEL UP! Nivå '+newLevel+'!');
+    }
+    if (totalGold > 0) state.gold = (state.gold||0) + totalGold;
+    save();
+    const msg = rewards[0].message || 'Belöning mottagen!';
+    if (totalXP || totalGold) showToast('🎉 ' + msg + (totalXP?' +'+totalXP+' XP':'') + (totalGold?' +'+totalGold+' 🪙':''));
+    await fetchTasks(); renderTasksWidget();
+  } catch(e) {}
+}
+
 function renderTasksWidget() {
   const el = document.getElementById('tasksWidget'); if (!el) return;
   const today = new Date().toISOString().split('T')[0];
-  const activeTasks = cachedTasks.filter(t => t.active && (t.type === 'daily' || t.type === 'once' || t.type === 'weekly'));
+  const activeTasks = cachedTasks.filter(t => t.active);
+
   const visibleTasks = activeTasks.filter(t => {
-    if (t.type === 'once' && t.completions && Object.keys(t.completions).length > 0) return false;
+    if (t.type === 'once') {
+      const comp = t.completions && t.completions[today];
+      if (!comp) return true;
+      if (comp && (comp.status === 'approved' || comp === true)) return false;
+      return true; // pending = visa fortfarande
+    }
     return true;
   });
 
@@ -2128,27 +2184,67 @@ function renderTasksWidget() {
   }
 
   el.innerHTML = visibleTasks.map(t => {
-    const doneToday = t.completions && t.completions[today];
+    const comp = t.completions && t.completions[today];
+    const doneToday = comp && (comp.status === 'approved' || comp === true);
+    const pendingToday = comp && comp.status === 'pending';
+
+    // Progress för data-kopplade uppgifter
+    let progressHtml = '';
+    const p = t.progress || {};
+    if (!doneToday && !pendingToday) {
+      if (t.completionType === 'distance' && t.targetDistance > 0) {
+        const pct = Math.min(100, Math.round((p.km || 0) / t.targetDistance * 100));
+        progressHtml = renderProgressBar(p.km?.toFixed(1) || '0.0', t.targetDistance, 'km', pct, 'var(--hero-blue)');
+      } else if (t.completionType === 'minutes' && t.targetMinutes > 0) {
+        const pct = Math.min(100, Math.round((p.minutes || 0) / t.targetMinutes * 100));
+        progressHtml = renderProgressBar(p.minutes || 0, t.targetMinutes, 'min', pct, 'var(--hero-blue)');
+      } else if (t.completionType === 'glucose_tir' && t.targetTIR > 0) {
+        const pct = Math.min(100, Math.round((p.tirMinutes || 0) / t.targetTIR * 100));
+        progressHtml = renderProgressBar(Math.round(p.tirMinutes || 0), t.targetTIR, 'min i mål', pct, 'var(--in-range)');
+      }
+    }
+
+    const isAuto = t.completionType && t.completionType !== 'manual';
     const diffColor = {easy:'var(--in-range-dark)',normal:'var(--hero-blue)',hard:'var(--pulse-red-deep)'}[t.difficulty||'normal'];
-    return '<div class="task-row '+(doneToday?'task-done':'')+'">' +
+
+    return '<div class="task-row ' + (doneToday?'task-done':pendingToday?'task-pending':'') + '">' +
       '<div class="task-row-left">' +
-        '<div class="task-row-icon" style="border-color:'+diffColor+';">'+( t.icon||'⭐')+'</div>' +
+        '<div class="task-row-icon" style="border-color:' + diffColor + ';">' + (t.icon||'⭐') + '</div>' +
         '<div class="task-row-info">' +
-          '<div class="task-row-title">'+(doneToday?'<s>':'')+t.title+(doneToday?'</s>':'')+'</div>' +
-          (t.description ? '<div class="task-row-desc">'+t.description+'</div>' : '') +
+          '<div class="task-row-title">' + (doneToday?'<s>':'') + t.title + (doneToday?'</s>':'') + '</div>' +
+          (t.description ? '<div class="task-row-desc">' + t.description + '</div>' : '') +
+          progressHtml +
           '<div class="task-row-rewards">' +
-            (t.xpReward ? '<span class="task-rew-badge xp">+'+t.xpReward+' XP</span>' : '') +
-            (t.goldReward ? '<span class="task-rew-badge gold">+'+t.goldReward+' 🪙</span>' : '') +
-            (t.requirePhotos ? '<span class="task-rew-badge photo">📷 foto</span>' : '') +
+            (t.xpReward ? '<span class="task-rew-badge xp">+' + t.xpReward + ' XP</span>' : '') +
+            (t.goldReward ? '<span class="task-rew-badge gold">+' + t.goldReward + ' 🪙</span>' : '') +
+            (t.requirePhotos ? '<span class="task-rew-badge photo">📷 kräver foto</span>' : '') +
+            (isAuto ? '<span class="task-rew-badge auto">⚡ auto</span>' : '') +
           '</div>' +
         '</div>' +
       '</div>' +
       (doneToday
         ? '<div class="task-check">✅</div>'
-        : '<button class="task-complete-btn" data-tid="'+t.id+'" onclick="completeTask(this.dataset.tid)">KLAR!</button>') +
+        : pendingToday
+          ? '<div class="task-pending-badge">🕐 Väntar</div>'
+          : isAuto
+            ? '<div style="font-size:11px;color:var(--ink-muted);font-weight:700;text-align:center;flex-shrink:0;">Auto</div>'
+            : '<button class="task-complete-btn" data-tid="' + t.id + '" onclick="completeTask(this.dataset.tid)">KLAR!</button>') +
     '</div>';
   }).join('');
 }
+
+function renderProgressBar(current, target, unit, pct, color) {
+  return '<div style="margin:4px 0 2px;">' +
+    '<div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:var(--ink-muted);margin-bottom:2px;">' +
+      '<span>' + current + ' / ' + target + ' ' + unit + '</span>' +
+      '<span>' + pct + '%</span>' +
+    '</div>' +
+    '<div style="height:5px;border-radius:3px;background:var(--paper-dark);overflow:hidden;">' +
+      '<div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:3px;transition:width .5s;"></div>' +
+    '</div>' +
+  '</div>';
+}
+
 
 function renderAchievementsWidget() {
   const el = document.getElementById('achWidget'); if (!el) return;
@@ -2700,6 +2796,7 @@ state.appOpens=(state.appOpens||0)+1;
 loadSettings(); updateClock(); setInterval(updateClock,10000); updateGoldDisplay();
 if(state.cgmConnected) pollXDrip();
 fetchTasks().then(()=>{ renderTasksWidget(); renderAchievementsWidget(); });
+claimPendingRewards(); // Hämta godkända belöningar från servern
 renderHome();
 if('serviceWorker'in navigator){navigator.serviceWorker.register('sw.js').catch(e=>console.log('SW:',e));}
 setupPush(); startReminders(); setTimeout(runAchievementCheck,600);

@@ -27,11 +27,13 @@ const UPLOADS_DIR    = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads/
 });
 
 // ── DATA-FILER ───────────────────────────────────────────────
-const SUBS_FILE    = path.join(DATA_DIR, 'subscriptions.json');
-const MEALS_FILE   = path.join(DATA_DIR, 'meals.json');
-const WALKS_FILE   = path.join(DATA_DIR, 'walks.json');
-const TASKS_FILE   = path.join(DATA_DIR, 'tasks.json');
-const GLUCOSE_FILE = path.join(DATA_DIR, 'glucose.json');
+const SUBS_FILE      = path.join(DATA_DIR, 'subscriptions.json');
+const MEALS_FILE     = path.join(DATA_DIR, 'meals.json');
+const WALKS_FILE     = path.join(DATA_DIR, 'walks.json');
+const TASKS_FILE     = path.join(DATA_DIR, 'tasks.json');
+const GLUCOSE_FILE   = path.join(DATA_DIR, 'glucose.json');
+const APPROVALS_FILE = path.join(DATA_DIR, 'approvals.json');
+const REWARDS_FILE   = path.join(DATA_DIR, 'rewards.json');
 
 function readJSON(file, def) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch(e) { return def; }
@@ -40,11 +42,13 @@ function writeJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
-let subscriptions = readJSON(SUBS_FILE, []);
-let meals         = readJSON(MEALS_FILE, []);
-let walks         = readJSON(WALKS_FILE, []);
-let tasks         = readJSON(TASKS_FILE, []);
-let glucoseLog    = readJSON(GLUCOSE_FILE, []);
+let subscriptions   = readJSON(SUBS_FILE, []);
+let meals           = readJSON(MEALS_FILE, []);
+let walks           = readJSON(WALKS_FILE, []);
+let tasks           = readJSON(TASKS_FILE, []);
+let glucoseLog      = readJSON(GLUCOSE_FILE, []);
+let pendingApprovals = readJSON(APPROVALS_FILE, []);
+let pendingRewards  = readJSON(REWARDS_FILE, []);
 
 // ── MULTER ───────────────────────────────────────────────────
 const storage = multer.diskStorage({
@@ -216,6 +220,51 @@ app.post('/api/walks/finish', (req, res) => {
     walk.duration = minutes || Math.round((walk.endTime - walk.startTime) / 60000);
     walk.distance = calcDistance(walk.coords);
     writeJSON(WALKS_FILE, walks);
+
+    // Auto-komplettera distance/minuter-uppgifter
+    const today = new Date().toISOString().split('T')[0];
+    const todayWalks = walks.filter(w =>
+      !w.active && w.endTime && new Date(w.endTime).toISOString().split('T')[0] === today
+    );
+    const totalKmToday  = todayWalks.reduce((a,w) => a + (w.distance||0), 0);
+    const totalMinToday = todayWalks.reduce((a,w) => a + (w.duration||0), 0);
+
+    let autoCompleted = [];
+    tasks.forEach(task => {
+      if (!task.active) return;
+      if (task.completions && task.completions[today]) return;
+      if (task.completionType === 'distance' && task.targetDistance > 0) {
+        if (totalKmToday >= task.targetDistance) {
+          if (!task.completions) task.completions = {};
+          task.completions[today] = { status: 'approved', auto: true };
+          autoCompleted.push({ taskId: task.id, xpReward: task.xpReward||0, goldReward: task.goldReward||0, title: task.title });
+        }
+      }
+      if (task.completionType === 'minutes' && task.targetMinutes > 0) {
+        if (totalMinToday >= task.targetMinutes) {
+          if (!task.completions) task.completions = {};
+          task.completions[today] = { status: 'approved', auto: true };
+          autoCompleted.push({ taskId: task.id, xpReward: task.xpReward||0, goldReward: task.goldReward||0, title: task.title });
+        }
+      }
+    });
+
+    if (autoCompleted.length > 0) {
+      autoCompleted.forEach(ac => {
+        pendingRewards.push({
+          id: crypto.randomUUID(),
+          type: 'task_auto',
+          sourceId: ac.taskId,
+          xpReward: ac.xpReward,
+          goldReward: ac.goldReward,
+          message: '🎉 ' + ac.title + ' klar!',
+          createdAt: Date.now(),
+          claimed: false,
+        });
+      });
+      writeJSON(TASKS_FILE, tasks);
+      writeJSON(REWARDS_FILE, pendingRewards);
+    }
   }
   res.json({ ok: true, walk });
 });
@@ -248,6 +297,44 @@ app.post('/api/glucose', (req, res) => {
   glucoseLog.push(entry);
   if (glucoseLog.length > 500) glucoseLog.shift();
   writeJSON(GLUCOSE_FILE, glucoseLog);
+
+  // Auto-komplettera TIR (Time In Range) uppgifter
+  const LOW = 4.0; const HIGH = 8.0;
+  const today = new Date().toISOString().split('T')[0];
+  const todayStart = new Date(today).getTime();
+  const todayGlucose = glucoseLog.filter(g => g.time >= todayStart);
+
+  // Beräkna minuter i målzonen idag
+  let tirMinutes = 0;
+  for (let i = 1; i < todayGlucose.length; i++) {
+    const prev = todayGlucose[i-1], curr = todayGlucose[i];
+    const mins = (curr.time - prev.time) / 60000;
+    if (mins < 120 && prev.val >= LOW && prev.val <= HIGH) tirMinutes += mins;
+  }
+
+  tasks.forEach(task => {
+    if (!task.active) return;
+    if (task.completions && task.completions[today]) return;
+    if (task.completionType === 'glucose_tir' && task.targetTIR > 0) {
+      if (tirMinutes >= task.targetTIR) {
+        if (!task.completions) task.completions = {};
+        task.completions[today] = { status: 'approved', auto: true, tirMinutes: Math.round(tirMinutes) };
+        pendingRewards.push({
+          id: crypto.randomUUID(),
+          type: 'task_auto',
+          sourceId: task.id,
+          xpReward: task.xpReward || 0,
+          goldReward: task.goldReward || 0,
+          message: '🩸 ' + task.title + ' klar! ' + Math.round(tirMinutes) + ' min i målzonen.',
+          createdAt: Date.now(),
+          claimed: false,
+        });
+        writeJSON(TASKS_FILE, tasks);
+        writeJSON(REWARDS_FILE, pendingRewards);
+      }
+    }
+  });
+
   res.json({ ok: true });
 });
 
@@ -256,23 +343,59 @@ app.get('/api/glucose', adminAuth, (req, res) => {
 });
 
 // ── UPPGIFTER ─────────────────────────────────────────────────
-app.get('/api/tasks', (req, res) => res.json(tasks));
+app.get('/api/tasks', (req, res) => {
+  // Beräkna progress för data-kopplade uppgifter
+  const today = new Date().toISOString().split('T')[0];
+  const todayStart = new Date(today).getTime();
+  const todayWalks = walks.filter(w =>
+    !w.active && w.endTime && new Date(w.endTime).toISOString().split('T')[0] === today
+  );
+  const totalKmToday  = todayWalks.reduce((a,w) => a + (w.distance||0), 0);
+  const totalMinToday = todayWalks.reduce((a,w) => a + (w.duration||0), 0);
+
+  // TIR idag
+  const todayGlucose = glucoseLog.filter(g => g.time >= todayStart);
+  let tirMinutes = 0;
+  const LOW = 4.0, HIGH = 8.0;
+  for (let i = 1; i < todayGlucose.length; i++) {
+    const prev = todayGlucose[i-1], curr = todayGlucose[i];
+    const mins = (curr.time - prev.time) / 60000;
+    if (mins < 120 && prev.val >= LOW && prev.val <= HIGH) tirMinutes += mins;
+  }
+
+  const enriched = tasks.map(t => ({
+    ...t,
+    progress: {
+      km: totalKmToday,
+      minutes: totalMinToday,
+      tirMinutes: Math.round(tirMinutes),
+    }
+  }));
+  res.json(enriched);
+});
 
 app.post('/api/tasks', adminAuth, (req, res) => {
+  const b = req.body;
   const task = {
     id: crypto.randomUUID(),
-    title: req.body.title,
-    description: req.body.description || '',
-    type: req.body.type || 'daily',
-    reward: req.body.reward || '',
-    xpReward: parseInt(req.body.xpReward) || 0,
-    goldReward: parseInt(req.body.goldReward) || 0,
-    requirePhotos: req.body.requirePhotos === true || req.body.requirePhotos === 'true',
-    photoCount: parseInt(req.body.photoCount) || 1,
-    icon: req.body.icon || '⭐',
-    difficulty: req.body.difficulty || 'normal',
+    title: b.title,
+    description: b.description || '',
+    type: b.type || 'daily',            // daily | weekly | once
+    reward: b.reward || '',
+    xpReward: parseInt(b.xpReward) || 0,
+    goldReward: parseInt(b.goldReward) || 0,
+    requirePhotos: b.requirePhotos === true || b.requirePhotos === 'true',
+    photoCount: parseInt(b.photoCount) || 1,
+    icon: b.icon || '⭐',
+    difficulty: b.difficulty || 'normal',
+    // Koppling till data
+    completionType: b.completionType || 'manual', // manual | distance | glucose_tir | combo
+    targetDistance: parseFloat(b.targetDistance) || 0,  // km
+    targetMinutes:  parseInt(b.targetMinutes)  || 0,    // promenadminuter
+    targetTIR:      parseInt(b.targetTIR)      || 0,    // minuter i målzonen
+    targetMeals:    parseInt(b.targetMeals)    || 0,    // antal måltider
     active: true,
-    completions: {},   // { 'YYYY-MM-DD': true } för dagliga
+    completions: {},   // { 'YYYY-MM-DD': { status, approvalId } }
     createdAt: Date.now()
   };
   tasks.push(task);
@@ -288,15 +411,113 @@ app.put('/api/tasks/:id', adminAuth, (req, res) => {
   res.json({ ok: true, task });
 });
 
-// Markera uppgift som slutförd (från appen, ej admin)
+// Markera uppgift som slutförd — om foton krävs → pending approval
 app.post('/api/tasks/:id/complete', (req, res) => {
   const task = tasks.find(t => t.id === req.params.id);
   if (!task) return res.status(404).json({ error: 'Hittades ej' });
   const today = new Date().toISOString().split('T')[0];
   if (!task.completions) task.completions = {};
-  task.completions[today] = true;
+
+  // Kräver foto-godkännande?
+  if (task.requirePhotos) {
+    const approvalId = crypto.randomUUID();
+    pendingApprovals.push({
+      id: approvalId,
+      type: 'task',
+      taskId: task.id,
+      taskTitle: task.title,
+      taskIcon: task.icon || '⭐',
+      xpReward: task.xpReward || 0,
+      goldReward: task.goldReward || 0,
+      photoUrls: req.body.photoUrls || [],
+      submittedAt: Date.now(),
+      status: 'pending',
+      date: today,
+    });
+    task.completions[today] = { status: 'pending', approvalId };
+    writeJSON(TASKS_FILE, tasks);
+    writeJSON(APPROVALS_FILE, pendingApprovals);
+    return res.json({ ok: true, status: 'pending', approvalId, message: 'Väntar på admin-godkännande' });
+  }
+
+  // Direkt komplettering
+  task.completions[today] = { status: 'approved' };
   writeJSON(TASKS_FILE, tasks);
-  res.json({ ok: true, xpReward: task.xpReward || 0, goldReward: task.goldReward || 0 });
+  res.json({ ok: true, status: 'approved', xpReward: task.xpReward || 0, goldReward: task.goldReward || 0 });
+});
+
+// Hämta pending rewards för spelaren
+app.get('/api/rewards', (req, res) => {
+  res.json(pendingRewards);
+});
+
+// Hämta pending approvals (admin)
+app.get('/api/admin/approvals', adminAuth, (req, res) => {
+  res.json(pendingApprovals.filter(a => a.status === 'pending'));
+});
+
+// Godkänn eller avvisa (admin)
+app.post('/api/admin/approvals/:id', adminAuth, (req, res) => {
+  const approval = pendingApprovals.find(a => a.id === req.params.id);
+  if (!approval) return res.status(404).json({ error: 'Hittades ej' });
+
+  const { action } = req.body; // 'approve' | 'reject'
+  approval.status = action === 'approve' ? 'approved' : 'rejected';
+  approval.decidedAt = Date.now();
+  approval.adminNote = req.body.note || '';
+
+  if (action === 'approve') {
+    // Lägg belöning i pending rewards för appen att hämta
+    pendingRewards.push({
+      id: crypto.randomUUID(),
+      type: approval.type,
+      sourceId: approval.taskId || approval.mealId,
+      xpReward: approval.xpReward || 0,
+      goldReward: approval.goldReward || 0,
+      message: approval.adminNote || approval.taskTitle || 'Godkänt! 🎉',
+      createdAt: Date.now(),
+      claimed: false,
+    });
+
+    // Uppdatera task-completion till approved
+    if (approval.taskId) {
+      const task = tasks.find(t => t.id === approval.taskId);
+      if (task && task.completions && task.completions[approval.date]) {
+        task.completions[approval.date] = { status: 'approved' };
+        writeJSON(TASKS_FILE, tasks);
+      }
+    }
+
+    // Uppdatera meal till approved
+    if (approval.mealId) {
+      const meal = meals.find(m => m.id === approval.mealId);
+      if (meal) {
+        meal.approvalStatus = 'approved';
+        writeJSON(MEALS_FILE, meals);
+      }
+    }
+  } else {
+    // Avvisad — rensa completion så hon kan försöka igen
+    if (approval.taskId) {
+      const task = tasks.find(t => t.id === approval.taskId);
+      if (task && task.completions) {
+        delete task.completions[approval.date];
+        writeJSON(TASKS_FILE, tasks);
+      }
+    }
+  }
+
+  writeJSON(APPROVALS_FILE, pendingApprovals);
+  writeJSON(REWARDS_FILE, pendingRewards);
+  res.json({ ok: true, status: approval.status });
+});
+
+// Hämta och rensa claimed rewards
+app.post('/api/rewards/claim', (req, res) => {
+  const unclaimed = pendingRewards.filter(r => !r.claimed);
+  pendingRewards.forEach(r => r.claimed = true);
+  writeJSON(REWARDS_FILE, pendingRewards);
+  res.json({ rewards: unclaimed });
 });
 
 app.delete('/api/tasks/:id', adminAuth, (req, res) => {
