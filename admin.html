@@ -739,8 +739,19 @@ function closePhotoModal() {
 // INIT
 // ════════════════════════════════════════════════════════
 if (adminToken) {
-  document.getElementById('loginScreen').style.display = 'none';
-  loadDashboard();
+  // Verifiera att token fortfarande är giltig (servern kan ha bytt lösenord)
+  fetch('/api/admin/dashboard', { headers: { 'x-admin-token': adminToken } })
+    .then(r => {
+      if (r.ok) {
+        document.getElementById('loginScreen').style.display = 'none';
+        loadDashboard();
+      } else {
+        // Token ogiltig - rensa och visa login
+        sessionStorage.removeItem('adminToken');
+        adminToken = null;
+      }
+    })
+    .catch(() => {});
 }
 
 setInterval(() => {

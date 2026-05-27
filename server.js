@@ -91,21 +91,14 @@ app.get('/admin', (req, res) => {
 // ── AUTH ─────────────────────────────────────────────────────
 // Stateless token: base64(timestamp) + "." + hmac
 // Överlever server-restart utan att användaren behöver logga in igen
+// Auth: token = HMAC(password, salt) — verifieras mot lösenordet, ingen server-state
+const ADMIN_SALT = 'soumaya-admin-2024';
 function makeToken() {
-  const ts = Date.now().toString();
-  const sig = require('crypto').createHmac('sha256', ADMIN_PASSWORD).update(ts).digest('hex').slice(0,16);
-  return Buffer.from(ts).toString('base64') + '.' + sig;
+  return crypto.createHmac('sha256', ADMIN_SALT).update(ADMIN_PASSWORD).digest('hex');
 }
 function validToken(token) {
   if (!token) return false;
-  try {
-    const [tsPart, sig] = token.split('.');
-    const ts = Buffer.from(tsPart, 'base64').toString();
-    const expected = require('crypto').createHmac('sha256', ADMIN_PASSWORD).update(ts).digest('hex').slice(0,16);
-    if (sig !== expected) return false;
-    // Token gäller i 30 dagar
-    return (Date.now() - parseInt(ts)) < 30 * 24 * 3600 * 1000;
-  } catch(e) { return false; }
+  return token === makeToken();
 }
 
 function adminAuth(req, res, next) {
