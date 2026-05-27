@@ -3,186 +3,119 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Soumaya Admin v0526-0551</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
+<title>Soumaya Admin</title>
 <style>
 :root {
-  --primary: #FFD700;
-  --primary-dark: #cc9900;
-  --blue: #1a6bff;
-  --black: #080808;
-  --dark: #111;
-  --card: #161616;
-  --card2: #1e1e1e;
-  --text: #f0f0e8;
-  --muted: #888;
-  --green: #4aff6a;
-  --red: #ff3a2a;
-  --border: #2a2a2a;
-  --font-title: 'Bangers', cursive;
-  --font-body: 'Nunito', sans-serif;
+  --bg:#0a0a0a; --card:#111; --card2:#161616; --border:#222; --border2:#2a2a2a;
+  --text:#f0f0f0; --muted:#666; --muted2:#444;
+  --primary:#FFE600; --primary-dark:#b8860b;
+  --blue:#169ee7; --green:#2DD881; --red:#E63946; --purple:#7c3aed;
+  --font-title:'Bungee',Impact,sans-serif; --font-body:'Space Grotesk',system-ui,sans-serif;
 }
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; background: var(--black); color: var(--text); font-family: var(--font-body); }
-body { display: flex; }
-
-/* SIDEBAR */
-.sidebar {
-  width: 220px;
-  flex-shrink: 0;
-  background: var(--dark);
-  border-right: 3px solid var(--primary);
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  position: sticky;
-  top: 0;
-}
-.sidebar-logo {
-  padding: 20px 16px 16px;
-  border-bottom: 1px solid #222;
-}
-.sidebar-logo .title { font-family: var(--font-title); font-size: 26px; color: var(--primary); letter-spacing: 2px; text-shadow: 2px 2px 0 var(--primary-dark); }
-.sidebar-logo .sub { font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
-.sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
-.nav-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 12px 16px;
-  cursor: pointer;
-  font-size: 14px; font-weight: 700;
-  color: var(--muted);
-  border-left: 3px solid transparent;
-  transition: all 0.15s;
-}
-.nav-item:hover { background: #1a1a1a; color: var(--text); }
-.nav-item.active { color: var(--primary); border-left-color: var(--primary); background: rgba(255,215,0,0.05); }
-.nav-item svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
-.sidebar-footer { padding: 16px; border-top: 1px solid #222; }
-.logout-btn { width: 100%; padding: 8px; background: none; border: 1px solid #333; color: var(--muted); font-family: var(--font-body); font-size: 13px; border-radius: 6px; cursor: pointer; }
-.logout-btn:hover { border-color: var(--red); color: var(--red); }
-
-/* MAIN */
-.main { flex: 1; overflow-y: auto; padding: 24px; }
-.page-section { display: none; }
-.page-section.active { display: block; }
-.page-title { font-family: var(--font-title); font-size: 32px; letter-spacing: 2px; color: var(--primary); margin-bottom: 20px; text-transform: uppercase; text-shadow: 2px 2px 0 var(--primary-dark); }
-
-/* CARDS */
-.card { background: var(--card); border: 1.5px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 16px; position: relative; overflow: hidden; }
-.card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--primary); }
-.card.blue::before { background: var(--blue); }
-.card.green::before { background: var(--green); }
-.card.red::before { background: var(--red); }
-.card-title { font-family: var(--font-title); font-size: 16px; letter-spacing: 1px; color: var(--primary); margin-bottom: 14px; text-transform: uppercase; }
-.card.blue .card-title { color: var(--blue); }
-.card.green .card-title { color: var(--green); }
-.card.red .card-title { color: var(--red); }
-
-/* GRID */
-.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
-.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 16px; }
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
-.stat-card { background: var(--card2); border: 1.5px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
-.stat-val { font-family: var(--font-title); font-size: 36px; letter-spacing: 1px; color: var(--primary); line-height: 1; }
-.stat-label { font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
-
-/* TABLE */
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th { text-align: left; padding: 8px 12px; color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #2a2a2a; }
-td { padding: 10px 12px; border-bottom: 1px solid #1a1a1a; vertical-align: middle; }
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: #1a1a1a; }
-
-/* BADGE */
-.badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-.badge-green { background: rgba(74,255,106,0.15); color: var(--green); }
-.badge-yellow { background: rgba(255,215,0,0.15); color: var(--primary); }
-.badge-red { background: rgba(255,58,42,0.15); color: var(--red); }
-.badge-blue { background: rgba(26,107,255,0.15); color: var(--blue); }
-
-/* FORM */
-.form-group { margin-bottom: 14px; }
-.form-label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 6px; }
-.form-input, .form-select, .form-textarea {
-  width: 100%; background: #1e1e1e; border: 1.5px solid #333; border-radius: 8px;
-  color: var(--text); font-family: var(--font-body); font-size: 14px; padding: 10px 12px; outline: none;
-}
-.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--primary); }
-.form-textarea { resize: vertical; min-height: 80px; }
-
-/* BUTTONS */
-.btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 8px; border: none; font-family: var(--font-title); font-size: 16px; letter-spacing: 1px; cursor: pointer; transition: transform 0.1s; }
-.btn:active { transform: scale(0.97); }
-.btn-primary { background: var(--primary); color: #111; box-shadow: 0 3px 0 var(--primary-dark); }
-.btn-blue { background: var(--blue); color: white; box-shadow: 0 3px 0 #1a5aaa; }
-.btn-red { background: var(--red); color: white; box-shadow: 0 3px 0 #8a1a0a; }
-.btn-ghost { background: none; border: 1.5px solid #333; color: var(--muted); font-family: var(--font-body); font-size: 13px; padding: 6px 12px; }
-.btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
-.btn-sm { font-size: 13px; padding: 6px 12px; letter-spacing: 0.5px; }
-
-/* FOTO */
-.photo-pair { display: flex; gap: 10px; }
-.photo-thumb { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; border: 1.5px solid #333; cursor: pointer; }
-.photo-thumb:hover { border-color: var(--primary); }
-.photo-missing { width: 60px; height: 60px; border-radius: 8px; background: #1a1a1a; border: 1.5px dashed #333; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-
-/* MAP */
-#walkDetailMap { height: 300px; border-radius: 10px; border: 1.5px solid #333; }
-
-/* PUSH PANEL */
-.push-panel { background: rgba(255,215,0,0.05); border: 1.5px solid rgba(255,215,0,0.2); border-radius: 10px; padding: 16px; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;display:flex}
+@import url('https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;600;700&display=swap');
 
 /* LOGIN */
-#loginScreen {
-  position: fixed; inset: 0; background: var(--black);
-  display: flex; align-items: center; justify-content: center; z-index: 9999;
-}
-.login-box { width: 340px; text-align: center; }
-.login-title { font-family: var(--font-title); font-size: 48px; color: var(--primary); letter-spacing: 3px; text-shadow: 4px 4px 0 var(--primary-dark); margin-bottom: 8px; }
-.login-sub { color: var(--muted); font-size: 13px; font-weight: 600; margin-bottom: 28px; letter-spacing: 1px; text-transform: uppercase; }
-.login-input { width: 100%; background: var(--card); border: 2px solid #333; border-radius: 10px; color: var(--text); font-family: var(--font-body); font-size: 18px; padding: 14px; text-align: center; letter-spacing: 3px; outline: none; margin-bottom: 14px; }
-.login-input:focus { border-color: var(--primary); }
-.login-err { color: var(--red); font-size: 13px; font-weight: 700; min-height: 20px; margin-bottom: 8px; }
+#loginScreen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000}
+.login-box{width:340px;text-align:center;padding:40px}
+.login-title{font-family:var(--font-title);font-size:32px;color:var(--primary);margin-bottom:8px;letter-spacing:2px}
+.login-sub{color:var(--muted);font-size:13px;margin-bottom:24px}
+.login-input{width:100%;background:#1a1a1a;border:2px solid var(--border2);color:var(--text);font-family:var(--font-body);font-size:16px;padding:12px 14px;border-radius:8px;outline:none;margin-bottom:12px}
+.login-input:focus{border-color:var(--primary)}
 
-/* MODAL */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 500; display: none; align-items: center; justify-content: center; padding: 20px; }
-.modal-overlay.open { display: flex; }
-.modal { background: var(--dark); border: 2px solid var(--primary); border-radius: 14px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; padding: 24px; }
-.modal-title { font-family: var(--font-title); font-size: 22px; color: var(--primary); letter-spacing: 2px; margin-bottom: 20px; }
+/* SIDEBAR */
+.sidebar{width:200px;min-height:100vh;background:#0d0d0d;border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.sidebar-logo{padding:20px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo-title{font-family:var(--font-title);font-size:18px;color:var(--primary);letter-spacing:2px}
+.sidebar-logo-sub{font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px;margin-top:2px}
+.sidebar-nav{flex:1;padding:8px 0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;border-left:3px solid transparent;transition:all .15s}
+.nav-item:hover{background:#1a1a1a;color:var(--text)}
+.nav-item.active{color:var(--primary);border-left-color:var(--primary);background:rgba(255,230,0,.05)}
+.nav-item svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.sidebar-footer{padding:12px 16px;border-top:1px solid var(--border)}
+.logout-btn{width:100%;padding:8px;background:none;border:1px solid var(--border2);color:var(--muted);font-family:var(--font-body);font-size:12px;border-radius:6px;cursor:pointer}
+.logout-btn:hover{border-color:var(--red);color:var(--red)}
 
-/* GLUCOSE STATUS */
-.glucose-big { font-family: var(--font-title); font-size: 52px; color: var(--green); letter-spacing: -1px; line-height: 1; }
-.glucose-big.warn { color: var(--primary); }
-.glucose-big.danger { color: var(--red); }
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:24px}
+.page-section{display:none}.page-section.active{display:block}
+.page-title{font-family:var(--font-title);font-size:28px;letter-spacing:2px;color:var(--primary);margin-bottom:20px;text-transform:uppercase}
 
-/* MINI CHART */
-.chart-wrap { height: 120px; }
+/* CARDS */
+.card{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:18px;margin-bottom:16px}
+.card-title{font-family:var(--font-title);font-size:14px;letter-spacing:1px;color:var(--primary);margin-bottom:14px;text-transform:uppercase}
 
-/* RESPONSIVE */
-@media (max-width: 900px) {
-  .sidebar { width: 60px; }
-  .sidebar-logo .title, .sidebar-logo .sub, .nav-item span { display: none; }
-  .nav-item { justify-content: center; padding: 14px; }
-  .grid-4 { grid-template-columns: 1fr 1fr; }
-}
+/* GRID */
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.stat-card{background:var(--card2);border:1.5px solid var(--border);border-radius:8px;padding:16px;text-align:center}
+.stat-val{font-family:var(--font-title);font-size:32px;color:var(--primary);line-height:1}
+.stat-label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-top:4px}
 
-    .pcbtn { padding:7px 14px; border:2px solid #D9CEB8; border-radius:8px; background:#fff; font-weight:700; font-size:12px; cursor:pointer; transition:all .15s; }
-    .pcbtn.active { background:#169ee7; color:white; border-color:#003E7A; }
-    .task-item { border:2px solid #eee; border-radius:10px; padding:14px; margin-bottom:10px; background:#fff; }
-    .task-item.inactive { opacity:.5; background:#f9f9f9; }
-    .task-meta-row { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0; }
-    .task-badge { display:inline-flex; align-items:center; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; border:1.5px solid; }
-    .task-badge.xp { color:#1a8a4a; border-color:#1a8a4a; background:#E8FBF0; }
-    .task-badge.gold { color:#b8860b; border-color:#b8860b; background:#FFFBE0; }
-    .task-badge.photo { color:#0072D6; border-color:#0072D6; background:#EBF6FD; }
-    .task-badge.type { color:#666; border-color:#ccc; background:#f5f5f5; }
-    .task-badge.hard { color:#E63946; border-color:#E63946; background:#FDECEA; }
-    .task-completed-today { color:#1a8a4a; font-size:12px; font-weight:700; margin-top:6px; }
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 12px;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border2)}
+td{padding:10px 12px;border-bottom:1px solid #1a1a1a;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#1a1a1a}
 
-    </style>
+/* BADGE */
+.badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-green{background:rgba(45,216,129,.15);color:var(--green);border:1px solid rgba(45,216,129,.3)}
+.badge-red{background:rgba(230,57,70,.15);color:var(--red);border:1px solid rgba(230,57,70,.3)}
+.badge-blue{background:rgba(22,158,231,.15);color:var(--blue);border:1px solid rgba(22,158,231,.3)}
+.badge-yellow{background:rgba(255,230,0,.15);color:var(--primary);border:1px solid rgba(255,230,0,.3)}
+.badge-purple{background:rgba(124,58,237,.15);color:var(--purple);border:1px solid rgba(124,58,237,.3)}
+
+/* FORMS */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.form-input,.form-select,.form-textarea{width:100%;background:#1a1a1a;border:1.5px solid var(--border2);color:var(--text);font-family:var(--font-body);font-size:14px;padding:9px 12px;border-radius:7px;outline:none;transition:border-color .15s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--primary)}
+.form-textarea{resize:vertical;min-height:70px}
+.form-select option{background:#1a1a1a}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:7px;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;border:none}
+.btn-primary{background:var(--primary);color:#000}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-ghost{background:transparent;color:var(--muted);border:1.5px solid var(--border2)}
+.btn-ghost:hover{border-color:var(--text);color:var(--text)}
+.btn-red{background:rgba(230,57,70,.15);color:var(--red);border:1.5px solid rgba(230,57,70,.3)}
+.btn-red:hover{background:var(--red);color:#fff}
+.btn-sm{padding:5px 10px;font-size:12px}
+
+/* PHOTO MODAL */
+#photoModal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:2000}
+#photoModal.open{display:flex}
+#photoModal .modal{max-width:600px;width:90%;background:#0a0a0a;border-radius:10px;overflow:hidden}
+#photoModal img{width:100%;display:block}
+#photoModal .modal-footer{padding:12px;display:flex;justify-content:flex-end}
+
+/* PHOTO COUNT BTNS */
+.pcbtn{padding:7px 14px;border:2px solid var(--border2);border-radius:7px;background:var(--card);color:var(--text);font-weight:700;font-size:12px;cursor:pointer;transition:all .15s}
+.pcbtn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* TASK ITEMS */
+.task-item{border:1.5px solid var(--border2);border-radius:8px;padding:14px;margin-bottom:10px;background:var(--card2)}
+.task-item.inactive{opacity:.5}
+.task-meta{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+
+/* ACH GRID */
+.ach-admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.ach-admin-card{background:var(--card2);border:1.5px solid var(--border2);border-radius:8px;padding:12px;text-align:center}
+.ach-admin-card.unlocked{border-color:var(--green)}
+.ach-admin-icon{font-size:28px;margin-bottom:6px}
+.ach-admin-title{font-size:12px;font-weight:700;margin-bottom:3px}
+.ach-admin-meta{font-size:10px;color:var(--muted)}
+
+/* PUSH CARDS */
+.push-card{background:var(--card2);border:1.5px solid var(--border2);border-radius:8px;padding:14px;cursor:pointer;transition:border-color .15s}
+.push-card:hover{border-color:var(--primary)}
+</style>
 </head>
 <body>
 
@@ -190,47 +123,47 @@ tr:hover td { background: #1a1a1a; }
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-title">ADMIN</div>
-    <div class="login-sub">Soumaya — Kontrollpanel</div>
-    <input type="password" class="login-input" id="passwordInput" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
-    <div class="login-err" id="loginErr"></div>
-    <button class="btn btn-primary" style="width:100%;font-size:20px;padding:14px;" onclick="doLogin()">LOGGA IN</button>
+    <div class="login-sub">Soumaya · Kontrollpanel</div>
+    <input type="password" class="login-input" id="passwordInput" placeholder="Lösenord" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn btn-primary" style="width:100%;padding:12px;font-size:16px;" onclick="doLogin()">LOGGA IN</button>
+    <div id="loginError" style="color:var(--red);font-size:13px;margin-top:10px;"></div>
   </div>
 </div>
 
-<!-- SIDEBAR -->
+<!-- APP -->
 <aside class="sidebar">
   <div class="sidebar-logo">
-    <div class="title">ADMIN</div>
-    <div class="sub">Soumaya</div>
+    <div class="sidebar-logo-title">SOUMAYA</div>
+    <div class="sidebar-logo-sub">Admin Panel</div>
   </div>
   <nav class="sidebar-nav">
-    <div class="nav-item active" onclick="goTo('dashboard',this)" data-page="dashboard">
-      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-      <span>Översikt</span>
+    <div class="nav-item active" onclick="goTo('dashboard',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
     </div>
-    <div class="nav-item" onclick="goTo('glucose',this)" data-page="glucose">
+    <div class="nav-item" onclick="goTo('glucose',this)">
       <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      <span>Blodsocker</span>
+      Blodsocker
     </div>
-    <div class="nav-item" onclick="goTo('meals',this)" data-page="meals">
-      <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-      <span>Måltider</span>
+    <div class="nav-item" onclick="goTo('meals',this)">
+      <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/></svg>
+      Måltider
     </div>
-    <div class="nav-item" onclick="goTo('walks',this)" data-page="walks">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M16 17l-4-4-4 4"/><path d="M8 10l4-5 4 5"/><path d="M8 17v4"/><path d="M16 17v4"/></svg>
-      <span>Promenader</span>
+    <div class="nav-item" onclick="goTo('walks',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M8 10l4-5 4 5"/><path d="M8 17v4"/><path d="M16 17v4"/></svg>
+      Promenader
     </div>
-    <div class="nav-item" onclick="goTo('tasks',this)" data-page="tasks">
+    <div class="nav-item" onclick="goTo('tasks',this)">
       <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-      <span>Uppgifter</span>
+      Uppgifter
     </div>
-    <div class="nav-item" onclick="goTo('achievements',this)" data-page="achievements">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
-      <span>Achievements</span>
-    </div>
-    <div class="nav-item" onclick="goTo('push',this)" data-page="push">
+    <div class="nav-item" onclick="goTo('push',this)">
       <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-      <span>Notiser</span>
+      Push-notiser
+    </div>
+    <div class="nav-item" onclick="goTo('achievements',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+      Achievements
     </div>
   </nav>
   <div class="sidebar-footer">
@@ -238,93 +171,41 @@ tr:hover td { background: #1a1a1a; }
   </div>
 </aside>
 
-<!-- MAIN CONTENT -->
 <main class="main">
 
-  <!-- ══ ÖVERSIKT ══ -->
+  <!-- DASHBOARD -->
   <section class="page-section active" id="sec-dashboard">
-    <div class="page-title">Översikt</div>
-
-    <div class="grid-4" id="dashStats">
-      <div class="stat-card"><div class="stat-val" id="d-meals">—</div><div class="stat-label">Måltider idag</div></div>
-      <div class="stat-card"><div class="stat-val" id="d-walkmin">—</div><div class="stat-label">Promenadmin</div></div>
-      <div class="stat-card"><div class="stat-val" id="d-walkKm">—</div><div class="stat-label">km idag</div></div>
-      <div class="stat-card"><div class="stat-val" id="d-streak">—</div><div class="stat-label">Dagars streak</div></div>
-    </div>
-
+    <div class="page-title">Dashboard</div>
+    <div class="grid-4" id="dashStats"></div>
     <div class="grid-2">
-      <div class="card">
-        <div class="card-title">Blodsocker just nu</div>
-        <div id="glucoseNow" style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;">
-          <div class="glucose-big" id="dashGlucoseVal">—</div>
-          <div style="color:var(--muted);font-size:16px;font-weight:700;">mmol/L</div>
-        </div>
-        <div id="dashGlucoseTime" style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:10px;"></div>
-        <div class="chart-wrap"><canvas id="dashGlucoseChart"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-title">Senaste aktivitet</div>
-        <div id="recentActivity"></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Senaste måltider (bilder)</div>
-      <div id="recentMealPics" style="display:flex;gap:12px;flex-wrap:wrap;"></div>
+      <div class="card"><div class="card-title">Senaste blodsocker</div><div id="dashGlucose"><div style="color:var(--muted);font-size:13px;">Laddar...</div></div></div>
+      <div class="card"><div class="card-title">Senaste måltider</div><div id="dashMeals"><div style="color:var(--muted);font-size:13px;">Laddar...</div></div></div>
     </div>
   </section>
 
-  <!-- ══ BLODSOCKER ══ -->
+  <!-- BLODSOCKER -->
   <section class="page-section" id="sec-glucose">
     <div class="page-title">Blodsocker</div>
-    <div class="card">
-      <div class="card-title">24-timmars kurva</div>
-      <div style="height:200px;"><canvas id="glucoseFullChart"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Logg</div>
-      <table>
-        <thead><tr><th>Tid</th><th>Värde</th><th>Källa</th><th>Status</th></tr></thead>
-        <tbody id="glucoseTable"></tbody>
-      </table>
-    </div>
+    <div class="card"><div id="glucoseTable"><div style="color:var(--muted);font-size:13px;">Laddar...</div></div></div>
   </section>
 
-  <!-- ══ MÅLTIDER ══ -->
+  <!-- MÅLTIDER -->
   <section class="page-section" id="sec-meals">
     <div class="page-title">Måltider</div>
-    <div class="card">
-      <div class="card-title">Alla måltider med bilder</div>
-      <table>
-        <thead><tr><th>Bilder</th><th>Måltid</th><th>Typ</th><th>Kh</th><th>Tid</th><th>Status</th></tr></thead>
-        <tbody id="mealsTable"></tbody>
-      </table>
-    </div>
+    <div class="card"><div id="mealsTable"><div style="color:var(--muted);font-size:13px;">Laddar...</div></div></div>
   </section>
 
-  <!-- ══ PROMENADER ══ -->
+  <!-- PROMENADER -->
   <section class="page-section" id="sec-walks">
     <div class="page-title">Promenader</div>
-    <div class="card">
-      <div class="card-title">Promenadshistorik</div>
-      <table>
-        <thead><tr><th>Datum</th><th>Tid</th><th>Distans</th><th>Karta</th></tr></thead>
-        <tbody id="walksTable"></tbody>
-      </table>
-    </div>
-    <div class="card" id="walkMapCard" style="display:none;">
-      <div class="card-title" id="walkMapTitle">Promenadkarta</div>
-      <div id="walkDetailMap"></div>
-      <div id="walkMapStats" style="display:flex;gap:20px;margin-top:12px;font-size:13px;color:var(--muted);font-weight:700;"></div>
-    </div>
+    <div class="card"><div id="walksTable"><div style="color:var(--muted);font-size:13px;">Laddar...</div></div></div>
   </section>
 
-  <!-- ══ UPPGIFTER ══ -->
+  <!-- UPPGIFTER -->
   <section class="page-section" id="sec-tasks">
     <div class="page-title">Uppgifter</div>
     <div class="card">
       <div class="card-title">Skapa ny uppgift</div>
-
       <div class="grid-2">
         <div class="form-group">
           <label class="form-label">Titel</label>
@@ -332,10 +213,9 @@ tr:hover td { background: #1a1a1a; }
         </div>
         <div class="form-group">
           <label class="form-label">Ikon (emoji)</label>
-          <input type="text" class="form-input" id="taskIcon" placeholder="⭐" value="⭐" style="font-size:22px;text-align:center;">
+          <input type="text" class="form-input" id="taskIcon" value="⭐" style="font-size:20px;text-align:center;">
         </div>
       </div>
-
       <div class="grid-2">
         <div class="form-group">
           <label class="form-label">Typ</label>
@@ -354,153 +234,139 @@ tr:hover td { background: #1a1a1a; }
           </select>
         </div>
       </div>
-
       <div class="form-group">
         <label class="form-label">Beskrivning</label>
-        <textarea class="form-textarea" id="taskDesc" placeholder="Beskriv uppgiften..." rows="2"></textarea>
+        <textarea class="form-textarea" id="taskDesc" placeholder="Beskriv uppgiften..."></textarea>
       </div>
-
-      <div style="background:#f8f5ef;border:1.5px solid #D9CEB8;border-radius:8px;padding:14px;margin-bottom:14px;">
-        <div style="font-weight:700;font-size:12px;margin-bottom:10px;color:#666;text-transform:uppercase;letter-spacing:1px;">💰 Belöningar</div>
-        <div class="grid-2" style="margin-bottom:10px;">
+      <div style="background:#1a1a1a;border:1.5px solid var(--border2);border-radius:8px;padding:14px;margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">💰 Belöningar</div>
+        <div class="grid-2">
           <div class="form-group" style="margin:0;">
             <label class="form-label">XP</label>
-            <input type="number" class="form-input" id="taskXP" placeholder="50" min="0" max="500" value="50">
+            <input type="number" class="form-input" id="taskXP" value="50" min="0" max="500">
           </div>
           <div class="form-group" style="margin:0;">
             <label class="form-label">Guld 🪙</label>
-            <input type="number" class="form-input" id="taskGold" placeholder="10" min="0" max="200" value="10">
+            <input type="number" class="form-input" id="taskGold" value="10" min="0" max="200">
           </div>
         </div>
-        <div class="form-group" style="margin:0;">
+        <div class="form-group" style="margin-top:10px;margin-bottom:0;">
           <label class="form-label">Textstämpel vid genomförande (valfritt)</label>
           <input type="text" class="form-input" id="taskReward" placeholder="T.ex. Allen är stolt! 💪">
         </div>
       </div>
-
-      <div style="background:#EBF6FD;border:1.5px solid #169ee7;border-radius:8px;padding:14px;margin-bottom:16px;">
-        <div style="font-weight:700;font-size:12px;margin-bottom:10px;color:#0072D6;text-transform:uppercase;letter-spacing:1px;">📷 Fotokrav</div>
+      <div style="background:#0f1f2e;border:1.5px solid var(--blue);border-radius:8px;padding:14px;margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">📷 Fotokrav</div>
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:14px;margin-bottom:10px;">
-          <input type="checkbox" id="taskRequirePhotos" onchange="togglePhotoCount()" style="width:18px;height:18px;">
+          <input type="checkbox" id="taskRequirePhotos" onchange="togglePhotoCount()" style="width:16px;height:16px;">
           Kräv foton för att slutföra
         </label>
         <div id="photoCountRow" style="display:none;">
-          <label class="form-label">Antal foton som krävs</label>
+          <label class="form-label">Antal foton</label>
           <div style="display:flex;gap:8px;">
-            <button type="button" class="pcbtn active" data-val="1" onclick="setPhotoCount(1,this)">1 foto</button>
-            <button type="button" class="pcbtn" data-val="2" onclick="setPhotoCount(2,this)">2 (innan + efter)</button>
+            <button type="button" class="pcbtn active" onclick="setPhotoCount(1,this)">1 foto</button>
+            <button type="button" class="pcbtn" onclick="setPhotoCount(2,this)">2 (innan+efter)</button>
           </div>
           <input type="hidden" id="taskPhotoCount" value="1">
         </div>
       </div>
-
-      <button class="btn btn-primary" onclick="createTask()" style="width:100%;">✅ SKAPA UPPGIFT</button>
+      <button class="btn btn-primary" onclick="createTask()" style="width:100%;padding:11px;font-size:15px;">✅ SKAPA UPPGIFT</button>
     </div>
-
     <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
         <div class="card-title" style="margin:0;">Alla uppgifter</div>
         <div style="display:flex;gap:6px;">
-          <button class="btn btn-sm btn-ghost task-filter active" onclick="filterTasksAdmin('all',this)" style="font-size:11px;padding:4px 10px;">Alla</button>
-          <button class="btn btn-sm btn-ghost task-filter" onclick="filterTasksAdmin('daily',this)" style="font-size:11px;padding:4px 10px;">Dagliga</button>
-          <button class="btn btn-sm btn-ghost task-filter" onclick="filterTasksAdmin('once',this)" style="font-size:11px;padding:4px 10px;">Engång</button>
+          <button class="btn btn-ghost btn-sm task-filter-btn active" onclick="setTaskFilter('all',this)">Alla</button>
+          <button class="btn btn-ghost btn-sm task-filter-btn" onclick="setTaskFilter('daily',this)">Dagliga</button>
+          <button class="btn btn-ghost btn-sm task-filter-btn" onclick="setTaskFilter('once',this)">Engång</button>
         </div>
       </div>
-      <div id="tasksList"></div>
-    </div>
-  </section>
-  <!-- ══ ACHIEVEMENTS ══ -->
-  <section class="page-section" id="sec-achievements">
-    <div class="page-title">Achievements</div>
-
-    <div class="grid-3" id="achAdminStats">
-      <div class="stat-card"><div class="stat-val" id="adm-ach-unlocked">—</div><div class="stat-label">Upplåsta</div></div>
-      <div class="stat-card"><div class="stat-val" id="adm-ach-total">—</div><div class="stat-label">Totalt</div></div>
-      <div class="stat-card"><div class="stat-val" id="adm-ach-xp" style="color:var(--primary);">—</div><div class="stat-label">Total XP</div></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Upplåsta achievements</div>
-      <div id="adminAchUnlocked"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Alla achievements</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;" id="adminAchFilter">
-        <button class="btn-ghost btn btn-sm" style="border-color:var(--primary);color:var(--primary);" onclick="adminFilterAch('all')">Alla</button>
-        <button class="btn-ghost btn btn-sm" onclick="adminFilterAch('daily')">Dagliga</button>
-        <button class="btn-ghost btn btn-sm" onclick="adminFilterAch('streak')">Streaks</button>
-        <button class="btn-ghost btn btn-sm" onclick="adminFilterAch('milestone')">Milstolpar</button>
-        <button class="btn-ghost btn btn-sm" onclick="adminFilterAch('special')">Special</button>
-      </div>
-      <div id="adminAchGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;"></div>
+      <div id="tasksList"><div style="color:var(--muted);font-size:13px;">Laddar...</div></div>
     </div>
   </section>
 
-  <!-- ══ NOTISER ══ -->
+  <!-- PUSH -->
   <section class="page-section" id="sec-push">
     <div class="page-title">Push-notiser</div>
-    <div class="grid-3">
-      <div class="card" style="cursor:pointer;" onclick="sendQuickPush('food')">
-        <div class="card-title" style="font-size:24px;">🐸</div>
-        <div style="font-weight:700;margin-bottom:4px;">Grogu påminnelse</div>
-        <div style="font-size:13px;color:var(--muted);">Dags att äta!</div>
-      </div>
-      <div class="card blue" style="cursor:pointer;" onclick="sendQuickPush('walk')">
-        <div class="card-title" style="font-size:24px;">💪</div>
-        <div style="font-weight:700;margin-bottom:4px;">Allen påminnelse</div>
-        <div style="font-size:13px;color:var(--muted);">Dags för promenad!</div>
-      </div>
-      <div class="card red" style="cursor:pointer;" onclick="sendQuickPush('glucose')">
-        <div class="card-title" style="font-size:24px;">🔪</div>
-        <div style="font-weight:700;margin-bottom:4px;">Butcher påminnelse</div>
-        <div style="font-size:13px;color:var(--muted);">Mät blodsockret!</div>
+    <div class="card">
+      <div class="card-title">Snabbnotiser</div>
+      <div class="grid-3" id="quickPushGrid">
+        <div class="push-card" onclick="sendQuickPush('food')">
+          <div style="font-size:24px;margin-bottom:6px;">🐸</div>
+          <div style="font-weight:700;font-size:14px;">Dags att äta!</div>
+          <div style="font-size:12px;color:var(--muted);">Grogu påminner</div>
+        </div>
+        <div class="push-card" onclick="sendQuickPush('walk')">
+          <div style="font-size:24px;margin-bottom:6px;">💪</div>
+          <div style="font-weight:700;font-size:14px;">Dags för promenad!</div>
+          <div style="font-size:12px;color:var(--muted);">Allen väntar</div>
+        </div>
+        <div class="push-card" onclick="sendQuickPush('glucose')">
+          <div style="font-size:24px;margin-bottom:6px;">🩸</div>
+          <div style="font-weight:700;font-size:14px;">Mät blodsockret!</div>
+          <div style="font-size:12px;color:var(--muted);">Omni-Man kräver</div>
+        </div>
       </div>
     </div>
-
     <div class="card">
-      <div class="card-title">Skicka anpassad notis</div>
-      <div class="push-panel">
-        <div class="form-group">
-          <label class="form-label">Rubrik</label>
-          <input type="text" class="form-input" id="pushTitle" placeholder="T.ex. Hej Soumaya!">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Meddelande</label>
-          <textarea class="form-textarea" id="pushBody" placeholder="Skriv ett personligt meddelande..."></textarea>
-        </div>
-        <button class="btn btn-primary" onclick="sendCustomPush()">SKICKA NOTIS</button>
-        <span id="pushResult" style="margin-left:12px;font-size:13px;color:var(--green);font-weight:700;"></span>
+      <div class="card-title">Anpassad notis</div>
+      <div class="form-group">
+        <label class="form-label">Titel</label>
+        <input type="text" class="form-input" id="pushTitle" placeholder="Notis-titel">
       </div>
+      <div class="form-group">
+        <label class="form-label">Meddelande</label>
+        <textarea class="form-textarea" id="pushBody" placeholder="Skriv meddelandet..."></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="sendCustomPush()">📤 SKICKA NOTIS</button>
+      <div id="pushStatus" style="margin-top:10px;font-size:13px;color:var(--muted);"></div>
     </div>
-
     <div class="card">
-      <div class="card-title">Anslutna enheter</div>
-      <div id="deviceCount" style="font-family:var(--font-title);font-size:36px;color:var(--primary);"></div>
-      <div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-top:4px;">Push-subscriptions</div>
+      <div class="card-title">Prenumeranter</div>
+      <div id="pushSubscribers"><div style="color:var(--muted);font-size:13px;">Laddar...</div></div>
+    </div>
+  </section>
+
+  <!-- ACHIEVEMENTS -->
+  <section class="page-section" id="sec-achievements">
+    <div class="page-title">Achievements</div>
+    <div class="card">
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm ach-filter-btn active" onclick="filterAch('all',this)">Alla</button>
+        <button class="btn btn-ghost btn-sm ach-filter-btn" onclick="filterAch('unlocked',this)">Upplåsta</button>
+        <button class="btn btn-ghost btn-sm ach-filter-btn" onclick="filterAch('daily',this)">Dagliga</button>
+        <button class="btn btn-ghost btn-sm ach-filter-btn" onclick="filterAch('streak',this)">Streaks</button>
+        <button class="btn btn-ghost btn-sm ach-filter-btn" onclick="filterAch('milestone',this)">Milstolpar</button>
+      </div>
+      <div id="achAdminGrid" class="ach-admin-grid"></div>
     </div>
   </section>
 
 </main>
 
 <!-- BILD-MODAL -->
-<div class="modal-overlay" id="photoModal" onclick="closePhotoModal()">
-  <div class="modal" onclick="event.stopPropagation()" style="max-width:600px;padding:0;overflow:hidden;background:#0a0a0a;">
-    <img id="photoModalImg" style="width:100%;display:block;" src="">
-    <div style="padding:12px;display:flex;justify-content:flex-end;">
-      <button class="btn-ghost btn" onclick="closePhotoModal()">Stäng</button>
+<div id="photoModal" onclick="closePhotoModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <img id="photoModalImg" src="">
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closePhotoModal()">Stäng</button>
     </div>
   </div>
 </div>
 
 <script>
-// ══════════════════════════════════════════
-// AUTH
-// ══════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+// STATE & AUTH
+// ════════════════════════════════════════════════════════
 let adminToken = sessionStorage.getItem('adminToken');
+
+function apiHeaders() {
+  return { 'x-admin-token': adminToken, 'Content-Type': 'application/json' };
+}
 
 async function doLogin() {
   const pw = document.getElementById('passwordInput').value;
+  if (!pw) return;
   try {
     const res = await fetch('/api/admin/login', {
       method: 'POST',
@@ -508,272 +374,163 @@ async function doLogin() {
       body: JSON.stringify({ password: pw })
     });
     const data = await res.json();
-    if (data.ok) {
+    if (data.token) {
       adminToken = data.token;
       sessionStorage.setItem('adminToken', adminToken);
       document.getElementById('loginScreen').style.display = 'none';
       loadDashboard();
     } else {
-      document.getElementById('loginErr').textContent = 'Fel lösenord';
+      document.getElementById('loginError').textContent = 'Fel lösenord';
     }
   } catch(e) {
-    document.getElementById('loginErr').textContent = 'Anslutningsfel';
+    document.getElementById('loginError').textContent = 'Serverfel: ' + e.message;
   }
 }
 
 async function doLogout() {
-  if (adminToken) {
+  try {
     await fetch('/api/admin/logout', { method: 'POST', headers: { 'x-admin-token': adminToken } });
-  }
-  sessionStorage.removeItem('adminToken');
+  } catch(e) {}
   adminToken = null;
+  sessionStorage.removeItem('adminToken');
   document.getElementById('loginScreen').style.display = 'flex';
 }
 
-function apiHeaders() {
-  return { 'Content-Type': 'application/json', 'x-admin-token': adminToken };
-}
-
-// ══════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // NAVIGATION
-// ══════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function goTo(page, el) {
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('sec-' + page).classList.add('active');
-  el.classList.add('active');
-  if (page === 'dashboard') loadDashboard();
-  if (page === 'glucose')   loadGlucose();
-  if (page === 'meals')     loadMeals();
-  if (page === 'walks')     loadWalks();
-  if (page === 'tasks')     loadTasks();
-  if (page === 'push')         loadPush();
-  if (page === 'achievements') loadAchievements();
+  if (el) el.classList.add('active');
+  const loaders = {
+    dashboard:    loadDashboard,
+    glucose:      loadGlucose,
+    meals:        loadMeals,
+    walks:        loadWalks,
+    tasks:        loadTasks,
+    push:         loadPush,
+    achievements: loadAchievements,
+  };
+  if (loaders[page]) loaders[page]();
 }
 
-// ══════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // DASHBOARD
-// ══════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 async function loadDashboard() {
   try {
     const res = await fetch('/api/admin/dashboard', { headers: apiHeaders() });
-    if (res.status === 401) { doLogout(); return; }
     const d = await res.json();
+    document.getElementById('dashStats').innerHTML = [
+      { label: 'Måltider totalt',    val: d.meals || 0      },
+      { label: 'Promenader totalt',  val: d.walks || 0      },
+      { label: 'Glukosmätningar',    val: d.glucose || 0    },
+      { label: 'Push-prenumeranter', val: d.subscribers || 0 },
+    ].map(s =>
+      '<div class="stat-card"><div class="stat-val">' + s.val + '</div><div class="stat-label">' + s.label + '</div></div>'
+    ).join('');
 
-    document.getElementById('d-meals').textContent   = `${d.today.mealsOk}/${d.today.meals}`;
-    document.getElementById('d-walkmin').textContent = d.today.walkMins;
-    document.getElementById('d-walkKm').textContent  = d.today.walkKm;
-    document.getElementById('d-streak').textContent  = d.streak;
+    // Senaste glukos
+    const gRes = await fetch('/api/glucose', { headers: apiHeaders() });
+    const gData = await gRes.json();
+    const recent = (gData || []).slice(-5).reverse();
+    document.getElementById('dashGlucose').innerHTML = recent.length
+      ? '<table><thead><tr><th>Tid</th><th>Värde</th><th>Källa</th></tr></thead><tbody>' +
+        recent.map(g => {
+          const t = new Date(g.time).toLocaleTimeString('sv-SE', {hour:'2-digit',minute:'2-digit'});
+          const d2 = new Date(g.time).toLocaleDateString('sv-SE', {day:'numeric',month:'short'});
+          const cls = g.val < 4 ? 'badge-red' : g.val > 10 ? 'badge-yellow' : 'badge-green';
+          return '<tr><td>' + d2 + ' ' + t + '</td><td><span class="badge ' + cls + '">' + g.val.toFixed(1) + ' mmol/L</span></td><td>' + (g.source||'manuell') + '</td></tr>';
+        }).join('') + '</tbody></table>'
+      : '<div style="color:var(--muted);font-size:13px;">Inga mätningar</div>';
 
-    // Glukos
-    if (d.lastGlucose) {
-      const val = d.lastGlucose.val;
-      const el = document.getElementById('dashGlucoseVal');
-      el.textContent = val.toFixed(1);
-      el.className = 'glucose-big' + (val < 4 ? ' danger' : val > 8 ? ' warn' : '');
-      const t = new Date(d.lastGlucose.time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
-      document.getElementById('dashGlucoseTime').textContent = 'Senast: ' + t;
-    }
+    // Senaste måltider
+    const mRes = await fetch('/api/meals', { headers: apiHeaders() });
+    const mData = await mRes.json();
+    const recentM = (mData || []).slice(0, 5);
+    document.getElementById('dashMeals').innerHTML = recentM.length
+      ? '<table><thead><tr><th>Tid</th><th>Måltid</th><th>Kh</th></tr></thead><tbody>' +
+        recentM.map(m => {
+          const t = new Date(m.createdAt||m.time||Date.now()).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
+          return '<tr><td>' + t + '</td><td>' + (m.name||'?') + '</td><td>' + (m.carbs||0) + 'g</td></tr>';
+        }).join('') + '</tbody></table>'
+      : '<div style="color:var(--muted);font-size:13px;">Inga måltider</div>';
 
-    // Mini-glukos-chart
-    if (d.glucoseHistory.length > 1) {
-      drawMiniChart('dashGlucoseChart', d.glucoseHistory);
-    }
-
-    // Senaste aktivitet
-    const acts = [...(d.recentMeals||[]).map(m => ({
-      icon:'🍽️', text: m.name || 'Okänd måltid',
-      meta: new Date(m.createdAt).toLocaleString('sv-SE',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'}),
-      badge: m.complete ? 'badge-green' : 'badge-yellow',
-      badgeText: m.complete ? '✅ Komplett' : '📷 Saknar bild'
-    })), ...(d.recentWalks||[]).map(w => ({
-      icon:'🚶', text: `Promenad ${w.distance ? w.distance.toFixed(1)+'km' : ''}`,
-      meta: new Date(w.startTime).toLocaleString('sv-SE',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'}),
-      badge:'badge-blue', badgeText: w.duration+'min'
-    }))].sort((a,b) => 0);
-
-    document.getElementById('recentActivity').innerHTML = acts.slice(0,6).map(a =>
-      `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #1a1a1a;">
-        <span style="font-size:20px;">${a.icon}</span>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:700;">${a.text}</div><div style="font-size:11px;color:var(--muted);">${a.meta}</div></div>
-        <span class="badge ${a.badge}">${a.badgeText}</span>
-      </div>`
-    ).join('') || '<div style="color:var(--muted);font-size:13px;padding:12px 0;">Ingen aktivitet ännu</div>';
-
-    // Senaste matbilder
-    document.getElementById('recentMealPics').innerHTML = (d.recentMeals||[]).slice(0,6).map(m =>
-      `<div style="text-align:center;">
-        <div style="display:flex;gap:4px;margin-bottom:4px;">
-          ${m.before ? `<img class="photo-thumb" src="${m.before}" onclick="openPhoto('${m.before}')">` : '<div class="photo-missing">🍽️</div>'}
-          ${m.after  ? `<img class="photo-thumb" src="${m.after}"  onclick="openPhoto('${m.after}')">` : '<div class="photo-missing">✅</div>'}
-        </div>
-        <div style="font-size:11px;color:var(--muted);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.name||'—'}</div>
-      </div>`
-    ).join('') || '<div style="color:var(--muted);font-size:13px;">Inga bilder ännu</div>';
-
-  } catch(e) { console.error(e); }
+  } catch(e) {
+    console.error('Dashboard:', e);
+  }
 }
 
-// ══════════════════════════════════════════
-// GLUKOS
-// ══════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+// BLODSOCKER
+// ════════════════════════════════════════════════════════
 async function loadGlucose() {
   try {
-    const res = await fetch('/api/glucose?count=48', { headers: apiHeaders() });
+    const res = await fetch('/api/glucose', { headers: apiHeaders() });
     const data = await res.json();
-
-    if (data.length > 1) drawFullChart('glucoseFullChart', data);
-
-    const tbody = document.getElementById('glucoseTable');
-    tbody.innerHTML = [...data].reverse().slice(0,30).map(e => {
-      const cls = e.val < 4 ? 'badge-red' : e.val > 8 ? 'badge-yellow' : 'badge-green';
-      const label = e.val < 4 ? 'Lågt' : e.val > 8 ? 'Högt' : 'Bra';
-      const t = new Date(e.time).toLocaleString('sv-SE',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'});
-      return `<tr>
-        <td>${t}</td>
-        <td style="font-family:var(--font-title);font-size:18px;">${e.val.toFixed(1)}</td>
-        <td>${e.source === 'cgm' ? 'CGM' : 'Manuell'}</td>
-        <td><span class="badge ${cls}">${label}</span></td>
-      </tr>`;
-    }).join('') || '<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:20px;">Inga mätningar</td></tr>';
-  } catch(e) {}
+    const el = document.getElementById('glucoseTable');
+    if (!data || !data.length) { el.innerHTML = '<div style="color:var(--muted)">Inga mätningar</div>'; return; }
+    el.innerHTML = '<table><thead><tr><th>Datum</th><th>Tid</th><th>Värde</th><th>Källa</th></tr></thead><tbody>' +
+      [...data].reverse().map(g => {
+        const t = new Date(g.time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
+        const d = new Date(g.time).toLocaleDateString('sv-SE',{day:'numeric',month:'short'});
+        const cls = g.val < 4 ? 'badge-red' : g.val > 10 ? 'badge-yellow' : 'badge-green';
+        return '<tr><td>' + d + '</td><td>' + t + '</td><td><span class="badge ' + cls + '">' + g.val.toFixed(1) + ' mmol/L</span></td><td>' + (g.source||'manuell') + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  } catch(e) { console.error('Glucose:', e); }
 }
 
-// ══════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // MÅLTIDER
-// ══════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 async function loadMeals() {
   try {
     const res = await fetch('/api/meals', { headers: apiHeaders() });
     const data = await res.json();
-    const tbody = document.getElementById('mealsTable');
-    tbody.innerHTML = data.map(m => {
-      const t = new Date(m.createdAt).toLocaleString('sv-SE',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'});
-      const cls = m.complete ? 'badge-green' : 'badge-yellow';
-      const label = m.complete ? '✅ Komplett' : '📷 Saknar bild';
-      return `<tr>
-        <td>
-          <div class="photo-pair">
-            ${m.before ? `<img class="photo-thumb" src="${m.before}" onclick="openPhoto('${m.before}')">` : '<div class="photo-missing">🍽️</div>'}
-            ${m.after  ? `<img class="photo-thumb" src="${m.after}"  onclick="openPhoto('${m.after}')">` : '<div class="photo-missing">✅</div>'}
-          </div>
-        </td>
-        <td><strong>${m.name || '—'}</strong></td>
-        <td>${m.mealType || '—'}</td>
-        <td>${m.carbs || 0}g</td>
-        <td style="font-size:12px;color:var(--muted);">${t}</td>
-        <td><span class="badge ${cls}">${label}</span></td>
-      </tr>`;
-    }).join('') || '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px;">Inga måltider</td></tr>';
-  } catch(e) {}
+    const el = document.getElementById('mealsTable');
+    if (!data || !data.length) { el.innerHTML = '<div style="color:var(--muted)">Inga måltider</div>'; return; }
+    el.innerHTML = '<table><thead><tr><th>Tid</th><th>Namn</th><th>Kh</th><th>Typ</th><th>Bilder</th></tr></thead><tbody>' +
+      data.map(m => {
+        const t = new Date(m.createdAt||m.time||Date.now()).toLocaleString('sv-SE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+        const pics = [m.beforeImage, m.afterImage].filter(Boolean).map(url =>
+          '<img src="' + url + '" style="width:40px;height:40px;object-fit:cover;border-radius:4px;cursor:pointer;" onclick="openPhoto(\'' + url + '\')">'
+        ).join(' ');
+        return '<tr><td>' + t + '</td><td>' + (m.name||'?') + '</td><td>' + (m.carbs||0) + 'g</td><td>' + (m.mealType||'?') + '</td><td>' + (pics||'—') + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  } catch(e) { console.error('Meals:', e); }
 }
 
-// ══════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // PROMENADER
-// ══════════════════════════════════════════
-let detailMap = null;
-
+// ════════════════════════════════════════════════════════
 async function loadWalks() {
   try {
     const res = await fetch('/api/walks', { headers: apiHeaders() });
     const data = await res.json();
-    const tbody = document.getElementById('walksTable');
-    tbody.innerHTML = data.map(w => {
-      const t = new Date(w.startTime).toLocaleString('sv-SE',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'});
-      const dist = w.distance ? w.distance.toFixed(1) + ' km' : '—';
-      const hasGps = w.coords && w.coords.length > 1;
-      return `<tr>
-        <td>${t}</td>
-        <td style="font-family:var(--font-title);font-size:18px;">${w.duration || '—'} min</td>
-        <td style="font-family:var(--font-title);font-size:18px;">${dist}</td>
-        <td>${hasGps ? `<button class="btn-ghost btn btn-sm" onclick="showWalkMap('${w.id}')">🗺️ Visa karta</button>` : '<span style="color:var(--muted);font-size:12px;">Ingen GPS</span>'}</td>
-      </tr>`;
-    }).join('') || '<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:20px;">Inga promenader</td></tr>';
-  } catch(e) {}
+    const el = document.getElementById('walksTable');
+    if (!data || !data.length) { el.innerHTML = '<div style="color:var(--muted)">Inga promenader</div>'; return; }
+    el.innerHTML = '<table><thead><tr><th>Datum</th><th>Tid</th><th>Minuter</th><th>Distans</th></tr></thead><tbody>' +
+      data.map(w => {
+        const t = new Date(w.createdAt||w.time||Date.now()).toLocaleString('sv-SE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+        return '<tr><td colspan="2">' + t + '</td><td>' + (w.minutes||0) + ' min</td><td>' + ((w.distance||0).toFixed(1)) + ' km</td></tr>';
+      }).join('') + '</tbody></table>';
+  } catch(e) { console.error('Walks:', e); }
 }
 
-async function showWalkMap(walkId) {
-  try {
-    const res = await fetch(`/api/walks/${walkId}`, { headers: apiHeaders() });
-    const walk = await res.json();
-
-    document.getElementById('walkMapCard').style.display = 'block';
-    document.getElementById('walkMapTitle').textContent = `Promenadkarta — ${new Date(walk.startTime).toLocaleDateString('sv-SE',{day:'numeric',month:'long'})}`;
-    document.getElementById('walkMapStats').innerHTML = `
-      <span>⏱️ ${walk.duration || '?'} min</span>
-      <span>📍 ${walk.distance ? walk.distance.toFixed(2)+' km' : '—'}</span>
-      <span>📌 ${walk.coords.length} GPS-punkter</span>
-    `;
-    document.getElementById('walkMapCard').scrollIntoView({ behavior: 'smooth' });
-
-    setTimeout(() => {
-      if (detailMap) { detailMap.remove(); detailMap = null; }
-      const coords = walk.coords.map(c => [c.lat, c.lng]);
-      detailMap = L.map('walkDetailMap').setView(coords[0], 15);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OSM' }).addTo(detailMap);
-      const line = L.polyline(coords, { color: '#1a6bff', weight: 4, opacity: 0.9 }).addTo(detailMap);
-      // Start / slut-markörer
-      L.circleMarker(coords[0], { radius:8, color:'#4aff6a', fillColor:'#4aff6a', fillOpacity:1 }).addTo(detailMap).bindPopup('Start');
-      L.circleMarker(coords[coords.length-1], { radius:8, color:'#FFD700', fillColor:'#FFD700', fillOpacity:1 }).addTo(detailMap).bindPopup('Slut');
-      detailMap.fitBounds(line.getBounds(), { padding: [20,20] });
-    }, 100);
-  } catch(e) { console.error(e); }
-}
-
-// ══════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // UPPGIFTER
-// ══════════════════════════════════════════
-let taskFilter = 'all';
-function filterTasksAdmin(filter, btn) {
-  taskFilter = filter;
-  document.querySelectorAll('.task-filter').forEach(b => b.classList.remove('active'));
+// ════════════════════════════════════════════════════════
+let currentTaskFilter = 'all';
+
+function setTaskFilter(filter, btn) {
+  currentTaskFilter = filter;
+  document.querySelectorAll('.task-filter-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
   loadTasks();
 }
 
-async function loadTasks() {
-    const res = await fetch('/api/tasks', { headers: apiHeaders() });
-    let tasks = await res.json();
-    const today = new Date().toISOString().split('T')[0];
-    if (taskFilter !== 'all') tasks = tasks.filter(t => t.type === taskFilter);
-    const el = document.getElementById('tasksList');
-    if (!tasks.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px 0;">Inga uppgifter</div>'; return; }
-    el.innerHTML = tasks.map(t => {
-      const completedToday = t.completions && t.completions[today];
-      const diffColors = {easy:'#2DD881',normal:'#169ee7',hard:'#E63946'};
-      const diffLabels = {easy:'⭐ Enkel',normal:'⭐⭐ Normal',hard:'⭐⭐⭐ Svår'};
-      const typeLabels = {daily:'🔁 Daglig',once:'1️⃣ Engång',weekly:'📅 Veckovis'};
-      return `<div class="task-item ${t.active ? '' : 'inactive'}">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-          <span style="font-size:24px;">${t.icon || '⭐'}</span>
-          <div style="flex:1;">
-            <div style="font-weight:700;font-size:14px;">${t.title}</div>
-            ${t.description ? `<div style="font-size:12px;color:#666;margin-top:2px;">${t.description}</div>` : ''}
-          </div>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer;">
-            <input type="checkbox" ${t.active ? 'checked' : ''} onchange="toggleTaskActive('${t.id}', this.checked)">
-            Aktiv
-          </label>
-        </div>
-        <div class="task-meta-row">
-          <span class="task-badge type">${typeLabels[t.type] || t.type}</span>
-          ${t.xpReward ? `<span class="task-badge xp">+${t.xpReward} XP</span>` : ''}
-          ${t.goldReward ? `<span class="task-badge gold">+${t.goldReward} 🪙</span>` : ''}
-          ${t.requirePhotos ? `<span class="task-badge photo">📷 ${t.photoCount} foto</span>` : ''}
-          ${t.difficulty && t.difficulty !== 'normal' ? `<span class="task-badge hard">${diffLabels[t.difficulty]||t.difficulty}</span>` : ''}
-        </div>
-        ${completedToday ? '<div class="task-completed-today">✅ Slutförd idag</div>' : ''}
-        ${t.reward ? `<div style="font-size:11px;color:#666;font-style:italic;margin-top:4px;">"${t.reward}"</div>` : ''}
-        <div style="display:flex;gap:8px;margin-top:10px;">
-          <button class="btn btn-sm btn-ghost" onclick="deleteTask('${t.id}')" style="color:#E63946;border-color:#E63946;font-size:11px;padding:5px 10px;">🗑️ Ta bort</button>
-        </div>
-      </div>`;
-    }).join('');
-
-
-} // end loadTasks
-
-// ── FOTO-KRAV ────────────────────────────────────────────
 function togglePhotoCount() {
   const cb = document.getElementById('taskRequirePhotos');
   document.getElementById('photoCountRow').style.display = cb.checked ? 'block' : 'none';
@@ -785,6 +542,41 @@ function setPhotoCount(val, btn) {
   document.getElementById('taskPhotoCount').value = val;
 }
 
+async function loadTasks() {
+  try {
+    const res = await fetch('/api/tasks', { headers: apiHeaders() });
+    let tasks = await res.json();
+    const today = new Date().toISOString().split('T')[0];
+    if (currentTaskFilter !== 'all') tasks = tasks.filter(t => t.type === currentTaskFilter);
+    const el = document.getElementById('tasksList');
+    if (!tasks.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;">Inga uppgifter</div>'; return; }
+    el.innerHTML = tasks.map(t => {
+      const doneToday = t.completions && t.completions[today];
+      return '<div class="task-item ' + (t.active ? '' : 'inactive') + '">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+          '<span style="font-size:22px;">' + (t.icon||'⭐') + '</span>' +
+          '<div style="flex:1;"><div style="font-weight:700;font-size:14px;">' + t.title + '</div>' +
+          (t.description ? '<div style="font-size:12px;color:var(--muted);margin-top:2px;">' + t.description + '</div>' : '') +
+          '</div>' +
+          '<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;">' +
+            '<input type="checkbox" ' + (t.active ? 'checked' : '') + ' onchange="toggleTaskActive(\'' + t.id + '\',this.checked)"> Aktiv' +
+          '</label>' +
+        '</div>' +
+        '<div class="task-meta">' +
+          '<span class="badge badge-blue">' + (t.type==='daily'?'🔁 Daglig':t.type==='once'?'1️⃣ Engång':'📅 Veckovis') + '</span>' +
+          (t.xpReward ? '<span class="badge badge-green">+' + t.xpReward + ' XP</span>' : '') +
+          (t.goldReward ? '<span class="badge badge-yellow">+' + t.goldReward + ' 🪙</span>' : '') +
+          (t.requirePhotos ? '<span class="badge badge-purple">📷 ' + t.photoCount + ' foto</span>' : '') +
+          (doneToday ? '<span class="badge badge-green">✅ Klar idag</span>' : '') +
+        '</div>' +
+        '<div style="display:flex;gap:8px;margin-top:8px;">' +
+          '<button class="btn btn-red btn-sm" onclick="deleteTask(\'' + t.id + '\')">🗑️ Ta bort</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) { console.error('Tasks:', e); }
+}
+
 async function createTask() {
   const title = document.getElementById('taskTitle').value.trim();
   if (!title) { alert('Ange en titel'); return; }
@@ -794,118 +586,144 @@ async function createTask() {
       headers: apiHeaders(),
       body: JSON.stringify({
         title,
+        icon: document.getElementById('taskIcon').value.trim() || '⭐',
         description: document.getElementById('taskDesc').value.trim(),
         type: document.getElementById('taskType').value,
-        reward: document.getElementById('taskReward').value.trim()
+        difficulty: document.getElementById('taskDifficulty').value,
+        xpReward: parseInt(document.getElementById('taskXP').value) || 0,
+        goldReward: parseInt(document.getElementById('taskGold').value) || 0,
+        reward: document.getElementById('taskReward').value.trim(),
+        requirePhotos: document.getElementById('taskRequirePhotos').checked,
+        photoCount: parseInt(document.getElementById('taskPhotoCount').value) || 1,
       })
     });
-    document.getElementById('taskTitle').value = '';
-    document.getElementById('taskDesc').value = '';
-    document.getElementById('taskReward').value = '';
+    ['taskTitle','taskDesc','taskReward'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('taskIcon').value = '⭐';
+    document.getElementById('taskXP').value = '50';
+    document.getElementById('taskGold').value = '10';
+    document.getElementById('taskRequirePhotos').checked = false;
+    document.getElementById('photoCountRow').style.display = 'none';
     loadTasks();
-  } catch(e) {}
+  } catch(e) { alert('Fel: ' + e.message); }
 }
 
-
 async function toggleTaskActive(id, active) {
-  await fetch(`/api/tasks/${id}`, {
-    method: 'PUT',
-    headers: { ...apiHeaders(), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ active })
-  });
-  loadTasks();
+  try {
+    await fetch('/api/tasks/' + id, {
+      method: 'PUT',
+      headers: apiHeaders(),
+      body: JSON.stringify({ active })
+    });
+    loadTasks();
+  } catch(e) { console.error(e); }
 }
 
 async function deleteTask(id) {
   if (!confirm('Ta bort uppgiften?')) return;
-  await fetch(`/api/tasks/${id}`, { method: 'DELETE', headers: apiHeaders() });
-  loadTasks();
+  try {
+    await fetch('/api/tasks/' + id, { method: 'DELETE', headers: apiHeaders() });
+    loadTasks();
+  } catch(e) { console.error(e); }
 }
 
-// ══════════════════════════════════════════
-// PUSH-NOTISER
-// ══════════════════════════════════════════
-const QUICK_PUSH = {
-  food:    { title: 'Dags att äta! 🐸', body: '*stirrar intensivt* ...mat?' },
-  walk:    { title: 'Dags för promenad! 💪', body: 'Allen väntar på dig! Jag flyger bredvid.' },
-  glucose: { title: 'Mät blodsockret! 🩸', body: 'Håller koll på dig. — Butcher' }
+// ════════════════════════════════════════════════════════
+// PUSH
+// ════════════════════════════════════════════════════════
+const QUICK_MESSAGES = {
+  food:    { title: 'Dags att äta! 🐸',       body: '*stirrar intensivt* ...mat?' },
+  walk:    { title: 'Dags för promenad! 💪',   body: 'Allen väntar på dig!' },
+  glucose: { title: 'Mät blodsockret! 🩸',     body: 'Omni-Man kräver data.' },
 };
 
 async function sendQuickPush(type) {
-  const p = QUICK_PUSH[type];
-  const res = await fetch('/api/admin/push', {
-    method: 'POST',
-    headers: apiHeaders(),
-    body: JSON.stringify({ ...p, tag: type })
-  });
-  const d = await res.json();
-  showPushResult(`Skickat till ${d.to} enhet(er)!`);
+  const msg = QUICK_MESSAGES[type];
+  if (!msg) return;
+  try {
+    const res = await fetch('/api/admin/push', {
+      method: 'POST',
+      headers: apiHeaders(),
+      body: JSON.stringify(msg)
+    });
+    const d = await res.json();
+    document.getElementById('pushStatus').textContent = '✅ Skickad till ' + (d.sent||0) + ' prenumeranter';
+  } catch(e) {
+    document.getElementById('pushStatus').textContent = '❌ Fel: ' + e.message;
+  }
 }
 
 async function sendCustomPush() {
   const title = document.getElementById('pushTitle').value.trim();
-  const body  = document.getElementById('pushBody').value.trim();
-  if (!title || !body) { alert('Fyll i rubrik och meddelande'); return; }
-  const res = await fetch('/api/admin/push', {
-    method: 'POST',
-    headers: apiHeaders(),
-    body: JSON.stringify({ title, body, tag: 'custom' })
-  });
-  const d = await res.json();
-  showPushResult(`Skickat till ${d.to} enhet(er)!`);
-}
-
-function showPushResult(msg) {
-  const el = document.getElementById('pushResult');
-  el.textContent = msg;
-  setTimeout(() => el.textContent = '', 4000);
+  const body = document.getElementById('pushBody').value.trim();
+  if (!title || !body) { alert('Fyll i titel och meddelande'); return; }
+  try {
+    const res = await fetch('/api/admin/push', {
+      method: 'POST',
+      headers: apiHeaders(),
+      body: JSON.stringify({ title, body })
+    });
+    const d = await res.json();
+    document.getElementById('pushStatus').textContent = '✅ Skickad till ' + (d.sent||0) + ' prenumeranter';
+    document.getElementById('pushTitle').value = '';
+    document.getElementById('pushBody').value = '';
+  } catch(e) {
+    document.getElementById('pushStatus').textContent = '❌ Fel: ' + e.message;
+  }
 }
 
 async function loadPush() {
   try {
     const res = await fetch('/api/admin/dashboard', { headers: apiHeaders() });
     const d = await res.json();
-    document.getElementById('deviceCount').textContent = d.subscriptions;
-  } catch(e) {}
+    document.getElementById('pushSubscribers').innerHTML =
+      '<div style="font-size:16px;font-weight:700;color:var(--green);">' + (d.subscribers||0) + ' aktiva prenumeranter</div>';
+  } catch(e) { console.error('Push:', e); }
 }
 
-// ══════════════════════════════════════════
-// CHARTAR
-// ══════════════════════════════════════════
-function chartConfig(data, small = true) {
-  const labels = data.map(e => new Date(e.time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'}));
-  const vals   = data.map(e => e.val);
-  return {
-    type: 'line',
-    data: { labels, datasets: [{ data: vals, borderColor: '#4aff6a', backgroundColor: 'rgba(74,255,106,0.08)', borderWidth: 2, pointRadius: small ? 0 : 3, tension: 0.4, fill: true }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a1a1a', titleColor: '#4aff6a', bodyColor: '#f0f0e8', borderColor: '#333', borderWidth: 1 } },
-      scales: {
-        x: { display: !small, ticks: { color: '#555', font: { size: 10 } }, grid: { color: '#1a1a1a' } },
-        y: { min: 2, max: 14, grid: { color: '#1a1a1a' }, ticks: { color: '#555', font: { size: 10 } } }
-      }
-    }
-  };
+// ════════════════════════════════════════════════════════
+// ACHIEVEMENTS
+// ════════════════════════════════════════════════════════
+let achFilter = 'all';
+let playerAchievements = [];
+
+async function loadAchievements() {
+  try {
+    const res = await fetch('/api/admin/dashboard', { headers: apiHeaders() });
+    const d = await res.json();
+    playerAchievements = d.achievements || [];
+    renderAchGrid();
+  } catch(e) { console.error('Achievements:', e); }
 }
 
-let miniChart = null, fullChart = null;
-function drawMiniChart(id, data) {
-  const canvas = document.getElementById(id);
-  if (!canvas) return;
-  if (miniChart) miniChart.destroy();
-  miniChart = new Chart(canvas, chartConfig(data, true));
-}
-function drawFullChart(id, data) {
-  const canvas = document.getElementById(id);
-  if (!canvas) return;
-  if (fullChart) fullChart.destroy();
-  fullChart = new Chart(canvas, chartConfig(data, false));
+function filterAch(filter, btn) {
+  achFilter = filter;
+  document.querySelectorAll('.ach-filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderAchGrid();
 }
 
-// ══════════════════════════════════════════
+function renderAchGrid() {
+  const el = document.getElementById('achAdminGrid');
+  // Achievements laddas från servern, inte från achievements.js
+  if (!playerAchievements.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;grid-column:1/-1;">Inga achievement-data tillgängliga</div>';
+    return;
+  }
+  let items = playerAchievements;
+  if (achFilter === 'unlocked') items = items.filter(a => a.unlocked);
+  else if (achFilter !== 'all') items = items.filter(a => a.type === achFilter);
+
+  el.innerHTML = items.map(a =>
+    '<div class="ach-admin-card ' + (a.unlocked ? 'unlocked' : '') + '">' +
+      '<div class="ach-admin-icon">' + (a.icon||'⭐') + '</div>' +
+      '<div class="ach-admin-title">' + a.title + '</div>' +
+      '<div class="ach-admin-meta">' + (a.unlocked ? '✅ Upplåst' : '🔒 Låst') + ' · +' + a.xp + ' XP</div>' +
+    '</div>'
+  ).join('');
+}
+
+// ════════════════════════════════════════════════════════
 // FOTO-MODAL
-// ══════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 function openPhoto(url) {
   document.getElementById('photoModalImg').src = url;
   document.getElementById('photoModal').classList.add('open');
@@ -914,75 +732,14 @@ function closePhotoModal() {
   document.getElementById('photoModal').classList.remove('open');
 }
 
-// Enter i login
-document.getElementById('passwordInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
-});
-
-// ══════════════════════════════════════════
-// ADMIN ACHIEVEMENTS
-// ══════════════════════════════════════════
-let adminAchFilter = 'all';
-
-async function loadAchievements() {
-  // Hämta state-data från dashboard för att simulera unlock-check
-  try {
-    const res = await fetch('/api/admin/dashboard', { headers: apiHeaders() });
-    const d = await res.json();
-
-    // Vi hämtar localStorage från appen om möjligt — annars visa alla
-    // Admin visar bara statisk lista + förklaring
-    renderAdminAchGrid(adminAchFilter);
-
-    document.getElementById('adm-ach-total').textContent = ACHIEVEMENTS.length;
-    document.getElementById('adm-ach-unlocked').textContent = '?';
-    document.getElementById('adm-ach-xp').textContent = ACHIEVEMENTS.reduce((a,b)=>a+b.xp,0).toLocaleString('sv-SE');
-  } catch(e) {}
-}
-
-const TIER_COLORS = { bronze:'#cd7f32', silver:'#c0c0c0', gold:'#FFD700', platinum:'#e5e4e2', invincible:'#FFD700' };
-const CHAR_COLORS = { food:'#4aff6a', walk:'#1a6bff', glucose:'#ff3a2a', special:'#FFD700' };
-
-function renderAdminAchGrid(filter) {
-  let list = ACHIEVEMENTS;
-  if (filter !== 'all') list = list.filter(a => a.type === filter);
-
-  document.getElementById('adminAchGrid').innerHTML = list.map(a => {
-    const cc = CHAR_COLORS[a.char] || '#FFD700';
-    const tc = TIER_COLORS[a.tier] || '#FFD700';
-    const iconInfo = typeof getAchIcon !== 'undefined' ? getAchIcon(a) : null;
-    let iconHTML = '<span style="font-size:26px;">' + a.icon + '</span>';
-    if (iconInfo && iconInfo.type === 'img' && typeof CHAR_IMGS !== 'undefined' && CHAR_IMGS[iconInfo.src]) {
-      iconHTML = '<img src="' + CHAR_IMGS[iconInfo.src] + '" style="width:52px;height:52px;object-fit:contain;" alt="' + a.title + '">';
-    }
-    return `<div style="background:var(--card2);border:1.5px solid #2a2a2a;border-radius:10px;padding:12px;position:relative;">
-      <div style="position:absolute;top:6px;right:6px;font-size:9px;font-weight:900;padding:2px 5px;border-radius:4px;background:${tc}22;color:${tc};">${a.tier.toUpperCase()}</div>
-      <div style="margin-bottom:8px;height:56px;display:flex;align-items:center;">${iconHTML}</div>
-      <div style="font-family:var(--font-title);font-size:14px;color:${cc};margin-bottom:3px;">${a.title}</div>
-      <div style="font-size:11px;color:var(--muted);line-height:1.4;margin-bottom:6px;">${a.desc}</div>
-      <div style="font-size:11px;color:var(--text);font-style:italic;line-height:1.4;border-top:1px solid #222;padding-top:6px;margin-bottom:6px;">${a.flavor}</div>
-      <div style="font-size:12px;font-weight:700;color:var(--green);">+${a.xp} XP</div>
-    </div>`;
-  }).join('');
-}
-
-function adminFilterAch(filter) {
-  adminAchFilter = filter;
-  document.querySelectorAll('#adminAchFilter button').forEach(b => {
-    b.style.borderColor = ''; b.style.color = '';
-  });
-  event.target.style.borderColor = 'var(--primary)';
-  event.target.style.color = 'var(--primary)';
-  renderAdminAchGrid(filter);
-}
-
-// Auto-login om token finns
+// ════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════
 if (adminToken) {
   document.getElementById('loginScreen').style.display = 'none';
-  setTimeout(loadDashboard, 100);
+  loadDashboard();
 }
 
-// Auto-refresh dashboard
 setInterval(() => {
   const active = document.querySelector('.page-section.active');
   if (active && active.id === 'sec-dashboard') loadDashboard();
