@@ -77,6 +77,7 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 // ── EXPRESS ──────────────────────────────────────────────────
 const app = express();
 app.use(express.json({ limit: '10mb' }));
+app.use(express.text({ type: '*/*', limit: '10mb' })); // xDrip kan skicka text/plain
 app.use(express.static(path.join(__dirname), {
   setHeaders(res, fp) {
     // Aldrig cacha HTML-filer
@@ -337,8 +338,17 @@ app.get('/api/v1/entries.json', xdripAuth, (req, res) => {
 
 app.post('/api/v1/entries.json', xdripAuth, (req, res) => {
   try {
+    // Logga för debug
+    console.log('xDrip POST /api/v1/entries.json headers:', JSON.stringify(req.headers));
+    console.log('xDrip body type:', typeof req.body, 'body:', JSON.stringify(req.body)?.slice(0, 200));
+
+    // xDrip kan skicka JSON-sträng istället för parsed JSON
+    let body = req.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch(e) {}
+    }
     // xDrip skickar antingen en array eller ett objekt
-    const entries = Array.isArray(req.body) ? req.body : [req.body];
+    const entries = Array.isArray(body) ? body : [body];
     let added = 0;
 
     entries.forEach(entry => {
@@ -425,6 +435,7 @@ app.post('/api/v1/entries.json', xdripAuth, (req, res) => {
 
 // Nightscout-kompatibel status-endpoint (xDrip kollar denna)
 app.get('/api/v1/status.json', (req, res) => {
+  console.log('xDrip GET /api/v1/status.json headers:', JSON.stringify(req.headers));
   res.json({
     status: 'ok',
     name: 'Soumaya',
