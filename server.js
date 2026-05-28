@@ -304,6 +304,110 @@ function haversine(lat1, lon1, lat2, lon2) {
 function rad(d) { return d * Math.PI / 180; }
 
 // ── GLUKOS ───────────────────────────────────────────────────
+
+// ── xDRIP+ REST API UPLOAD ────────────────────────────────────
+// xDrip+ → Settings → Inter-app settings → REST API Upload
+// Sätt URL: https://DITT-RAILWAY-DOMÄN/api/v1/entries.json
+// xDrip skickar automatiskt nya mätvärden hit
+app.post('/api/v1/entries.json', (req, res) => {
+  try {
+    // xDrip skickar antingen en array eller ett objekt
+    const entries = Array.isArray(req.body) ? req.body : [req.body];
+    let added = 0;
+
+    entries.forEach(entry => {
+      // sgv = blood glucose i mg/dL
+      const sgv = entry.sgv || entry.glucose;
+      if (!sgv) return;
+
+      const mmol = Math.round(sgv / 18 * 10) / 10;  // mg/dL → mmol/L
+      const ts   = entry.date || entry.dateString ? new Date(entry.dateString || entry.date).getTime() : Date.now();
+      const dir  = entry.direction || entry.trend || '';
+
+      // Kolla om vi redan har detta värde (undvik dubletter)
+      const exists = glucoseLog.some(g => Math.abs(g.time - ts) < 30000);
+      if (exists) return;
+
+      const newEntry = {
+        val: mmol,
+        source: 'xdrip',
+        time: ts,
+        direction: dir,
+        raw: sgv,
+      };
+      glucoseLog.push(newEntry);
+      added++;
+    });
+
+    if (added > 0) {
+      // Sortera och trimma
+      glucoseLog.sort((a, b) => a.time - b.time);
+      if (glucoseLog.length > 500) glucoseLog = glucoseLog.slice(-500);
+      writeJSON(GLUCOSE_FILE, glucoseLog);
+
+      // Auto-komplettera TIR-uppgifter
+      const LOW = 4.0, HIGH = 8.0;
+      const today = new Date().toISOString().split('T')[0];
+      const todayStart = new Date(today).getTime();
+      const todayGlucose = glucoseLog.filter(g => g.time >= todayStart);
+      let tirMinutes = 0;
+      for (let i = 1; i < todayGlucose.length; i++) {
+        const prev = todayGlucose[i-1], curr = todayGlucose[i];
+        const mins = (curr.time - prev.time) / 60000;
+        if (mins < 120 && prev.val >= LOW && prev.val <= HIGH) tirMinutes += mins;
+      }
+      tasks.forEach(task => {
+        if (!task.active) return;
+        if (task.completions && task.completions[today]) return;
+        if (task.completionType === 'glucose_tir' && task.targetTIR > 0 && tirMinutes >= task.targetTIR) {
+          if (!task.completions) task.completions = {};
+          task.completions[today] = { status: 'approved', auto: true, tirMinutes: Math.round(tirMinutes) };
+          pendingRewards.push({
+            id: crypto.randomUUID(), type: 'task_auto', sourceId: task.id,
+            xpReward: task.xpReward||0, goldReward: task.goldReward||0,
+            message: '🩸 ' + task.title + ' klar! ' + Math.round(tirMinutes) + ' min i målzonen.',
+            createdAt: Date.now(), claimed: false,
+          });
+          writeJSON(TASKS_FILE, tasks);
+          writeJSON(REWARDS_FILE, pendingRewards);
+        }
+      });
+
+      // Kolla varningar för lågt/högt
+      const latest = glucoseLog[glucoseLog.length - 1];
+      if (latest && latest.source === 'xdrip') {
+        const s = notifSettings;
+        const low  = s.glucoseLow  || 4.0;
+        const high = s.glucoseHigh || 10.0;
+        if (latest.val < low) {
+          pushToAll('⚠️ LÅGT BLODSOCKER!', latest.val.toFixed(1) + ' mmol/L — ät något NU!', 'glucose-low');
+        } else if (latest.val > high) {
+          pushToAll('⚠️ Högt blodsocker', latest.val.toFixed(1) + ' mmol/L', 'glucose-high');
+        }
+      }
+
+      console.log('xDrip: ' + added + ' nya värden, senaste: ' + (glucoseLog[glucoseLog.length-1]?.val || '?') + ' mmol/L');
+    }
+
+    // xDrip förväntar sig 200 OK med entries tillbaka
+    res.status(200).json(entries);
+  } catch(e) {
+    console.error('xDrip upload error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Nightscout-kompatibel status-endpoint (xDrip kollar denna)
+app.get('/api/v1/status.json', (req, res) => {
+  res.json({
+    status: 'ok',
+    name: 'Soumaya',
+    version: '1.0.0',
+    apiEnabled: true,
+    careportalEnabled: false,
+  });
+});
+
 app.post('/api/glucose', (req, res) => {
   const { val, source, time } = req.body;
   if (!val) return res.status(400).json({ error: 'Saknar val' });
@@ -352,8 +456,17 @@ app.post('/api/glucose', (req, res) => {
   res.json({ ok: true });
 });
 
+// Publik endpoint för appen — returnerar senaste mätningar
+app.get('/api/glucose/latest', (req, res) => {
+  const count = Math.min(parseInt(req.query.count) || 48, 288); // max 24h à 5min
+  const data = glucoseLog.slice(-count);
+  res.setHeader('Cache-Control', 'no-store');
+  res.json(data);
+});
+
+// Admin-endpoint med full historik
 app.get('/api/glucose', adminAuth, (req, res) => {
-  res.json(glucoseLog.slice(-(parseInt(req.query.count) || 48)));
+  res.json(glucoseLog.slice(-(parseInt(req.query.count) || 200)));
 });
 
 // ── UPPGIFTER ─────────────────────────────────────────────────

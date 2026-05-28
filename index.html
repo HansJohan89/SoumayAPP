@@ -573,27 +573,24 @@ body{
 <!-- BLODSOCKER -->
 <div class="page" id="page-glucose">
   <div class="card blue">
-    <div class="card-label">xDrip+ Anslutning</div>
-    <div id="cgmStatus">
-      <div class="setup-box">
-        <div style="font-size:36px;margin-bottom:8px;">📡</div>
-        <div class="burst burst-sm" style="color:var(--hero-blue);margin-bottom:6px;">ANSLUT XDRIP+</div>
-        <div style="font-size:12px;color:var(--ink-muted);font-weight:600;margin-bottom:12px;">Aktivera "xDrip Web Service" i xDrip+ → ange adressen</div>
-        <div class="input-group">
-          <label class="input-label">xDrip URL</label>
-          <input type="text" class="input-field" id="xdripUrl" placeholder="http://127.0.0.1:17580" value="http://127.0.0.1:17580">
-        </div>
-        <button class="btn btn-blue btn-sm" onclick="connectXDrip()">ANSLUT</button>
+    <div class="card-label">xDrip+ Live-data</div>
+    <div id="cgmLiveStatus">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div id="cgmDot" style="width:10px;height:10px;border-radius:50%;background:var(--paper-dark);border:1.5px solid var(--ink-muted);flex-shrink:0;"></div>
+        <span id="cgmStatusText" style="font-weight:700;font-size:13px;color:var(--ink-muted);">Väntar på data från xDrip+</span>
       </div>
+      <canvas id="glucoseChart" style="width:100%;height:120px;display:none;"></canvas>
     </div>
-    <div id="cgmConnected" style="display:none;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-        <div style="width:10px;height:10px;border-radius:50%;background:var(--in-range);border:1.5px solid var(--in-range-dark);"></div>
-        <span style="font-weight:700;font-size:13px;">Ansluten till xDrip+</span>
-        <button onclick="disconnectXDrip()" style="margin-left:auto;background:none;border:none;color:var(--ink-muted);font-size:12px;cursor:pointer;">Koppla bort</button>
+    <details style="margin-top:10px;">
+      <summary style="font-size:11px;font-weight:700;color:var(--hero-blue-deep);cursor:pointer;text-transform:uppercase;letter-spacing:1px;">📡 Konfigurera xDrip+</summary>
+      <div style="margin-top:10px;font-size:13px;font-weight:600;line-height:1.7;color:var(--ink-soft);">
+        <div style="margin-bottom:8px;">I xDrip+ → <strong>Settings → Inter-app settings → REST API Upload</strong></div>
+        <div style="margin-bottom:6px;">Aktivera <strong>"REST API Upload"</strong></div>
+        <div style="margin-bottom:8px;">Sätt URL till:</div>
+        <div id="xdripUrlDisplay" style="background:var(--ink);color:var(--power-yellow);font-family:var(--font-mono);font-size:12px;padding:10px 12px;border-radius:6px;word-break:break-all;margin-bottom:8px;">Laddar...</div>
+        <div style="font-size:11px;color:var(--ink-muted);">xDrip skickar sedan data automatiskt var 5:e minut.</div>
       </div>
-      <canvas id="glucoseChart" style="width:100%;height:80px;"></canvas>
-    </div>
+    </details>
   </div>
   <details style="margin-bottom:12px;">
     <summary style="padding:10px 14px;background:var(--paper-soft);border:var(--border);border-radius:8px;font-size:12px;font-weight:700;color:var(--ink-muted);cursor:pointer;text-transform:uppercase;letter-spacing:1px;list-style:none;">
@@ -1960,45 +1957,50 @@ function logManualGlucose(){
   if(val<state.settings.lowTarget) showToast('⚠️ LÅGT BLODSOCKER — ät något!');
   else if(val>state.settings.highTarget*1.4) showToast('⚠️ HÖGT BLODSOCKER');
 }
-async function connectXDrip(){
-  const url=document.getElementById('xdripUrl').value.trim(); state.xdripUrl=url; save();
-  try{
-    const res=await fetch(url+'/sgv.json?count=1',{mode:'cors'}); if(!res.ok) throw new Error();
-    state.cgmConnected=true; save();
-    document.getElementById('cgmStatus').style.display='none';
-    document.getElementById('cgmConnected').style.display='block';
-    showToast('Ansluten till xDrip+!'); pollXDrip();
-  }catch(e){showToast('Kunde inte ansluta');}
-}
-function disconnectXDrip(){
-  state.cgmConnected=false; save();
-  document.getElementById('cgmStatus').style.display='block';
-  document.getElementById('cgmConnected').style.display='none';
-}
-async function pollXDrip(){
-  if(!state.cgmConnected) return;
-  try{
-    const res=await fetch(state.xdripUrl+'/sgv.json?count=48',{mode:'cors'});
-    const data=await res.json();
-    if(data&&data.length){
-      const entries=data.map(d=>({val:d.sgv?Math.round(d.sgv/18*10)/10:null,time:d.date||d.dateString,source:'cgm'})).filter(d=>d.val);
-      const existing=new Set(state.glucoseHistory.map(g=>g.time));
-      entries.forEach(e=>{if(!existing.has(e.time)) state.glucoseHistory.push(e);});
-      state.glucoseHistory.sort((a,b)=>a.time-b.time);
-      if(state.glucoseHistory.length>200) state.glucoseHistory=state.glucoseHistory.slice(-200);
-      const latest=entries[0];
-      const t=new Date(latest.time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
-      const tEl=document.getElementById('glucoseTime'); if(tEl) tEl.textContent='xDrip · '+t;
-      renderGlucoseCard(latest.val); save(); drawGlucoseChart();
-    }
-  }catch(e){}
-  setTimeout(pollXDrip,60000);
-}
+// xDrip ansluts via REST API Upload — se xDrip-kortet på Socker-sidan
+function connectXDrip(){} function disconnectXDrip(){} async function pollXDrip(){}
+
 function renderGlucosePage(){
-  if(state.cgmConnected){document.getElementById('cgmStatus').style.display='none'; document.getElementById('cgmConnected').style.display='block';}
-  const urlEl=document.getElementById('xdripUrl'); if(urlEl) urlEl.value=state.xdripUrl;
   renderGlucoseLog();
+  // Uppdatera live-status
+  updateCGMStatus();
+  // Visa URL för xDrip-konfiguration
+  const urlEl = document.getElementById('xdripUrlDisplay');
+  if (urlEl) urlEl.textContent = window.location.origin + '/api/v1/entries.json';
+  // Rita chart om vi har data
+  if (state.glucoseHistory && state.glucoseHistory.length > 1) drawGlucoseChart();
 }
+
+function updateCGMStatus() {
+  const dot  = document.getElementById('cgmDot');
+  const text = document.getElementById('cgmStatusText');
+  const chart = document.getElementById('glucoseChart');
+  if (!dot || !text) return;
+
+  const history = state.glucoseHistory || [];
+  const xdripEntries = history.filter(g => g.source === 'xdrip');
+  const last = xdripEntries[xdripEntries.length - 1];
+
+  if (!last) {
+    dot.style.background  = 'var(--paper-dark)';
+    dot.style.borderColor = 'var(--ink-muted)';
+    text.textContent = 'Väntar på data från xDrip+';
+    text.style.color = 'var(--ink-muted)';
+    return;
+  }
+
+  const minAgo = Math.round((Date.now() - last.time) / 60000);
+  const isRecent = minAgo < 15;
+  dot.style.background  = isRecent ? 'var(--in-range)' : 'var(--high)';
+  dot.style.borderColor = isRecent ? 'var(--in-range-dark)' : '#b35a00';
+  text.textContent = isRecent
+    ? 'Live · Senaste: ' + last.val.toFixed(1) + ' mmol/L (' + minAgo + ' min sedan)'
+    : 'Senaste data: ' + minAgo + ' min sedan · Kolla xDrip+';
+  text.style.color = isRecent ? 'var(--in-range-dark)' : 'var(--high)';
+  if (chart) chart.style.display = 'block';
+}
+
+
 function renderGlucoseLog(){
   const el=document.getElementById('glucoseLog'); if(!el) return;
   const history=[...state.glucoseHistory].reverse().slice(0,15);
@@ -3025,15 +3027,65 @@ function setAvatars(){
   }
 }
 
+
+// ═══════════════════════════════════════════════════
+// GLUKOS-POLLING (var 5:e minut från server)
+// ═══════════════════════════════════════════════════
+async function fetchGlucose() {
+  try {
+    const res = await fetch('/api/glucose/latest?count=48');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!Array.isArray(data) || !data.length) return;
+
+    // Merga med lokalt state — undvik dubletter
+    const existing = new Set(state.glucoseHistory.map(g => g.time));
+    let added = 0;
+    data.forEach(g => {
+      if (!existing.has(g.time)) {
+        state.glucoseHistory.push(g);
+        added++;
+      }
+    });
+
+    if (added > 0) {
+      state.glucoseHistory.sort((a, b) => a.time - b.time);
+      if (state.glucoseHistory.length > 500) state.glucoseHistory = state.glucoseHistory.slice(-500);
+      // Spara utan att trigga achievement-check (undvik loop)
+      localStorage.setItem('soumaya_state', JSON.stringify(state));
+
+      // Uppdatera UI om vi är på rätt sida
+      const last = state.glucoseHistory[state.glucoseHistory.length - 1];
+      if (last) {
+        renderGlucoseCard(last.val);
+        const gt = document.getElementById('glucoseTime');
+        if (gt) {
+          const minAgo = Math.round((Date.now() - last.time) / 60000);
+          gt.textContent = 'xDrip · ' + (minAgo < 2 ? 'just nu' : minAgo + ' min sedan');
+        }
+      }
+      updateCGMStatus();
+      if (document.getElementById('page-glucose')?.classList.contains('active')) {
+        renderGlucoseLog();
+        drawGlucoseChart();
+      }
+    }
+  } catch(e) {
+    console.warn('fetchGlucose:', e.message);
+  }
+}
+
 // ═══════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════
 load();
 state.appOpens=(state.appOpens||0)+1;
 loadSettings(); updateClock(); setInterval(updateClock,10000); updateGoldDisplay();
-if(state.cgmConnected) pollXDrip();
+// xDrip pushar data via REST API, ingen polling behövs
 fetchTasks().then(()=>{ renderTasksWidget(); renderAchievementsWidget(); });
-claimPendingRewards(); // Hämta godkända belöningar från servern
+claimPendingRewards();
+fetchGlucose(); // Hämta senaste glukos vid start
+setInterval(fetchGlucose, 5 * 60 * 1000); // Uppdatera var 5:e minut
 renderHome();
 if('serviceWorker'in navigator){navigator.serviceWorker.register('sw.js').catch(e=>console.log('SW:',e));}
 setupPush(); startReminders(); setTimeout(runAchievementCheck,600);
