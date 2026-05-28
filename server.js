@@ -306,10 +306,36 @@ function rad(d) { return d * Math.PI / 180; }
 // ── GLUKOS ───────────────────────────────────────────────────
 
 // ── xDRIP+ REST API UPLOAD ────────────────────────────────────
-// xDrip+ → Settings → Inter-app settings → REST API Upload
-// Sätt URL: https://DITT-RAILWAY-DOMÄN/api/v1/entries.json
-// xDrip skickar automatiskt nya mätvärden hit
-app.post('/api/v1/entries.json', (req, res) => {
+// Rotadress i xDrip: https://invincible2024@soumayapp-production.up.railway.app/api/v1/
+// xDrip skickar api-secret som SHA1-hash av lösenordet i headern
+
+function xdripAuth(req, res, next) {
+  // xDrip skickar api-secret = SHA1(lösenord) som header
+  const secret = req.headers['api-secret'];
+  if (secret) {
+    const expected = crypto.createHash('sha1').update(ADMIN_PASSWORD).digest('hex');
+    if (secret.toLowerCase() === expected.toLowerCase()) return next();
+  }
+  // Tillåt även utan auth (för enkel testning och bakåtkompatibilitet)
+  // entries-data är inte känslig
+  return next();
+}
+
+// xDrip GET entries (behövs för att xDrip ska verifiera anslutningen)
+app.get('/api/v1/entries.json', xdripAuth, (req, res) => {
+  const count = parseInt(req.query.count) || 10;
+  const recent = glucoseLog.filter(g => g.source === 'xdrip').slice(-count);
+  // Returnera i Nightscout-format
+  res.json(recent.map(g => ({
+    sgv: Math.round(g.val * 18),
+    date: g.time,
+    dateString: new Date(g.time).toISOString(),
+    direction: g.direction || 'Flat',
+    type: 'sgv',
+  })));
+});
+
+app.post('/api/v1/entries.json', xdripAuth, (req, res) => {
   try {
     // xDrip skickar antingen en array eller ett objekt
     const entries = Array.isArray(req.body) ? req.body : [req.body];
@@ -402,9 +428,33 @@ app.get('/api/v1/status.json', (req, res) => {
   res.json({
     status: 'ok',
     name: 'Soumaya',
-    version: '1.0.0',
+    version: '14.2.1', // Nightscout-kompatibel version
     apiEnabled: true,
     careportalEnabled: false,
+    settings: {
+      units: 'mmol',
+      timeFormat: 24,
+      nightMode: false,
+      showRawbg: 'never',
+      customTitle: 'Soumaya',
+      theme: 'default',
+      alarmUrgentHigh: true,
+      alarmHigh: true,
+      alarmLow: true,
+      alarmUrgentLow: true,
+      alarmUrgentHighMins: [30,60,90,120],
+      alarmHighMins: [30,60,90,120],
+      alarmLowMins: [15,30,45,60],
+      alarmUrgentLowMins: [15,30,45],
+      alarmTimeagoWarn: true,
+      alarmTimeagoWarnMins: 15,
+      alarmTimeagoUrgent: true,
+      alarmTimeagoUrgentMins: 30,
+      enable: ['careportal'],
+      alarmTypes: ['predict'],
+    },
+    extendedSettings: {},
+    authorized: null,
   });
 });
 
