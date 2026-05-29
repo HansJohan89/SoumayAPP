@@ -580,7 +580,7 @@ body{
         <div id="cgmDot" style="width:10px;height:10px;border-radius:50%;background:var(--paper-dark);border:1.5px solid var(--ink-muted);flex-shrink:0;"></div>
         <span id="cgmStatusText" style="font-weight:700;font-size:13px;color:var(--ink-muted);">Väntar på data från xDrip+</span>
       </div>
-      <canvas id="glucoseChart" style="width:100%;height:120px;display:none;"></canvas>
+      <div id="glucoseChartWrap" style="position:relative;width:100%;height:160px;display:none;"><canvas id="glucoseChart"></canvas></div>
     </div>
     <details style="margin-top:10px;">
       <summary style="font-size:11px;font-weight:700;color:var(--hero-blue-deep);cursor:pointer;text-transform:uppercase;letter-spacing:1px;">📡 Konfigurera xDrip+</summary>
@@ -2007,7 +2007,8 @@ function updateCGMStatus() {
     ? 'Live · Senaste: ' + last.val.toFixed(1) + ' mmol/L (' + minAgo + ' min sedan)'
     : 'Senaste data: ' + minAgo + ' min sedan · Kolla xDrip+';
   text.style.color = isRecent ? 'var(--in-range-dark)' : 'var(--high)';
-  if (chart) chart.style.display = 'block';
+  const wrap2 = document.getElementById('glucoseChartWrap');
+  if(wrap2 && recent.length >= 2) wrap2.style.display = 'block';
 }
 
 
@@ -2023,10 +2024,84 @@ function renderGlucoseLog(){
   }).join('');
 }
 function drawGlucoseChart(){
-  const canvas=document.getElementById('glucoseChart'); if(!canvas) return;
-  const recent=state.glucoseHistory.slice(-24); if(recent.length<2) return;
-  if(window._glucoseChart) window._glucoseChart.destroy();
-  window._glucoseChart=new Chart(canvas,{type:'line',data:{labels:recent.map(e=>new Date(e.time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})),datasets:[{data:recent.map(e=>e.val),borderColor:'#2DD881',backgroundColor:'rgba(45,216,129,0.1)',borderWidth:2,pointRadius:2,tension:0.4,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{min:2,max:14,ticks:{color:'#999',font:{size:10}}}}}});
+  const wrap = document.getElementById('glucoseChartWrap');
+  const canvas = document.getElementById('glucoseChart');
+  if(!canvas || !wrap) return;
+
+  // Visa senaste 3 timmar = 36 mätvärden à 5 min
+  const cutoff = Date.now() - 3 * 60 * 60 * 1000;
+  const recent = state.glucoseHistory.filter(g => g.time >= cutoff);
+  if(recent.length < 2) return;
+
+  wrap.style.display = 'block';
+
+  // Förstör gamla chart korrekt
+  if(window._glucoseChart){
+    window._glucoseChart.destroy();
+    window._glucoseChart = null;
+  }
+
+  // Beräkna min/max med lite marginal
+  const vals = recent.map(g => g.val);
+  const lo = Math.max(2, Math.min(...vals) - 1);
+  const hi = Math.min(22, Math.max(...vals) + 1);
+
+  // Färgsätt punkter beroende på om de är i mål
+  const low = state.settings.lowTarget || 4;
+  const high = state.settings.highTarget || 8;
+  const pointColors = recent.map(g =>
+    g.val < low ? '#E63946' : g.val > high ? '#FF8A00' : '#2DD881'
+  );
+
+  window._glucoseChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: recent.map(g => {
+        const d = new Date(g.time);
+        return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+      }),
+      datasets: [{
+        data: recent.map(g => g.val),
+        borderColor: '#2DD881',
+        backgroundColor: 'rgba(45,216,129,0.08)',
+        borderWidth: 2,
+        pointRadius: recent.length > 20 ? 2 : 4,
+        pointBackgroundColor: pointColors,
+        tension: 0.3,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.parsed.y.toFixed(1) + ' mmol/L'
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: '#666',
+            font: { size: 10 },
+            maxTicksLimit: 6,
+            maxRotation: 0,
+          },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        y: {
+          min: Math.floor(lo),
+          max: Math.ceil(hi),
+          ticks: { color: '#666', font: { size: 10 }, stepSize: 2 },
+          grid: { color: 'rgba(0,0,0,0.07)' }
+        }
+      }
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════
