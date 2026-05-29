@@ -602,8 +602,8 @@ body{
         <div class="companion-img" style="width:120px;flex-shrink:0;">
           <img id="omniGlucoseImg" style="width:100%;height:auto;object-fit:contain;" alt=""></div>
         <div style="flex:1;">
-          <div class="companion-name" style="color:var(--pulse-red-deep);">OMNI-MAN</div>
-          <div class="speech-bubble" style="font-size:13px;">Endast om xDrip inte fungerar.</div>
+          <div class="companion-name" style="color:var(--pulse-red-deep);">JAR JAR BINKS</div>
+          <div class="speech-bubble" style="font-size:13px;">Ex-squeeze me — backup only!</div>
         </div>
       </div>
       <div class="input-group">
@@ -1839,19 +1839,68 @@ fetch('/char_imgs.json')
 // ═══════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════
-const DEFAULT_STATE = {
-  glucoseHistory:[], foodLog:[], walkLog:[],
-  settings:{lowTarget:4.0,highTarget:8.0,foodInterval:4,glucoseReminder:true,foodReminder:true,walkReminder:true},
-  cgmConnected:false, xdripUrl:'http://127.0.0.1:17580',
-  walkActive:false, selectedMealType:'frukost',
-  unlockedAchievements:[], totalXP:0, appOpens:0,
-  gold:0, inventory:[], equipped:{weapon:null,armor:null,accessory:null},
-  combatLog:[], lastFightDate:null, activeCombat:null,
+let state = {
+  glucoseHistory: [], foodLog: [], walkLog: [],
+  settings: { lowTarget: 4.0, highTarget: 8.0 },
+  totalXP: 0, gold: 0,
+  inventory: [], equipped: { weapon:null, armor:null, accessory:null, potion:null, rune:null },
+  combatLog: [], lastFightDate: null,
+  unlockedAchievements: [], appOpens: 0,
+  walkActive: false, selectedMealType: 'frukost',
+  activeCombat: null, shopFilter: 'weapon',
 };
-let state = {...DEFAULT_STATE};
-function save() { localStorage.setItem('soumaya_state',JSON.stringify(state)); runAchievementCheck(); updateGoldDisplay(); }
-function load() { try { const s=localStorage.getItem('soumaya_state'); if(s) state={...DEFAULT_STATE,...JSON.parse(s)}; } catch(e){} }
 
+let _savePlayerTimer = null;
+
+function save() {
+  runAchievementCheck();
+  updateGoldDisplay();
+  clearTimeout(_savePlayerTimer);
+  _savePlayerTimer = setTimeout(savePlayerToServer, 1000);
+}
+
+async function savePlayerToServer() {
+  try {
+    await fetch('/api/player', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        totalXP: state.totalXP, gold: state.gold,
+        inventory: state.inventory, equipped: state.equipped,
+        combatLog: state.combatLog, lastFightDate: state.lastFightDate,
+        unlockedAchievements: state.unlockedAchievements,
+        appOpens: state.appOpens, settings: state.settings,
+      })
+    });
+  } catch(e) { console.warn('savePlayer:', e.message); }
+}
+
+async function loadAllData() {
+  // Spelarprofil
+  try {
+    const r = await fetch('/api/player');
+    if (r.ok) {
+      const p = await r.json();
+      state.totalXP = p.totalXP || 0;
+      state.gold = p.gold || 0;
+      state.inventory = p.inventory || [];
+      state.equipped = p.equipped || { weapon:null, armor:null, accessory:null, potion:null, rune:null };
+      state.combatLog = p.combatLog || [];
+      state.lastFightDate = p.lastFightDate || null;
+      state.unlockedAchievements = p.unlockedAchievements || [];
+      state.appOpens = (p.appOpens || 0) + 1;
+      if (p.settings) state.settings = { ...state.settings, ...p.settings };
+    }
+  } catch(e) { console.warn('loadPlayer:', e.message); }
+  // Glukos
+  try { const r = await fetch('/api/glucose/latest?count=288'); if(r.ok) state.glucoseHistory = await r.json(); } catch(e) {}
+  // Måltider
+  try { const r = await fetch('/api/meals'); if(r.ok) { const d = await r.json(); state.foodLog = Array.isArray(d) ? d : []; } } catch(e) {}
+  // Promenader
+  try { const r = await fetch('/api/walks'); if(r.ok) { const d = await r.json(); state.walkLog = Array.isArray(d) ? d : []; } } catch(e) {}
+}
+
+function load() {} // Bakåtkompatibilitet — allt via loadAllData()
 // ═══════════════════════════════════════════════════
 // HERO HELPERS
 // ═══════════════════════════════════════════════════
@@ -1895,10 +1944,10 @@ const ALLEN_LINES={
   great:['Du är starkare än du tror, Soumaya!']
 };
 const OMNI_LINES={
-  high:['Sockret är ute och spelar. Fixa det.'],
-  low:['LÅGT. Ät. Direkt.'],
-  good:['Bra. Sockret sitter som det ska.','Stabilt.'],
-  default:['Håller koll på dig.','Mät, logga, agera.']
+  high:['Meesa thinkin dat sugar too high! Fixen it now-now!','Oie! Dat number no good, Soumaya!','Weesa needen to bringen dat down, okeeday?'],
+  low:['Uh oh! Sugar too low-low! Eaten somethin FAST!','Meesa very scared! Low sugar BAD!','Ex-squeeze me, but yousa need food NOW-NOW!'],
+  good:['Sugars perfecto! Meesa so happy!','Okeday! Dat number beautiful, just beautiful!','Yousa doin BOMBAD good with dat sugar!'],
+  default:['Meesa watching da sugar for you!','Jar Jar keeping eye on dis, okeeday?','Hmmm... how are yousa feelin today?']
 };
 function rnd(arr){return arr[Math.floor(Math.random()*arr.length)];}
 function groguLine(ctx){return rnd(GROGU_LINES[ctx]||GROGU_LINES.default);}
@@ -3041,7 +3090,7 @@ function runAchievementCheck(){
     state.totalXP=(state.totalXP||0)+xpGain; state.gold=(state.gold||0)+goldGain;
     const newLevel=getLevelData(state.totalXP).current.level;
     if(newLevel>prevLevel) showToast('🎉 LEVEL UP! Nivå '+newLevel+'!');
-    localStorage.setItem('soumaya_state',JSON.stringify(state)); updateGoldDisplay();
+    savePlayerToServer(); updateGoldDisplay();
     if(achQueue.length===1) showNextAchModal();
   }
 }
@@ -3058,17 +3107,17 @@ function updateAchBadge(){}
 // INSTÄLLNINGAR
 // ═══════════════════════════════════════════════════
 function saveSettings(){
-  state.settings={
-    lowTarget: parseFloat(document.getElementById('lowTarget').value)||4,
-    highTarget: parseFloat(document.getElementById('highTarget').value)||8,
+  state.settings = {
+    lowTarget: parseFloat(document.getElementById('lowTarget').value) || 4,
+    highTarget: parseFloat(document.getElementById('highTarget').value) || 8,
   };
-  save();
+  savePlayerToServer();
   showToast('Inställningar sparade!');
 }
 function loadSettings(){
-  const s=state.settings||{};
-  const lt=document.getElementById('lowTarget'); if(lt) lt.value=s.lowTarget||4;
-  const ht=document.getElementById('highTarget'); if(ht) ht.value=s.highTarget||8;
+  const s = state.settings || {};
+  const lt = document.getElementById('lowTarget'); if(lt) lt.value = s.lowTarget || 4;
+  const ht = document.getElementById('highTarget'); if(ht) ht.value = s.highTarget || 8;
 }
 
 // ═══════════════════════════════════════════════════
@@ -3091,6 +3140,16 @@ function startReminders(){
 let toastTimeout;
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>t.classList.remove('show'),2800);}
 function updateClock(){const now=new Date();const ht=document.getElementById('headerTime');if(ht)ht.textContent=now.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});const hd=document.getElementById('headerDate');if(hd)hd.textContent=now.toLocaleDateString('sv-SE',{weekday:'short',day:'numeric',month:'short'});}
+let _jarjarIdx = 0;
+const JARJAR_KEYS = ['omni_avatar','omni_speech','omni_badge','jarjar_1','jarjar_2','jarjar_3','jarjar_4'];
+
+function getJarJarImg() {
+  // Rotera bland alla 4 unika bilder
+  const keys = ['jarjar_1','jarjar_2','jarjar_3','jarjar_4'];
+  _jarjarIdx = (_jarjarIdx + 1) % keys.length;
+  return CHAR_IMGS[keys[_jarjarIdx]] || CHAR_IMGS['omni_avatar'] || '';
+}
+
 function setAvatars(){
   if(!CHAR_IMGS||!CHAR_IMGS.grogu_avatar) return;
 
@@ -3104,8 +3163,9 @@ function setAvatars(){
   setImg('groguHomeImg', CHAR_IMGS.grogu_avatar);
   setImg('groguFoodImg', CHAR_IMGS.grogu_avatar);
   setImg('allenWalkImg', CHAR_IMGS.allen_avatar);
-  setImg('omniHomeImg', CHAR_IMGS.omni_avatar);
-  setImg('omniGlucoseImg', CHAR_IMGS.omni_avatar);
+  // Jar Jar ersätter Omni-Man — rotera bland bilderna
+  setImg('omniHomeImg', CHAR_IMGS.jarjar_2 || CHAR_IMGS.omni_avatar);
+  setImg('omniGlucoseImg', CHAR_IMGS.jarjar_4 || CHAR_IMGS.omni_avatar);
 
   // Hero-profil
   const heroCard=document.getElementById('heroProfileCard');
@@ -3144,7 +3204,7 @@ async function fetchGlucose() {
       state.glucoseHistory.sort((a, b) => a.time - b.time);
       if (state.glucoseHistory.length > 500) state.glucoseHistory = state.glucoseHistory.slice(-500);
       // Spara utan att trigga achievement-check (undvik loop)
-      localStorage.setItem('soumaya_state', JSON.stringify(state));
+      savePlayerToServer();
 
       // Uppdatera UI om vi är på rätt sida
       const last = state.glucoseHistory[state.glucoseHistory.length - 1];
@@ -3167,20 +3227,96 @@ async function fetchGlucose() {
   }
 }
 
+
+// ═══════════════════════════════════════════════════
+// BAKGRUNDS-REFRESH
+// ═══════════════════════════════════════════════════
+async function refreshPlayer() {
+  try {
+    const r = await fetch('/api/player');
+    if (!r.ok) return;
+    const p = await r.json();
+    const oldXP = state.totalXP;
+    const oldGold = state.gold;
+    state.totalXP = p.totalXP || 0;
+    state.gold = p.gold || 0;
+    state.inventory = p.inventory || [];
+    state.equipped = p.equipped || state.equipped;
+    state.combatLog = p.combatLog || [];
+    state.lastFightDate = p.lastFightDate || null;
+    state.unlockedAchievements = p.unlockedAchievements || [];
+    if (p.settings) state.settings = { ...state.settings, ...p.settings };
+    // Uppdatera UI om något ändrats
+    if (state.gold !== oldGold) updateGoldDisplay();
+    if (state.totalXP !== oldXP) runAchievementCheck();
+  } catch(e) {}
+
+  // Kolla pending rewards (admin kan ha godkänt något)
+  await claimPendingRewards();
+}
+
+async function refreshActivity() {
+  try {
+    const [mRes, wRes] = await Promise.all([
+      fetch('/api/meals'),
+      fetch('/api/walks'),
+    ]);
+    if (mRes.ok) { const d = await mRes.json(); if (Array.isArray(d)) state.foodLog = d; }
+    if (wRes.ok) { const d = await wRes.json(); if (Array.isArray(d)) state.walkLog = d; }
+    // Re-rendera hem om aktiv
+    if (document.getElementById('page-home')?.classList.contains('active')) {
+      renderStreak();
+      renderRings();
+    }
+    if (document.getElementById('page-food')?.classList.contains('active')) renderFoodPage();
+    if (document.getElementById('page-walk')?.classList.contains('active')) renderWalkPage();
+  } catch(e) {}
+}
+
 // ═══════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════
-load();
-state.appOpens=(state.appOpens||0)+1;
-loadSettings(); updateClock(); setInterval(updateClock,10000); updateGoldDisplay();
-// xDrip pushar data via REST API, ingen polling behövs
-fetchTasks().then(()=>{ renderTasksWidget(); renderAchievementsWidget(); });
-claimPendingRewards();
-fetchGlucose(); // Hämta senaste glukos vid start
-setInterval(fetchGlucose, 5 * 60 * 1000); // Uppdatera var 5:e minut
-renderHome();
-if('serviceWorker'in navigator){navigator.serviceWorker.register('sw.js').catch(e=>console.log('SW:',e));}
-setupPush(); startReminders(); setTimeout(runAchievementCheck,600);
+// ── Starta appen — ladda all data från servern ──────────
+updateClock(); setInterval(updateClock, 10000);
+
+(async () => {
+  // Ladda all data från servern
+  await loadAllData();
+
+  // Uppdatera UI
+  loadSettings();
+  updateGoldDisplay();
+  renderHome();
+  setAvatars();
+
+  // Hämta uppgifter och achievements
+  await fetchTasks();
+  renderTasksWidget();
+  renderAchievementsWidget();
+
+  // Hämta pending belöningar
+  await claimPendingRewards();
+
+  // Starta glukos-polling
+  await fetchGlucose();
+  setInterval(fetchGlucose, 5 * 60 * 1000);
+
+  // Service worker och push
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(e => console.log('SW:', e));
+  }
+  setupPush();
+  startReminders();
+  setTimeout(runAchievementCheck, 600);
+
+  // Polling — hämta uppdateringar från servern
+  setInterval(refreshPlayer,  30 * 1000);   // XP, guld, achievements: var 30s
+  setInterval(refreshActivity, 2 * 60 * 1000); // Måltider + promenader: var 2 min
+  setInterval(async () => {                  // Tasks: var 60s
+    await fetchTasks();
+    renderTasksWidget();
+  }, 60 * 1000);
+})();
 
 </script>
 </body>

@@ -36,6 +36,7 @@ const APPROVALS_FILE = path.join(DATA_DIR, 'approvals.json');
 const REWARDS_FILE   = path.join(DATA_DIR, 'rewards.json');
 const SETTINGS_FILE  = path.join(DATA_DIR, 'notif_settings.json');
 const SCHEDULED_FILE = path.join(DATA_DIR, 'scheduled_push.json');
+const PLAYER_FILE    = path.join(DATA_DIR, 'player.json');
 
 function readJSON(file, def) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch(e) { return def; }
@@ -61,6 +62,19 @@ const DEFAULT_NOTIF_SETTINGS = {
   mealEnabled: true,
   walkEnabled: true,
 };
+const DEFAULT_PLAYER = {
+  totalXP: 0,
+  gold: 0,
+  inventory: [],
+  equipped: { weapon: null, armor: null, accessory: null, potion: null, rune: null },
+  combatLog: [],
+  lastFightDate: null,
+  unlockedAchievements: [],
+  appOpens: 0,
+  settings: { lowTarget: 4.0, highTarget: 8.0 },
+};
+let player = readJSON(PLAYER_FILE, DEFAULT_PLAYER);
+
 let notifSettings = readJSON(SETTINGS_FILE, DEFAULT_NOTIF_SETTINGS);
 let scheduledPush = readJSON(SCHEDULED_FILE, []);
 
@@ -209,7 +223,13 @@ app.post('/api/meals', (req, res) => {
   res.json({ ok: true, meal });
 });
 
-app.get('/api/meals', adminAuth, (req, res) => res.json(meals.slice(0, 100)));
+// Publik — appen läser måltider
+app.get('/api/meals', (req, res) => {
+  const admin = req.headers['x-admin-token'];
+  const isAdmin = admin && admin === require('crypto').createHmac('sha256','soumaya-admin-2024').update(process.env.ADMIN_PASSWORD||'invincible2024').digest('hex');
+  // Admin får alla, appen får senaste 100
+  res.json(isAdmin ? meals : meals.slice(-100));
+});
 
 // ── PROMENADER ───────────────────────────────────────────────
 app.post('/api/walks/track', (req, res) => {
@@ -284,7 +304,10 @@ app.post('/api/walks/finish', (req, res) => {
   res.json({ ok: true, walk });
 });
 
-app.get('/api/walks', adminAuth, (req, res) => res.json(walks.slice(0, 50)));
+// Publik — appen läser promenader
+app.get('/api/walks', (req, res) => {
+  res.json(walks.filter(w => !w.active).slice(-50));
+});
 app.get('/api/walks/:id', (req, res) => {
   const w = walks.find(w => w.id === req.params.id);
   w ? res.json(w) : res.status(404).json({ error: 'Hittades ej' });
@@ -722,10 +745,25 @@ app.delete('/api/tasks/:id', adminAuth, (req, res) => {
 });
 
 
+
+// ── SPELARPROFIL ──────────────────────────────────────────────
+app.get('/api/player', (req, res) => {
+  res.json(player);
+});
+
+app.post('/api/player', (req, res) => {
+  const allowed = ['totalXP','gold','inventory','equipped','combatLog','lastFightDate','unlockedAchievements','appOpens','settings'];
+  allowed.forEach(key => {
+    if (req.body[key] !== undefined) player[key] = req.body[key];
+  });
+  writeJSON(PLAYER_FILE, player);
+  res.json({ ok: true });
+});
+
 // ── EXPORT / IMPORT ──────────────────────────────────────────
 app.get('/api/admin/export', adminAuth, (req, res) => {
   const exportData = {
-    version: 3,
+    version: 4,
     exportedAt: new Date().toISOString(),
     meals,
     walks,
@@ -736,6 +774,7 @@ app.get('/api/admin/export', adminAuth, (req, res) => {
     subscriptions,
     notifSettings,
     scheduledPush,
+    player,
   };
   res.setHeader('Content-Disposition', 'attachment; filename="soumaya-backup-' + new Date().toISOString().split('T')[0] + '.json"');
   res.setHeader('Content-Type', 'application/json');
@@ -754,6 +793,7 @@ app.post('/api/admin/import', adminAuth, (req, res) => {
     if (d.pendingRewards)   { pendingRewards = d.pendingRewards;     writeJSON(REWARDS_FILE, pendingRewards); }
     if (d.notifSettings)    { notifSettings = d.notifSettings;       writeJSON(SETTINGS_FILE, notifSettings); }
     if (d.scheduledPush)    { scheduledPush = d.scheduledPush;       writeJSON(SCHEDULED_FILE, scheduledPush); }
+    if (d.player)           { player = { ...DEFAULT_PLAYER, ...d.player }; writeJSON(PLAYER_FILE, player); }
     res.json({ ok: true, message: 'Import klar', counts: {
       meals: meals.length, walks: walks.length, tasks: tasks.length,
       glucose: glucoseLog.length, approvals: pendingApprovals.length,
