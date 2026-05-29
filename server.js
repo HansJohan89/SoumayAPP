@@ -323,7 +323,8 @@ function xdripAuth(req, res, next) {
 }
 
 // xDrip GET entries (behövs för att xDrip ska verifiera anslutningen)
-app.get('/api/v1/entries.json', xdripAuth, (req, res) => {
+// Stöd både med och utan .json (xDrip använder .json, GlucoDataHandler utan)
+app.get(['/api/v1/entries', '/api/v1/entries.json'], xdripAuth, (req, res) => {
   const count = parseInt(req.query.count) || 10;
   const recent = glucoseLog.filter(g => g.source === 'xdrip').slice(-count);
   // Returnera i Nightscout-format
@@ -336,7 +337,7 @@ app.get('/api/v1/entries.json', xdripAuth, (req, res) => {
   })));
 });
 
-app.post('/api/v1/entries.json', xdripAuth, (req, res) => {
+app.post(['/api/v1/entries', '/api/v1/entries.json'], xdripAuth, (req, res) => {
   try {
     // Logga för debug
     console.log('xDrip POST /api/v1/entries.json headers:', JSON.stringify(req.headers));
@@ -434,7 +435,13 @@ app.post('/api/v1/entries.json', xdripAuth, (req, res) => {
 });
 
 // Nightscout-kompatibel status-endpoint (xDrip kollar denna)
-app.get('/api/v1/status.json', (req, res) => {
+
+// GlucoDataHandler hämtar treatments (måltider/insulin) — returnera tom array
+app.get(['/api/v1/treatments', '/api/v1/treatments.json'], (req, res) => {
+  res.json([]);
+});
+
+app.get(['/api/v1/status', '/api/v1/status.json'], (req, res) => {
   console.log('xDrip GET /api/v1/status.json headers:', JSON.stringify(req.headers));
   res.json({
     status: 'ok',
