@@ -370,7 +370,8 @@ body{
 
 
 /* ── UPPGIFTSMODAL ── */
-#taskModal.open { display:flex; }
+#taskModal { display:none; }
+#taskModal.open { display:flex !important; }
 #taskModal.open #taskModalInner { transform:translateY(0); }
 .task-photo-slot {
   aspect-ratio:1; border:2px dashed var(--paper-dark);
@@ -681,7 +682,7 @@ body{
 
 <!-- UPPGIFTSDETALJ-MODAL -->
 <div id="taskModal" style="position:fixed;inset:0;z-index:500;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.5);">
-  <div id="taskModalInner" style="background:var(--paper);border:var(--border-thick);border-radius:24px 24px 0 0;width:100%;max-width:500px;padding:20px;max-height:85vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.34,1.56,.64,1);">
+  <div id="taskModalInner" style="background:var(--paper);border:var(--border-thick);border-radius:24px 24px 0 0;width:100%;max-width:500px;padding:20px;max-height:85vh;overflow-y:auto;">
     <div style="width:40px;height:4px;background:var(--paper-dark);border-radius:2px;margin:0 auto 16px;"></div>
     <div id="taskModalContent"></div>
   </div>
@@ -2433,17 +2434,18 @@ async function openTaskDetail(taskId) {
     if (res.ok) photoStatus = await res.json();
   } catch(e) {}
 
+  const modal = document.getElementById('taskModal');
+  if (!modal) { console.error('taskModal saknas i DOM'); return; }
+
   renderTaskModal(task, photoStatus);
 
-  const modal = document.getElementById('taskModal');
-  modal.style.display = 'flex';
-  requestAnimationFrame(() => modal.classList.add('open'));
+  modal.classList.add('open');
 }
 
 function closeTaskModal() {
   const modal = document.getElementById('taskModal');
-  modal.classList.remove('open');
-  setTimeout(() => { modal.style.display = 'none'; currentDetailTaskId = null; }, 300);
+  if (modal) modal.classList.remove('open');
+  currentDetailTaskId = null;
 }
 
 function renderTaskModal(task, photoStatus) {
@@ -2569,8 +2571,9 @@ async function uploadTaskPhoto(input) {
 }
 
 // Stäng modal vid klick utanför
-document.getElementById('taskModal').addEventListener('click', function(e) {
-  if (e.target === this) closeTaskModal();
+// Stäng modal vid klick på bakgrunden
+document.addEventListener('click', function(e) {
+  if (e.target && e.target.id === 'taskModal') closeTaskModal();
 });
 
 function renderAchievementsWidget() {
