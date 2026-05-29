@@ -38,7 +38,7 @@ body{
   color:var(--ink);
   font-family:var(--font-ui);
   min-height:100vh;
-  padding-bottom:calc(80px + var(--safe-bottom));
+  padding-bottom:calc(90px + var(--safe-bottom));
   background-image:radial-gradient(circle,rgba(10,10,10,0.06) 1px,transparent 1px);
   background-size:8px 8px;
 }
@@ -77,7 +77,7 @@ body{
 .card{
   background:var(--white);border:var(--border-thick);border-radius:16px;
   padding:16px;margin-bottom:12px;box-shadow:4px 4px 0 var(--ink);
-  position:relative;overflow:hidden;
+  position:relative;
 }
 .card.blue{background:#EBF6FD;border-color:var(--hero-blue);box-shadow:4px 4px 0 var(--hero-blue-dark)}
 .card.yellow{background:#FFFBE0;border-color:var(--power-yellow-deep);box-shadow:4px 4px 0 var(--ink)}
@@ -121,8 +121,9 @@ body{
 .ring-unit{font-size:8px;font-weight:700;text-transform:uppercase;color:var(--ink-muted)}
 .ring-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:4px;color:var(--ink-muted)}
 .companion-row{display:flex;gap:14px;align-items:center;margin-bottom:12px}
-.companion-img{flex-shrink:0;filter:drop-shadow(3px 3px 0 rgba(0,0,0,.15));overflow:visible;}
-.companion-img img{display:block;width:100%;height:auto;object-fit:contain;max-height:160px;}
+.companion-img{flex-shrink:0;filter:drop-shadow(3px 3px 0 rgba(0,0,0,.15));overflow:visible;min-width:100px;}
+.companion-img img{display:block;width:100%;height:auto;object-fit:contain;}
+.companion-img img{display:block;width:100%;height:auto;object-fit:contain;}
 .speech-bubble{
   background:var(--white);border:var(--border-thick);border-radius:16px;border-bottom-left-radius:4px;
   padding:10px 14px;font-size:14px;font-weight:600;line-height:1.5;flex:1;
@@ -433,7 +434,7 @@ body{
         <div class="range-labels"><span>Lågt &lt;4</span><span>Mål 4–8</span><span>Högt &gt;10</span></div>
         <div id="glucoseTime" style="font-size:11px;color:var(--ink-muted);font-weight:600;margin-top:6px;"></div>
       </div>
-      <div class="companion-img" style="width:90px;flex-shrink:0;">
+      <div class="companion-img" style="width:120px;flex-shrink:0;">
         <img id="omniHomeImg" style="width:100%;height:auto;object-fit:contain;" alt="">
       </div>
     </div>
@@ -454,7 +455,7 @@ body{
   <div class="card">
     <div class="card-label">Grogu säger</div>
     <div class="companion-row">
-      <div class="companion-img" style="width:112px;">
+      <div class="companion-img" style="width:120px;flex-shrink:0;">
         <img id="groguHomeImg" style="width:100%;height:auto;object-fit:contain;" alt=""></div>
       <div style="flex:1;">
         <div class="companion-name" style="color:var(--in-range-dark);">GROGU</div>
@@ -481,7 +482,7 @@ body{
   <div class="card">
     <div class="card-label">Logga måltid</div>
     <div class="companion-row" style="margin-bottom:14px;">
-      <div class="companion-img" style="width:100px;">
+      <div class="companion-img" style="width:120px;flex-shrink:0;">
         <img id="groguFoodImg" style="width:100%;height:auto;object-fit:contain;" alt=""></div>
       <div style="flex:1;">
         <div class="companion-name" style="color:var(--in-range-dark);">GROGU</div>
@@ -538,7 +539,7 @@ body{
   <div class="card blue">
     <div class="card-label">Promenad med Allen</div>
     <div class="companion-row" style="margin-bottom:14px;">
-      <div class="companion-img" style="width:112px;">
+      <div class="companion-img" style="width:120px;flex-shrink:0;">
         <img id="allenWalkImg" style="width:100%;height:auto;object-fit:contain;" alt=""></div>
       <div style="flex:1;">
         <div class="companion-name" style="color:var(--hero-blue-deep);">ALLEN THE ALIEN</div>
@@ -598,7 +599,7 @@ body{
     </summary>
     <div class="card" style="margin-top:8px;margin-bottom:0;">
       <div class="companion-row" style="margin-bottom:10px;">
-        <div class="companion-img" style="width:90px;flex-shrink:0;">
+        <div class="companion-img" style="width:120px;flex-shrink:0;">
           <img id="omniGlucoseImg" style="width:100%;height:auto;object-fit:contain;" alt=""></div>
         <div style="flex:1;">
           <div class="companion-name" style="color:var(--pulse-red-deep);">OMNI-MAN</div>
@@ -1821,9 +1822,18 @@ if (typeof module !== 'undefined') {
 // BILDER
 // ═══════════════════════════════════════════════════
 let CHAR_IMGS = {};
+let CHAR_IMGS_LOADED = false;
+
 fetch('/char_imgs.json')
   .then(r => r.json())
-  .then(data => { CHAR_IMGS = data; setAvatars(); })
+  .then(data => {
+    CHAR_IMGS = data;
+    CHAR_IMGS_LOADED = true;
+    setAvatars();
+    // Re-rendera sidor som visar avatarer
+    if(document.getElementById('page-home').classList.contains('active')) renderHome();
+    if(document.getElementById('page-hero') && document.getElementById('page-hero').classList.contains('active')) renderHeroProfile();
+  })
   .catch(e => console.warn('char_imgs:', e));
 
 // ═══════════════════════════════════════════════════
@@ -2262,10 +2272,8 @@ function renderTasksWidget() {
         : pendingToday
           ? '<div class="task-pending-badge">🕐 Väntar</div>'
           : isAuto
-            ? '<div style="font-size:11px;color:var(--ink-muted);font-weight:700;text-align:center;flex-shrink:0;">Auto</div>'
-            : (t.requirePhotos
-          ? '<button class="task-complete-btn" data-tid="' + t.id + '" onclick="openTaskDetail(this.dataset.tid)">📷 FOTON</button>'
-          : '<button class="task-complete-btn" data-tid="' + t.id + '" onclick="completeTask(this.dataset.tid)">KLAR!</button>')) +
+            ? '<div style="font-size:11px;color:var(--ink-muted);font-weight:700;text-align:center;flex-shrink:0;">⚡ Auto</div>'
+            : '<button class="task-complete-btn" data-tid="' + t.id + '" onclick="openTaskDetail(this.dataset.tid)">' + (t.requirePhotos ? '📷 FOTON' : 'ÖPPNA') + '</button>') +
     '</div>';
   }).join('');
 }
@@ -2394,7 +2402,7 @@ function renderTaskModal(task, photoStatus) {
 
   } else {
     // Manuell komplettering utan foto
-    content += '<button class="btn btn-primary" data-tid="' + task.id + '" onclick="completeTask(this.dataset.tid);closeTaskModal();">MARKERA KLAR</button>';
+    content += '<button class="btn btn-primary" style="margin-bottom:10px;" data-tid="' + task.id + '" onclick="completeTask(this.dataset.tid).then ? completeTask(this.dataset.tid).then(closeTaskModal) : (completeTask(this.dataset.tid), closeTaskModal())">✅ MARKERA SOM KLAR</button>';
   }
 
   content += '<button class="btn btn-ghost btn-sm" onclick="closeTaskModal()" style="margin-top:10px;">Stäng</button>';
@@ -2793,18 +2801,23 @@ function doAction(actionId){
         logEl.scrollTop=logEl.scrollHeight;
       }
 
-      // Sista loggen — uppdatera hela UI
+      // Sista loggen — uppdatera UI
       if(idx===allLogs.length-1){
         state.activeCombat=c;
         if(enemyKilled){
+          c.done=true;
           endCombatFlow(true);
         }else if(c.heroHp<=0){
           c.done=true;
           endCombatFlow(false);
         }
         save();
-        // Uppdatera HP-bars och actions utan att radera loggen
-        updateCombatUI(c);
+        // Full re-render när striden är klar, annars bara HP-update
+        if(c.done){
+          renderActiveCombat();
+        }else{
+          updateCombatUI(c);
+        }
       }
     }, idx*DELAY);
   });
@@ -3005,25 +3018,29 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 function updateClock(){const now=new Date();const ht=document.getElementById('headerTime');if(ht)ht.textContent=now.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});const hd=document.getElementById('headerDate');if(hd)hd.textContent=now.toLocaleDateString('sv-SE',{weekday:'short',day:'numeric',month:'short'});}
 function setAvatars(){
   if(!CHAR_IMGS||!CHAR_IMGS.grogu_avatar) return;
-  // Grogu
-  ['groguHomeImg','groguFoodImg'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el){ el.src=CHAR_IMGS.grogu_avatar; el.style.width='100%'; el.style.height='auto'; }
-  });
-  // Allen
-  const allen=document.getElementById('allenWalkImg');
-  if(allen){ allen.src=CHAR_IMGS.allen_avatar; allen.style.width='100%'; allen.style.height='auto'; }
-  // Omni-Man
-  ['omniHomeImg','omniGlucoseImg'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el){ el.src=CHAR_IMGS.omni_avatar; el.style.width='100%'; el.style.height='auto'; }
-  });
-  // Hero-profil om öppen
+
+  function setImg(id, src){
+    const el=document.getElementById(id); if(!el) return;
+    el.src=src;
+    el.style.cssText='width:100%;height:auto;object-fit:contain;display:block;';
+    el.onerror=()=>{ el.style.display='none'; };
+  }
+
+  setImg('groguHomeImg', CHAR_IMGS.grogu_avatar);
+  setImg('groguFoodImg', CHAR_IMGS.grogu_avatar);
+  setImg('allenWalkImg', CHAR_IMGS.allen_avatar);
+  setImg('omniHomeImg', CHAR_IMGS.omni_avatar);
+  setImg('omniGlucoseImg', CHAR_IMGS.omni_avatar);
+
+  // Hero-profil
   const heroCard=document.getElementById('heroProfileCard');
-  if(heroCard && heroCard.querySelector('img')){
-    const ld=heroLevelData();
-    const src=CHAR_IMGS[ld.current.avatar]||'';
-    if(src) heroCard.querySelector('img').src=src;
+  if(heroCard){
+    const imgs=heroCard.querySelectorAll('img');
+    if(imgs.length>0){
+      const ld=heroLevelData();
+      const src=CHAR_IMGS[ld.current.avatar]||'';
+      if(src) imgs[0].src=src;
+    }
   }
 }
 
