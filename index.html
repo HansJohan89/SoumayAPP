@@ -492,6 +492,51 @@ body{
   margin-top:10px;padding:0 8px;line-height:1.5;
 }
 
+
+/* ── TÄRNINGSANIMATION ── */
+.dice-roll-overlay {
+  position:fixed;inset:0;z-index:800;
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
+}
+.dice-container {
+  display:flex;gap:16px;align-items:center;justify-content:center;
+  flex-wrap:wrap;
+}
+.dice {
+  width:72px;height:72px;border-radius:16px;
+  background:var(--ink);border:3px solid var(--power-yellow);
+  box-shadow:0 0 30px rgba(255,230,0,.4), 4px 4px 0 #000;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-burst);font-size:28px;font-weight:900;
+  color:var(--power-yellow);
+  transform:scale(0) rotate(-20deg);
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1);
+}
+.dice.visible { transform:scale(1) rotate(0deg); }
+.dice.rolling { animation:diceWiggle .08s ease infinite alternate; }
+.dice.done { 
+  animation:diceLand .3s cubic-bezier(.34,1.56,.64,1) forwards;
+  border-color:var(--in-range);
+  box-shadow:0 0 30px rgba(45,216,129,.5), 4px 4px 0 #000;
+}
+.dice-label {
+  font-size:10px;font-weight:800;color:rgba(255,255,255,.5);
+  text-align:center;margin-top:4px;letter-spacing:1px;text-transform:uppercase;
+}
+.dice-wrapper { display:flex;flex-direction:column;align-items:center; }
+
+@keyframes diceWiggle {
+  0%  { transform:scale(1.05) rotate(-3deg); }
+  100%{ transform:scale(1.05) rotate(3deg); }
+}
+@keyframes diceLand {
+  0%  { transform:scale(1.3); }
+  60% { transform:scale(.9); }
+  80% { transform:scale(1.05); }
+  100%{ transform:scale(1); }
+}
+
 </style>
 </head>
 <body>
@@ -511,6 +556,7 @@ body{
 </header>
 
 <div class="toast" id="toast"></div>
+<div class="dice-roll-overlay" id="diceOverlay" style="display:none;"></div>
 
 <!-- HEM -->
 <div class="page active" id="page-home">
@@ -3560,48 +3606,70 @@ function doAction(actionId){
     enemyLogs.push({type:'system', text:'💀 Soumaya faller i strid...'});
   }
 
-  // Animera logg rad för rad
-  const allLogs=[...logs,...enemyLogs];
-  const DELAY=350; // ms per rad
+  // Frys in värden så setTimeout inte läser muterad state
+  const allLogs = [...logs, ...enemyLogs];
+  const finalEnemyKilled = enemyKilled;
+  const finalHeroDead = !enemyKilled && c.heroHp <= 0;
+  const DELAY = 350;
 
-  allLogs.forEach((entry, idx)=>{
-    setTimeout(()=>{
+  // Bygg timing med extra fördröjning för tärningsrader
+  let cumulativeDelay = 0;
+  const timedLogs = allLogs.map(entry => {
+    const hasDice = entry.type === 'dice' && parseDiceFromLog(entry.text).length > 0;
+    const delay = cumulativeDelay;
+    cumulativeDelay += hasDice ? DELAY + 700 : DELAY;
+    return { entry, delay, hasDice };
+  });
+
+  timedLogs.forEach(({ entry, delay, hasDice }, idx) => {
+    setTimeout(async () => {
+      // Visa tärningsanimation för dice-rader
+      if (hasDice) {
+        const diceSpec = parseDiceFromLog(entry.text);
+        await animateDiceRoll(diceSpec);
+      }
+
       c.log.push(entry);
-      // Uppdatera bara loggen, inte hela UI (för prestanda)
-      const logEl=document.getElementById('combatLogEl');
-      if(logEl){
-        const div=document.createElement('div');
-        div.className='combat-log-line '+entry.type;
-        const prefix={hero:'🗡️ ',enemy:'💢 ',system:'⚡ ',dice:'🎲 '}[entry.type]||'';
-        div.textContent=prefix+entry.text;
-        // Ny-rad-effekt
-        div.style.opacity='0';
-        div.style.transform='translateX(-8px)';
-        div.style.transition='opacity .2s ease, transform .2s ease';
+      const logEl = document.getElementById('combatLogEl');
+      if (logEl) {
+        const div = document.createElement('div');
+        div.className = 'combat-log-line ' + entry.type;
+        const prefix = {hero:'🗡️ ', enemy:'💢 ', system:'⚡ ', dice:'🎲 '}[entry.type] || '';
+        div.textContent = prefix + entry.text;
+        div.style.opacity = '0';
+        div.style.transform = 'translateX(-8px)';
+        div.style.transition = 'opacity .2s ease, transform .2s ease';
         logEl.appendChild(div);
-        requestAnimationFrame(()=>{ div.style.opacity='1'; div.style.transform='translateX(0)'; });
-        logEl.scrollTop=logEl.scrollHeight;
+        requestAnimationFrame(() => { div.style.opacity='1'; div.style.transform='translateX(0)'; });
+        logEl.scrollTop = logEl.scrollHeight;
       }
 
-      // Sista loggen — uppdatera UI
-      if(idx===allLogs.length-1){
-        state.activeCombat=c;
-        if(enemyKilled){
-          c.done=true;
+      // Sista loggraden — avgör stridsresultat
+      if (idx === timedLogs.length - 1) {
+        state.activeCombat = c;
+
+        // Uppdatera HP-bars direkt
+        updateCombatUI(c);
+
+        if (finalEnemyKilled) {
+          c.done = true;
           endCombatFlow(true);
-        }else if(c.heroHp<=0){
-          c.done=true;
-          endCombatFlow(false);
-        }
-        save();
-        // Full re-render när striden är klar, annars bara HP-update
-        if(c.done){
+          save();
           renderActiveCombat();
-        }else{
-          updateCombatUI(c);
+        } else if (finalHeroDead) {
+          c.done = true;
+          endCombatFlow(false);
+          save();
+          renderActiveCombat();
+        } else {
+          // Striden fortsätter — återaktivera knappar
+          document.querySelectorAll('.combat-action-btn').forEach(b => b.disabled = false);
+          const fleeBtn = document.querySelector('.flee-btn');
+          if (fleeBtn) fleeBtn.disabled = false;
+          save();
         }
       }
-    }, idx*DELAY);
+    }, idx * DELAY);
   });
 }
 
@@ -3940,6 +4008,89 @@ async function refreshActivity() {
     if (document.getElementById('page-food')?.classList.contains('active')) renderFoodPage();
     if (document.getElementById('page-walk')?.classList.contains('active')) renderWalkPage();
   } catch(e) {}
+}
+
+
+// ═══════════════════════════════════════════════════
+// TÄRNINGSANIMATION
+// ═══════════════════════════════════════════════════
+
+// Visa tärningskast-animation och returnera en Promise som resolvar när klart
+function animateDiceRoll(dice) {
+  // dice = [{sides:20, result:17, label:'Träffslag'}, {sides:12, result:10, label:'Skada'}]
+  return new Promise(resolve => {
+    const overlay = document.getElementById('diceOverlay');
+    if (!overlay) { resolve(); return; }
+
+    overlay.style.display = 'flex';
+    overlay.innerHTML = '<div class="dice-container" id="diceContainer"></div>';
+    const container = document.getElementById('diceContainer');
+
+    // Skapa tärningselement
+    const diceEls = dice.map(d => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'dice-wrapper';
+      wrapper.innerHTML = `
+        <div class="dice" id="dice-${d.label.replace(/\s/g,'')}">?</div>
+        <div class="dice-label">d${d.sides}</div>
+      `;
+      container.appendChild(wrapper);
+      return { el: wrapper.querySelector('.dice'), result: d.result, sides: d.sides };
+    });
+
+    // Visa tärningarna med liten fördröjning
+    requestAnimationFrame(() => {
+      diceEls.forEach(d => {
+        requestAnimationFrame(() => d.el.classList.add('visible'));
+      });
+    });
+
+    // Rulla varje tärning
+    const ROLL_DURATION = 600; // ms rolling
+    const STAGGER = 80;        // ms mellan tärningar
+
+    diceEls.forEach((d, i) => {
+      let elapsed = 0;
+      const startDelay = i * STAGGER;
+
+      setTimeout(() => {
+        d.el.classList.add('rolling');
+
+        // Snurra igenom slumpmässiga siffror
+        const ticker = setInterval(() => {
+          const fake = Math.ceil(Math.random() * d.sides);
+          d.el.textContent = fake;
+          elapsed += 50;
+          if (elapsed >= ROLL_DURATION) {
+            clearInterval(ticker);
+            d.el.classList.remove('rolling');
+            d.el.classList.add('done');
+            d.el.textContent = d.result;
+          }
+        }, 50);
+      }, startDelay);
+    });
+
+    // Dölj efter alla tärningar landat + liten paus
+    const totalTime = ROLL_DURATION + (diceEls.length * STAGGER) + 500;
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      overlay.innerHTML = '';
+      resolve();
+    }, totalTime);
+  });
+}
+
+// Parsa tärningsslag från en logg-rad och returnera dice-spec
+function parseDiceFromLog(text) {
+  const dice = [];
+  // Matcha [d20=17], [d12=10], [d8=5] etc
+  const pattern = /\[d(\d+)=(\d+)\]/g;
+  let m;
+  while ((m = pattern.exec(text)) !== null) {
+    dice.push({ sides: parseInt(m[1]), result: parseInt(m[2]), label: 'd'+m[1] });
+  }
+  return dice;
 }
 
 // ═══════════════════════════════════════════════════
