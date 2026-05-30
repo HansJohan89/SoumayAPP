@@ -3612,23 +3612,24 @@ function doAction(actionId){
   const finalHeroDead = !enemyKilled && c.heroHp <= 0;
   const DELAY = 350;
 
-  // Bygg timing med extra fördröjning för tärningsrader
-  let cumulativeDelay = 0;
-  const timedLogs = allLogs.map(entry => {
-    const hasDice = entry.type === 'dice' && parseDiceFromLog(entry.text).length > 0;
-    const delay = cumulativeDelay;
-    cumulativeDelay += hasDice ? DELAY + 700 : DELAY;
-    return { entry, delay, hasDice };
-  });
+  // Kör loggar sekventiellt med async/await
+  (async () => {
+    const DELAY = 350;
+    for (let idx = 0; idx < allLogs.length; idx++) {
+      const entry = allLogs[idx];
 
-  timedLogs.forEach(({ entry, delay, hasDice }, idx) => {
-    setTimeout(async () => {
+      // Vänta lite innan varje rad
+      await new Promise(r => setTimeout(r, DELAY));
+
       // Visa tärningsanimation för dice-rader
-      if (hasDice) {
+      if (entry.type === 'dice') {
         const diceSpec = parseDiceFromLog(entry.text);
-        await animateDiceRoll(diceSpec);
+        if (diceSpec.length > 0) {
+          await animateDiceRoll(diceSpec);
+        }
       }
 
+      // Lägg till rad i loggen
       c.log.push(entry);
       const logEl = document.getElementById('combatLogEl');
       if (logEl) {
@@ -3645,7 +3646,7 @@ function doAction(actionId){
       }
 
       // Sista loggraden — avgör stridsresultat
-      if (idx === timedLogs.length - 1) {
+      if (idx === allLogs.length - 1) {
         state.activeCombat = c;
 
         // Uppdatera HP-bars direkt
@@ -3669,8 +3670,8 @@ function doAction(actionId){
           save();
         }
       }
-    }, idx * DELAY);
-  });
+    }
+  })();
 }
 
 // Uppdaterar HP, actions m.m. utan att röra loggen
