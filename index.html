@@ -495,8 +495,11 @@ body{
 
 /* ── TÄRNINGSANIMATION ── */
 .dice-roll-overlay {
-  position:fixed;inset:0;z-index:800;
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  z-index:9999;
   display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.6);
   pointer-events:none;
 }
 .dice-container {
@@ -504,11 +507,11 @@ body{
   flex-wrap:wrap;
 }
 .dice {
-  width:72px;height:72px;border-radius:16px;
-  background:var(--ink);border:3px solid var(--power-yellow);
-  box-shadow:0 0 30px rgba(255,230,0,.4), 4px 4px 0 #000;
+  width:90px;height:90px;border-radius:18px;
+  background:#111;border:4px solid var(--power-yellow);
+  box-shadow:0 0 40px rgba(255,230,0,.5), 6px 6px 0 #000;
   display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-burst);font-size:28px;font-weight:900;
+  font-family:var(--font-burst);font-size:36px;font-weight:900;
   color:var(--power-yellow);
   transform:scale(0) rotate(-20deg);
   transition:transform .25s cubic-bezier(.34,1.56,.64,1);
@@ -3629,20 +3632,22 @@ function doAction(actionId){
         }
       }
 
-      // Lägg till rad i loggen
+      // Lägg till rad i loggen — dice-rader visas INTE som text, bara animationen
       c.log.push(entry);
-      const logEl = document.getElementById('combatLogEl');
-      if (logEl) {
-        const div = document.createElement('div');
-        div.className = 'combat-log-line ' + entry.type;
-        const prefix = {hero:'🗡️ ', enemy:'💢 ', system:'⚡ ', dice:'🎲 '}[entry.type] || '';
-        div.textContent = prefix + entry.text;
-        div.style.opacity = '0';
-        div.style.transform = 'translateX(-8px)';
-        div.style.transition = 'opacity .2s ease, transform .2s ease';
-        logEl.appendChild(div);
-        requestAnimationFrame(() => { div.style.opacity='1'; div.style.transform='translateX(0)'; });
-        logEl.scrollTop = logEl.scrollHeight;
+      if (entry.type !== 'dice') {
+        const logEl = document.getElementById('combatLogEl');
+        if (logEl) {
+          const div = document.createElement('div');
+          div.className = 'combat-log-line ' + entry.type;
+          const prefix = {hero:'🗡️ ', enemy:'💢 ', system:'⚡ '}[entry.type] || '';
+          div.textContent = prefix + entry.text;
+          div.style.opacity = '0';
+          div.style.transform = 'translateX(-8px)';
+          div.style.transition = 'opacity .2s ease, transform .2s ease';
+          logEl.appendChild(div);
+          requestAnimationFrame(() => { div.style.opacity='1'; div.style.transform='translateX(0)'; });
+          logEl.scrollTop = logEl.scrollHeight;
+        }
       }
 
       // Sista loggraden — avgör stridsresultat
