@@ -3404,7 +3404,7 @@ function renderCombatHistory(){const log=(state.combatLog||[]).slice(0,5);if(!lo
 function startCombat(enemyId){
   const ld=heroLevelData(),enemies=getEnemiesForLevel(ld.current.level),et=enemies.find(e=>e.id===enemyId); if(!et) return;
   const stats=heroStats(),maxHp=heroMaxHp();
-  state.activeCombat={enemyId,enemyName:et.name,enemyIcon:et.icon,enemyDiff:et.difficulty,enemyHp:et.scaledHp,enemyMaxHp:et.scaledHp,enemyStats:et.scaledStats,enemyAc:et.scaledAc,enemyAttacks:et.attacks,enemyDeathLine:et.deathLine,enemyWinLine:et.winLine,heroHp:maxHp,heroMaxHp:maxHp,heroAc:heroAC(),heroStats:stats,log:[{type:'system',text:'⚔️ Striden börjar! '+et.name+' tar positionen. '+et.flavor}],done:false,defendBonus:0};
+  state.activeCombat={enemyId,enemyName:et.name,enemyIcon:et.icon,enemyDiff:et.difficulty,enemyHp:et.scaledHp,enemyMaxHp:et.scaledHp,enemyStats:et.scaledStats,enemyAc:et.scaledAc,enemyAttacks:et.attacks,enemyDeathLine:et.deathLine,enemyWinLine:et.winLine,enemyXpReward:et.scaledXp||et.xpReward||100,enemyGoldReward:et.scaledGold||et.goldReward||30,heroHp:maxHp,heroMaxHp:maxHp,heroAc:heroAC(),heroStats:stats,log:[{type:'system',text:'⚔️ Striden börjar! '+et.name+' tar positionen. '+et.flavor}],done:false,defendBonus:0};
   save(); renderActiveCombat();
 }
 
@@ -3446,8 +3446,8 @@ function renderActiveCombat(){
     // ── Stridslogg ──
     '<div class="combat-log" id="combatLogEl">'+
       (c.log.length===0?'<div class="combat-log-empty">Striden börjar...</div>':
-      c.log.slice(-10).map(l=>'<div class="combat-log-line '+l.type+'">'+
-        (l.type==='hero'?'🗡️ ':l.type==='enemy'?'💢 ':l.type==='system'?'⚡ ':l.type==='dice'?'🎲 ':'')+
+      c.log.filter(l=>l.type!=='dice').slice(-10).map(l=>'<div class="combat-log-line '+l.type+'">'+
+        (l.type==='hero'?'🗡️ ':l.type==='enemy'?'💢 ':l.type==='system'?'⚡ ':'')+
         l.text+'</div>').join(''))+
     '</div>'+
 
@@ -3477,7 +3477,9 @@ function renderCombatActions(c, weaponItem){
 
 function renderCombatResult(c){
   const won=c.heroHp>0;
-  const reward=calcCombatReward(c.enemyDiff,heroLevelData().current.level,won);
+  const reward = won
+    ? { xp: c.enemyXpReward||100, gold: c.enemyGoldReward||30 }
+    : { xp: -Math.round((c.enemyXpReward||100)*0.25), gold: 0 };
   return '<div class="combat-result '+(won?'win':'loss')+'">'+
     '<div class="result-icon">'+(won?'🏆':'💀')+'</div>'+
     '<div class="result-title">'+(won?'SEGER!':'NEDERLAG...')+'</div>'+
@@ -3615,66 +3617,68 @@ function doAction(actionId){
   const finalHeroDead = !enemyKilled && c.heroHp <= 0;
   const DELAY = 350;
 
-  // Kör loggar sekventiellt med async/await
+  // Filtrera bort dice-rader för logg-visning, kör dem separat som animation
+  const visibleLogs = allLogs.filter(e => e.type !== 'dice');
+  const diceByPosition = {}; // index i visibleLogs → dice-spec
+  let visIdx = 0;
+  allLogs.forEach(entry => {
+    if (entry.type === 'dice') {
+      // Koppla dice till nästa synliga rad
+      if (!diceByPosition[visIdx]) diceByPosition[visIdx] = [];
+      const spec = parseDiceFromLog(entry.text);
+      if (spec.length) diceByPosition[visIdx].push(...spec);
+    } else {
+      visIdx++;
+    }
+  });
+
   (async () => {
-    const DELAY = 350;
-    for (let idx = 0; idx < allLogs.length; idx++) {
-      const entry = allLogs[idx];
+    for (let i = 0; i < visibleLogs.length; i++) {
+      const entry = visibleLogs[i];
 
-      // Vänta lite innan varje rad
-      await new Promise(r => setTimeout(r, DELAY));
-
-      // Visa tärningsanimation för dice-rader
-      if (entry.type === 'dice') {
-        const diceSpec = parseDiceFromLog(entry.text);
-        if (diceSpec.length > 0) {
-          await animateDiceRoll(diceSpec);
-        }
+      // Om denna rad har tärningar — visa animation INNAN raden
+      if (diceByPosition[i] && diceByPosition[i].length > 0) {
+        await animateDiceRoll(diceByPosition[i]);
+      } else {
+        await new Promise(r => setTimeout(r, 350));
       }
 
-      // Lägg till rad i loggen — dice-rader visas INTE som text, bara animationen
+      // Visa loggraden
       c.log.push(entry);
-      if (entry.type !== 'dice') {
-        const logEl = document.getElementById('combatLogEl');
-        if (logEl) {
-          const div = document.createElement('div');
-          div.className = 'combat-log-line ' + entry.type;
-          const prefix = {hero:'🗡️ ', enemy:'💢 ', system:'⚡ '}[entry.type] || '';
-          div.textContent = prefix + entry.text;
-          div.style.opacity = '0';
-          div.style.transform = 'translateX(-8px)';
-          div.style.transition = 'opacity .2s ease, transform .2s ease';
-          logEl.appendChild(div);
-          requestAnimationFrame(() => { div.style.opacity='1'; div.style.transform='translateX(0)'; });
-          logEl.scrollTop = logEl.scrollHeight;
-        }
+      const logEl = document.getElementById('combatLogEl');
+      if (logEl) {
+        const div = document.createElement('div');
+        div.className = 'combat-log-line ' + entry.type;
+        const prefix = {hero:'🗡️ ', enemy:'💢 ', system:'⚡ '}[entry.type] || '';
+        div.textContent = prefix + entry.text;
+        div.style.opacity = '0';
+        div.style.transform = 'translateX(-8px)';
+        div.style.transition = 'opacity .2s ease, transform .2s ease';
+        logEl.appendChild(div);
+        requestAnimationFrame(() => { div.style.opacity='1'; div.style.transform='translateX(0)'; });
+        logEl.scrollTop = logEl.scrollHeight;
       }
+    }
 
-      // Sista loggraden — avgör stridsresultat
-      if (idx === allLogs.length - 1) {
-        state.activeCombat = c;
+    // Alla loggar visade — nu avgörs striden
+    state.activeCombat = c;
+    updateCombatUI(c);
 
-        // Uppdatera HP-bars direkt
-        updateCombatUI(c);
-
-        if (finalEnemyKilled) {
-          c.done = true;
-          endCombatFlow(true);
-          save();
-          renderActiveCombat();
-        } else if (finalHeroDead) {
-          c.done = true;
-          endCombatFlow(false);
-          save();
-          renderActiveCombat();
-        } else {
-          // Striden fortsätter — återaktivera knappar
-          document.querySelectorAll('.combat-action-btn').forEach(b => b.disabled = false);
-          const fleeBtn = document.querySelector('.flee-btn');
-          if (fleeBtn) fleeBtn.disabled = false;
-          save();
-        }
-      }
+    if (finalEnemyKilled) {
+      c.done = true;
+      endCombatFlow(true);
+      save();
+      renderActiveCombat();
+    } else if (finalHeroDead) {
+      c.done = true;
+      endCombatFlow(false);
+      save();
+      renderActiveCombat();
+    } else {
+      document.querySelectorAll('.combat-action-btn').forEach(b => b.disabled = false);
+      const fleeBtn = document.querySelector('.flee-btn');
+      if (fleeBtn) fleeBtn.disabled = false;
+      save();
     }
   })();
 }
@@ -3715,7 +3719,10 @@ function updateCombatUI(c){
 
 function endCombatFlow(won){
   const c=state.activeCombat; if(!c) return;
-  const ld=heroLevelData(),reward=calcCombatReward(c.enemyDiff,ld.current.level,won);
+  const ld=heroLevelData();
+  const reward = won
+    ? { xp: c.enemyXpReward||100, gold: c.enemyGoldReward||30 }
+    : { xp: -Math.round((c.enemyXpReward||100)*0.25), gold: 0 };
   const prevLevel=ld.current.level;
   state.totalXP=Math.max(ld.current.xpReq,(state.totalXP||0)+reward.xp);
   if(won) state.gold=(state.gold||0)+reward.gold;
