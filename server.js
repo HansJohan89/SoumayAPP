@@ -37,6 +37,7 @@ const REWARDS_FILE   = path.join(DATA_DIR, 'rewards.json');
 const SETTINGS_FILE  = path.join(DATA_DIR, 'notif_settings.json');
 const SCHEDULED_FILE = path.join(DATA_DIR, 'scheduled_push.json');
 const PLAYER_FILE    = path.join(DATA_DIR, 'player.json');
+const MERGE_FILE     = path.join(DATA_DIR, 'merge.json');
 
 function readJSON(file, def) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch(e) { return def; }
@@ -74,6 +75,42 @@ const DEFAULT_PLAYER = {
   settings: { lowTarget: 4.0, highTarget: 8.0 },
 };
 let player = readJSON(PLAYER_FILE, DEFAULT_PLAYER);
+
+const BOARD_COLS = 7;
+const BOARD_ROWS = 9;
+const BOARD_SIZE = BOARD_COLS * BOARD_ROWS; // 63
+
+// Merge-kedjor
+const MERGE_CHAINS = {
+  food:    ['🥦','🥗','🍱','🍜','🍣','🎂','👑'],
+  walk:    ['👟','🏃','⚡','🌟','🏅','🏆','💎'],
+  glucose: ['💧','🩸','💚','✨','🌈','🔮','🪄'],
+  bird:    ['🪺','🐣','🐤','🐦','🦜','🦅','🦉'],
+};
+
+// Starta med en av varje grundvariant på brädet
+function createDefaultBoard() {
+  const board = Array(BOARD_SIZE).fill(null);
+  // Spawner-raden (index 0-6) är alltid reserved för spawners i UI
+  // Faktiska brädet börjar på rad 1 (index 7+)
+  board[7]  = { type:'food',    level:0 };
+  board[8]  = { type:'walk',    level:0 };
+  board[9]  = { type:'glucose', level:0 };
+  board[10] = { type:'bird',    level:0 };
+  return board;
+}
+
+const DEFAULT_MERGE = {
+  board: createDefaultBoard(),
+  spawnerCharges: { food: 3, walk: 3, glucose: 3, bird: 3 },
+  xpEarned: 0,
+};
+let mergeState = readJSON(MERGE_FILE, DEFAULT_MERGE);
+// Migrera om board är gammal storlek
+if (!mergeState.board || mergeState.board.length !== BOARD_SIZE) {
+  mergeState = { ...DEFAULT_MERGE, board: createDefaultBoard() };
+  writeJSON(MERGE_FILE, mergeState);
+}
 
 let notifSettings = readJSON(SETTINGS_FILE, DEFAULT_NOTIF_SETTINGS);
 let scheduledPush = readJSON(SCHEDULED_FILE, []);
@@ -255,6 +292,10 @@ app.post('/api/walks/finish', (req, res) => {
     walk.duration = minutes || Math.round((walk.endTime - walk.startTime) / 60000);
     walk.distance = calcDistance(walk.coords);
     writeJSON(WALKS_FILE, walks);
+
+    // Ladda merge-spawner: 3 per km (minst 1 om > 0.1km)
+    const kmCharge = Math.max(walk.distance >= 0.1 ? 1 : 0, Math.floor(walk.distance));
+    if (kmCharge > 0) chargeSpawner('walk', kmCharge * 3);
 
     // Auto-komplettera distance/minuter-uppgifter
     const today = new Date().toISOString().split('T')[0];
@@ -685,6 +726,10 @@ app.post('/api/admin/approvals/:id', adminAuth, (req, res) => {
   approval.adminNote = req.body.note || '';
 
   if (action === 'approve') {
+    // Kolla om det är fågeluppgiften → ladda bird-spawner
+    if (approval.taskTitle && approval.taskTitle.toLowerCase().includes('fågel')) {
+      chargeSpawner('bird', 3);
+    }
     // Lägg belöning i pending rewards för appen att hämta
     pendingRewards.push({
       id: crypto.randomUUID(),
@@ -760,6 +805,60 @@ app.post('/api/player', (req, res) => {
   res.json({ ok: true });
 });
 
+
+// ── MERGE-SPEL ────────────────────────────────────────────────
+
+// Hämta merge-state
+app.get('/api/merge', (req, res) => {
+  res.json({ ...mergeState, chains: MERGE_CHAINS, boardCols: BOARD_COLS, boardRows: BOARD_ROWS });
+});
+
+// Spara hela brädet (efter drag/merge i UI)
+app.post('/api/merge/board', (req, res) => {
+  if (Array.isArray(req.body.board)) {
+    mergeState.board = req.body.board;
+    writeJSON(MERGE_FILE, mergeState);
+  }
+  res.json({ ok: true });
+});
+
+// Spawna ett föremål
+app.post('/api/merge/spawn', (req, res) => {
+  const { type } = req.body;
+  if (!MERGE_CHAINS[type]) return res.status(400).json({ error: 'Okänd typ' });
+  if ((mergeState.spawnerCharges[type] || 0) < 1)
+    return res.status(400).json({ error: 'Inga laddningar kvar' });
+
+  // Hitta första lediga cell (hoppa över rad 0 = spawner-rad)
+  const firstFree = mergeState.board.findIndex((c, i) => i >= BOARD_COLS && c === null);
+  if (firstFree === -1) return res.status(400).json({ error: 'Brädet är fullt' });
+
+  mergeState.board[firstFree] = { type, level: 0 };
+  mergeState.spawnerCharges[type]--;
+  writeJSON(MERGE_FILE, mergeState);
+  res.json({ ok: true, board: mergeState.board, spawnerCharges: mergeState.spawnerCharges });
+});
+
+// Ge XP för merge (anropas från klienten efter lyckad merge)
+app.post('/api/merge/xp', (req, res) => {
+  const { xp } = req.body;
+  if (xp > 0) {
+    player.totalXP = (player.totalXP || 0) + xp;
+    player.gold    = (player.gold || 0) + Math.floor(xp / 10);
+    writeJSON(PLAYER_FILE, player);
+    mergeState.xpEarned = (mergeState.xpEarned || 0) + xp;
+    writeJSON(MERGE_FILE, mergeState);
+  }
+  res.json({ ok: true, totalXP: player.totalXP, gold: player.gold });
+});
+
+// Ladda spawner (anropas internt från servern — men även manuellt för test)
+function chargeSpawner(type, amount) {
+  mergeState.spawnerCharges[type] = (mergeState.spawnerCharges[type] || 0) + amount;
+  writeJSON(MERGE_FILE, mergeState);
+  console.log('Merge spawner:', type, '+' + amount, '→', mergeState.spawnerCharges[type]);
+}
+
 // ── EXPORT / IMPORT ──────────────────────────────────────────
 app.get('/api/admin/export', adminAuth, (req, res) => {
   const exportData = {
@@ -775,6 +874,7 @@ app.get('/api/admin/export', adminAuth, (req, res) => {
     notifSettings,
     scheduledPush,
     player,
+    mergeState,
   };
   res.setHeader('Content-Disposition', 'attachment; filename="soumaya-backup-' + new Date().toISOString().split('T')[0] + '.json"');
   res.setHeader('Content-Type', 'application/json');
@@ -794,6 +894,7 @@ app.post('/api/admin/import', adminAuth, (req, res) => {
     if (d.notifSettings)    { notifSettings = d.notifSettings;       writeJSON(SETTINGS_FILE, notifSettings); }
     if (d.scheduledPush)    { scheduledPush = d.scheduledPush;       writeJSON(SCHEDULED_FILE, scheduledPush); }
     if (d.player)           { player = { ...DEFAULT_PLAYER, ...d.player }; writeJSON(PLAYER_FILE, player); }
+    if (d.mergeState)       { mergeState = { ...DEFAULT_MERGE, ...d.mergeState }; writeJSON(MERGE_FILE, mergeState); }
     res.json({ ok: true, message: 'Import klar', counts: {
       meals: meals.length, walks: walks.length, tasks: tasks.length,
       glucose: glucoseLog.length, approvals: pendingApprovals.length,
