@@ -8,7 +8,8 @@ const path     = require('path');
 const fs       = require('fs');
 const crypto   = require('crypto');
 const webpush  = require('web-push');
-const multer   = require('multer');
+// Bilder sparas som base64 i JSON (Railway har ephemeral filsystem)
+// const multer = require('multer'); // Inte längre använt
 
 // ── VAPID ────────────────────────────────────────────────────
 const VAPID_PUBLIC  = 'BN0ejLf_fZYlrgPZgnM-uMbwCLIsobrjrC_Zn98MJYnZXoXHQv2k9bsTc3hDzSF_ZD8xOYlN7wUrB9VJEj-6aZQ';
@@ -120,14 +121,7 @@ let notifSettings = readJSON(SETTINGS_FILE, DEFAULT_NOTIF_SETTINGS);
 let scheduledPush = readJSON(SCHEDULED_FILE, []);
 
 // ── MULTER ───────────────────────────────────────────────────
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
-  filename:    (req, file, cb) => {
-    const ext = path.extname(file.originalname) || '.jpg';
-    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
-  }
-});
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+// Bildhjälpare — spara base64 data URLs direkt i meals/tasks JSON
 
 // ── EXPRESS ──────────────────────────────────────────────────
 const app = express();
@@ -150,7 +144,7 @@ app.use(express.static(path.join(__dirname), {
       res.setHeader('Content-Type', 'application/manifest+json');
   }
 }));
-app.use('/uploads', express.static(UPLOADS_DIR));
+// /uploads middleware borttagen — bilder sparas som base64
 
 // ── EXPLICIT HTML-ROUTES (ingen cache) ───────────────────────
 app.get('/', (req, res) => {
@@ -231,23 +225,23 @@ app.post('/api/admin/push', adminAuth, async (req, res) => {
 });
 
 // ── MÅLTIDER ─────────────────────────────────────────────────
-app.post('/api/meals/upload', upload.single('image'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'Ingen fil' });
-  const { mealId, phase } = req.body;
+app.post('/api/meals/upload', express.json({ limit: '20mb' }), (req, res) => {
+  const { mealId, phase, imageData } = req.body;
   if (!mealId || !['before','after'].includes(phase))
     return res.status(400).json({ error: 'Saknar mealId/phase' });
+  if (!imageData) return res.status(400).json({ error: 'Ingen bildata' });
 
-  const url = `/uploads/${req.file.filename}`;
+  // imageData är en base64 data URL
   let meal = meals.find(m => m.id === mealId);
   if (!meal) {
     meal = { id: mealId, createdAt: Date.now(), before: null, after: null, name: '', carbs: 0, mealType: '' };
     meals.unshift(meal);
   }
-  meal[phase] = url;
+  meal[phase] = imageData;
   meal[phase + 'Time'] = Date.now();
   if (meal.before && meal.after) meal.complete = true;
   writeJSON(MEALS_FILE, meals);
-  res.json({ ok: true, url, meal });
+  res.json({ ok: true, url: imageData.substring(0, 50) + '...', meal });
 });
 
 app.post('/api/meals', (req, res) => {
@@ -928,7 +922,7 @@ app.post('/api/admin/import', adminAuth, (req, res) => {
 
 // ── UPPGIFTSFOTON ────────────────────────────────────────────
 // Ladda upp ett foto till en specifik uppgift
-app.post('/api/tasks/:id/photos', upload.single('image'), (req, res) => {
+app.post('/api/tasks/:id/photos', express.json({ limit: '20mb' }), (req, res) => {
   const task = tasks.find(t => t.id === req.params.id);
   if (!task) return res.status(404).json({ error: 'Uppgift hittades ej' });
 
@@ -936,11 +930,11 @@ app.post('/api/tasks/:id/photos', upload.single('image'), (req, res) => {
   if (!task.photoSubmissions) task.photoSubmissions = {};
   if (!task.photoSubmissions[today]) task.photoSubmissions[today] = [];
 
-  const fileUrl = req.file ? '/uploads/meals/' + req.file.filename : req.body.url;
-  if (!fileUrl) return res.status(400).json({ error: 'Ingen bild skickades' });
+  const imageData = req.body.imageData || req.body.url;
+  if (!imageData) return res.status(400).json({ error: 'Ingen bildata' });
 
   task.photoSubmissions[today].push({
-    url: fileUrl,
+    url: imageData,
     uploadedAt: Date.now(),
   });
 
