@@ -91,7 +91,7 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 // ── EXPRESS ──────────────────────────────────────────────────
 const app = express();
 app.use(express.json({ limit: '10mb' }));
-app.use(express.text({ type: '*/*', limit: '10mb' })); // xDrip kan skicka text/plain
+app.use(express.text({ type: 'text/plain', limit: '10mb' })); // xDrip text/plain
 app.use(express.static(path.join(__dirname), {
   setHeaders(res, fp) {
     // Aldrig cacha HTML-filer
@@ -896,10 +896,16 @@ app.get('/api/admin/dashboard', adminAuth, (req, res) => {
   }
 
   res.json({
+    // Totaler för stat-korten
+    meals:       meals.length,
+    walks:       walks.length,
+    glucose:     glucoseLog.length,
+    subscribers: subscriptions.length,
+    // Dagens statistik
     today: {
       meals:    todayMeals.length,
       mealsOk:  todayMeals.filter(m => m.complete).length,
-      walkMins: todayWalks.reduce((a,w) => a+w.duration, 0),
+      walkMins: todayWalks.reduce((a,w) => a+(w.duration||0), 0),
       walkKm:   todayWalks.reduce((a,w) => a+(w.distance||0), 0).toFixed(1),
     },
     streak,
@@ -908,7 +914,7 @@ app.get('/api/admin/dashboard', adminAuth, (req, res) => {
     recentMeals:    meals.slice(0, 5),
     recentWalks:    walks.slice(0, 5),
     tasks,
-    subscriptions:  subscriptions.length
+    achievements:   player.unlockedAchievements || [],
   });
 });
 
