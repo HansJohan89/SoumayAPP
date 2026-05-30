@@ -829,14 +829,18 @@ app.post('/api/merge/spawn', (req, res) => {
   if ((mergeState.spawnerCharges[type] || 0) < 1)
     return res.status(400).json({ error: 'Inga laddningar kvar' });
 
-  // Hitta första lediga cell (hoppa över rad 0 = spawner-rad)
-  const firstFree = mergeState.board.findIndex((c, i) => i >= BOARD_COLS && c === null);
-  if (firstFree === -1) return res.status(400).json({ error: 'Brädet är fullt' });
+  // Hitta ALLA lediga celler (hoppa över rad 0 = spawner-rad) och välj en slumpmässigt
+  const freeCells = [];
+  for (let i = BOARD_COLS; i < mergeState.board.length; i++) {
+    if (!mergeState.board[i]) freeCells.push(i);
+  }
+  if (freeCells.length === 0) return res.status(400).json({ error: 'Brädet är fullt' });
 
-  mergeState.board[firstFree] = { type, level: 0 };
+  const spawnedIdx = freeCells[Math.floor(Math.random() * freeCells.length)];
+  mergeState.board[spawnedIdx] = { type, level: 0 };
   mergeState.spawnerCharges[type]--;
   writeJSON(MERGE_FILE, mergeState);
-  res.json({ ok: true, board: mergeState.board, spawnerCharges: mergeState.spawnerCharges });
+  res.json({ ok: true, board: mergeState.board, spawnerCharges: mergeState.spawnerCharges, spawnedIdx });
 });
 
 // Ge XP för merge (anropas från klienten efter lyckad merge)

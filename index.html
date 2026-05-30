@@ -402,6 +402,25 @@ body{
 
 
 /* ── MERGE-SPEL ── */
+@keyframes mergeShake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-6px)}
+  40%{transform:translateX(6px)}
+  60%{transform:translateX(-4px)}
+  80%{transform:translateX(4px)}
+}
+@keyframes mergeBounce {
+  0%{transform:scale(1)}
+  30%{transform:scale(1.5)}
+  60%{transform:scale(.85)}
+  80%{transform:scale(1.15)}
+  100%{transform:scale(1)}
+}
+@keyframes mergeSpawnIn {
+  0%{transform:scale(0) rotate(-15deg);opacity:0}
+  70%{transform:scale(1.2) rotate(5deg);opacity:1}
+  100%{transform:scale(1) rotate(0deg);opacity:1}
+}
 .merge-spawners {
   display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;
 }
@@ -438,15 +457,27 @@ body{
 .merge-item {
   width:88%;height:88%;border-radius:8px;border:2px solid transparent;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  position:relative;transition:transform .15s;
+  position:relative;
   -webkit-tap-highlight-color:transparent;user-select:none;
+  touch-action:none;
+  cursor:grab;
 }
-.merge-item:active { transform:scale(.9); }
+.merge-item:active { cursor:grabbing; }
+.merge-drag-clone { touch-action:none; }
 .merge-emoji  { font-size:22px;line-height:1; }
 .merge-level  {
   position:absolute;bottom:1px;right:3px;
   font-size:8px;font-weight:800;color:var(--ink-muted);
 }
+.merge-info-btn {
+  position:absolute;top:0;right:0;
+  background:var(--paper-soft);border:2px solid var(--ink-muted);
+  border-radius:50%;width:28px;height:28px;
+  font-size:14px;font-weight:700;cursor:pointer;
+  color:var(--ink-muted);display:flex;align-items:center;justify-content:center;
+  z-index:10;
+}
+#mergeGame { position:relative; }
 .merge-info {
   text-align:center;font-size:11px;color:var(--ink-muted);font-weight:600;
   margin-top:10px;padding:0 8px;line-height:1.5;
@@ -1589,7 +1620,7 @@ if (typeof module !== 'undefined') {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// TRAVEL TOWN MERGE-SPEL
+// TRAVEL TOWN MERGE-SPEL — Touch & Mouse version
 // ═══════════════════════════════════════════════════════════════
 
 const MERGE_COLS = 7;
@@ -1602,22 +1633,22 @@ const MERGE_CHAINS = {
   bird:    { name:'Fåglar',     items:['🪺','🐣','🐤','🐦','🦜','🦅','🦉'], color:'#b8860b' },
 };
 
-const MERGE_XP = [5, 10, 20, 35, 50, 75, 150]; // XP per merge-nivå
+const MERGE_XP = [5, 10, 20, 35, 50, 75, 150];
 
-function showMergeInfo() {
-  const el = document.getElementById('mergeInfoModal');
-  if (el) el.classList.add('open');
-}
-function closeMergeInfo() {
-  const el = document.getElementById('mergeInfoModal');
-  if (el) el.classList.remove('open');
-}
-
-// State
 let mergeBoard = [];
 let mergeSpawnerCharges = { food: 0, walk: 0, glucose: 0, bird: 0 };
-let mergeDragSrc = null;
 let mergeLoaded = false;
+
+// Drag state
+let mergeDrag = {
+  active: false,
+  srcIdx: null,
+  el: null,       // floating clone element
+  startX: 0,
+  startY: 0,
+  offsetX: 0,
+  offsetY: 0,
+};
 
 // ── INIT ─────────────────────────────────────────────────────
 async function loadMergeGame() {
@@ -1629,6 +1660,7 @@ async function loadMergeGame() {
     mergeSpawnerCharges = data.spawnerCharges || { food:0, walk:0, glucose:0, bird:0 };
     mergeLoaded = true;
     renderMergeGame();
+    setupMergeDrag();
   } catch(e) { console.warn('loadMerge:', e.message); }
 }
 
@@ -1647,60 +1679,58 @@ function renderMergeGame() {
   const el = document.getElementById('mergeGame');
   if (!el) return;
 
-  // Spawner-rad
   const spawnerTypes = ['food','walk','glucose','bird'];
   let spawnersHtml = '<div class="merge-spawners">';
   spawnerTypes.forEach(type => {
     const chain = MERGE_CHAINS[type];
     const charges = mergeSpawnerCharges[type] || 0;
-    spawnersHtml += `
-      <div class="merge-spawner ${charges > 0 ? 'charged' : 'empty'}"
+    spawnersHtml +=
+      `<div class="merge-spawner ${charges > 0 ? 'charged' : 'empty'}"
            style="border-color:${chain.color};"
-           onclick="mergeSpawn('${type}')">
+           data-spawn="${type}">
         <div class="merge-spawner-icon">${chain.items[0]}</div>
         <div class="merge-spawner-label" style="color:${chain.color};">${chain.name}</div>
-        <div class="merge-spawner-charges" style="background:${charges>0?chain.color:'#444'}">
+        <div class="merge-spawner-charges" style="background:${charges>0?chain.color:'#555'}">
           ${charges > 0 ? charges : '—'}
         </div>
       </div>`;
   });
   spawnersHtml += '</div>';
 
-  // Bräde (7×8 = 56 celler, spawner-raden är separat)
-  const PLAY_SIZE = MERGE_COLS * (MERGE_ROWS - 1); // 56 spelbara celler
+  // Info-knapp
+  const infoBtn = `<button onclick="showMergeInfo()" class="merge-info-btn">?</button>`;
+
+  // Bräde — 7×8 spelbara celler (hoppa över spawner-rad 0–6)
+  const PLAY_SIZE = MERGE_COLS * (MERGE_ROWS - 1);
   let boardHtml = '<div class="merge-board" id="mergeBoardEl">';
   for (let i = 0; i < PLAY_SIZE; i++) {
-    const cell = mergeBoard[MERGE_COLS + i]; // hoppa över spawner-rad index 0-6
-    const isEmpty = !cell;
-    boardHtml += `<div class="merge-cell ${isEmpty ? 'empty' : 'has-item'}"
-      data-idx="${MERGE_COLS + i}"
-      ondragover="mergeDragOver(event)"
-      ondrop="mergeDrop(event, ${MERGE_COLS + i})"
-      onclick="mergeCellClick(${MERGE_COLS + i})">`;
+    const idx = MERGE_COLS + i;
+    const cell = mergeBoard[idx];
     if (cell) {
       const emoji = MERGE_CHAINS[cell.type]?.items[cell.level] || '?';
       const color = MERGE_CHAINS[cell.type]?.color || '#fff';
-      boardHtml += `<div class="merge-item"
-        draggable="true"
-        data-idx="${MERGE_COLS + i}"
-        style="border-color:${color}20;background:${color}15;"
-        ondragstart="mergeDragStart(event, ${MERGE_COLS + i})"
-        ondragend="mergeDragEnd(event)">
-        <span class="merge-emoji">${emoji}</span>
-        ${cell.level > 0 ? `<span class="merge-level">Niv${cell.level + 1}</span>` : ''}
-      </div>`;
+      boardHtml +=
+        `<div class="merge-cell has-item" data-idx="${idx}">
+          <div class="merge-item" data-idx="${idx}"
+               style="border-color:${color}30;background:${color}18;">
+            <span class="merge-emoji">${emoji}</span>
+            ${cell.level > 0 ? `<span class="merge-level">Niv${cell.level+1}</span>` : ''}
+          </div>
+        </div>`;
+    } else {
+      boardHtml += `<div class="merge-cell empty" data-idx="${idx}"></div>`;
     }
-    boardHtml += '</div>';
   }
   boardHtml += '</div>';
 
-  // XP-info
-  const infoHtml = '<div class="merge-info">Dra lika föremål på varandra för att merga! Spawners laddas automatiskt.</div>';
+  el.innerHTML = infoBtn + spawnersHtml + boardHtml;
 
-  el.innerHTML = '<div style="position:relative;">' +
-    '<button onclick="showMergeInfo()" style="position:absolute;top:0;right:0;z-index:10;background:var(--paper-soft);border:2px solid var(--ink-muted);border-radius:50%;width:30px;height:30px;font-size:15px;cursor:pointer;color:var(--ink-soft);font-weight:700;display:flex;align-items:center;justify-content:center;">?</button>' +
-    '</div>' +
-    spawnersHtml + boardHtml + infoHtml;
+  // Spawner-lyssnare
+  el.querySelectorAll('[data-spawn]').forEach(btn => {
+    btn.addEventListener('click', () => mergeSpawn(btn.dataset.spawn));
+  });
+
+  setupMergeDrag();
 }
 
 // ── SPAWNA ────────────────────────────────────────────────────
@@ -1719,77 +1749,148 @@ async function mergeSpawn(type) {
     if (data.ok) {
       mergeBoard = data.board;
       mergeSpawnerCharges = data.spawnerCharges;
+      // Hitta vilken cell som fylldes (senast ändrad)
+      const newIdx = mergeBoard.findIndex((c,i) => i >= MERGE_COLS && c && c.type === type && !mergeBoard.slice(0,i).some(old => old && old === c));
       renderMergeGame();
+      // Animera spawnen
+      const spawnedIdx = data.spawnedIdx;
+      if (spawnedIdx !== undefined) animateSpawn(spawnedIdx);
     } else {
-      showToast(data.error || 'Kunde inte spawna');
+      showToast(data.error || 'Brädet är fullt!');
     }
   } catch(e) { showToast('Fel vid spawning'); }
 }
 
-// ── DRAG & DROP ───────────────────────────────────────────────
-function mergeDragStart(e, idx) {
-  mergeDragSrc = idx;
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('text/plain', idx);
-  const el = e.currentTarget;
-  el.style.opacity = '0.4';
-}
-
-function mergeDragEnd(e) {
-  e.currentTarget.style.opacity = '1';
-  mergeDragSrc = null;
-}
-
-function mergeDragOver(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-  e.currentTarget.classList.add('drag-over');
-  // Ta bort highlight från andra celler
-  document.querySelectorAll('.merge-cell.drag-over').forEach(c => {
-    if (c !== e.currentTarget) c.classList.remove('drag-over');
+function animateSpawn(idx) {
+  const cell = document.querySelector(`[data-idx="${idx}"] .merge-item`);
+  if (!cell) return;
+  cell.style.transform = 'scale(0)';
+  cell.style.transition = 'transform 0.3s cubic-bezier(.34,1.56,.64,1)';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      cell.style.transform = 'scale(1)';
+    });
   });
 }
 
-function mergeDrop(e, targetIdx) {
-  e.preventDefault();
-  e.currentTarget.classList.remove('drag-over');
-  const srcIdx = parseInt(e.dataTransfer.getData('text/plain'));
-  if (isNaN(srcIdx) || srcIdx === targetIdx) return;
-  mergeDoAction(srcIdx, targetIdx);
+// ── TOUCH/MOUSE DRAG ──────────────────────────────────────────
+function setupMergeDrag() {
+  const board = document.getElementById('mergeBoardEl');
+  if (!board) return;
+
+  board.addEventListener('mousedown', mergePointerDown);
+  board.addEventListener('touchstart', mergePointerDown, { passive: false });
 }
 
-// Klick-alternativ (tryck src, tryck dst)
-let mergeClickSrc = null;
-function mergeCellClick(idx) {
+function mergePointerDown(e) {
+  const item = e.target.closest('.merge-item');
+  if (!item) return;
+  if (e.cancelable) e.preventDefault();
+
+  const idx = parseInt(item.dataset.idx);
+  const touch = e.touches ? e.touches[0] : e;
+  const rect = item.getBoundingClientRect();
+
+  mergeDrag.active = true;
+  mergeDrag.srcIdx = idx;
+  mergeDrag.startX = touch.clientX;
+  mergeDrag.startY = touch.clientY;
+  mergeDrag.offsetX = touch.clientX - rect.left - rect.width / 2;
+  mergeDrag.offsetY = touch.clientY - rect.top - rect.height / 2;
+
+  // Skapa floating clone
   const cell = mergeBoard[idx];
-  if (!cell) {
-    // Klick på tom cell — avmarkera
-    mergeClickSrc = null;
-    document.querySelectorAll('.merge-cell.selected').forEach(c => c.classList.remove('selected'));
-    return;
+  const emoji = MERGE_CHAINS[cell.type]?.items[cell.level] || '?';
+  const color = MERGE_CHAINS[cell.type]?.color || '#fff';
+
+  const clone = document.createElement('div');
+  clone.className = 'merge-drag-clone';
+  clone.innerHTML = `<span style="font-size:32px">${emoji}</span>`;
+  clone.style.cssText = `
+    position:fixed;z-index:9999;pointer-events:none;
+    width:52px;height:52px;border-radius:12px;
+    background:${color}30;border:2.5px solid ${color};
+    display:flex;align-items:center;justify-content:center;
+    transform:scale(1.2);
+    transition:transform .1s;
+    left:${touch.clientX - 26}px;
+    top:${touch.clientY - 26}px;
+  `;
+  document.body.appendChild(clone);
+  mergeDrag.el = clone;
+
+  // Dimma ursprungscell
+  item.style.opacity = '0.3';
+  item.dataset.dragging = '1';
+
+  document.addEventListener('mousemove', mergePointerMove, { passive: false });
+  document.addEventListener('touchmove', mergePointerMove, { passive: false });
+  document.addEventListener('mouseup', mergePointerUp);
+  document.addEventListener('touchend', mergePointerUp);
+}
+
+function mergePointerMove(e) {
+  if (!mergeDrag.active) return;
+  if (e.cancelable) e.preventDefault();
+  const touch = e.touches ? e.touches[0] : e;
+
+  if (mergeDrag.el) {
+    mergeDrag.el.style.left = (touch.clientX - 26) + 'px';
+    mergeDrag.el.style.top  = (touch.clientY - 26) + 'px';
   }
-  if (mergeClickSrc === null) {
-    // Välj cell
-    mergeClickSrc = idx;
-    const el = document.querySelector(`[data-idx="${idx}"]`);
-    if (el) el.classList.add('selected');
-  } else if (mergeClickSrc === idx) {
-    // Avmarkera
-    mergeClickSrc = null;
-    document.querySelectorAll('.merge-cell.selected').forEach(c => c.classList.remove('selected'));
-  } else {
-    // Försök merga
-    mergeDoAction(mergeClickSrc, idx);
-    mergeClickSrc = null;
-    document.querySelectorAll('.merge-cell.selected').forEach(c => c.classList.remove('selected'));
+
+  // Highlight cell under finger
+  document.querySelectorAll('.merge-cell.drag-over').forEach(c => c.classList.remove('drag-over'));
+  const target = getCellUnderPoint(touch.clientX, touch.clientY);
+  if (target && parseInt(target.dataset.idx) !== mergeDrag.srcIdx) {
+    target.classList.add('drag-over');
   }
+}
+
+function mergePointerUp(e) {
+  if (!mergeDrag.active) return;
+  const touch = e.changedTouches ? e.changedTouches[0] : e;
+
+  document.removeEventListener('mousemove', mergePointerMove);
+  document.removeEventListener('touchmove', mergePointerMove);
+  document.removeEventListener('mouseup', mergePointerUp);
+  document.removeEventListener('touchend', mergePointerUp);
+
+  // Ta bort clone
+  if (mergeDrag.el) { mergeDrag.el.remove(); mergeDrag.el = null; }
+  document.querySelectorAll('.merge-cell.drag-over').forEach(c => c.classList.remove('drag-over'));
+
+  // Återställ opacity
+  const srcItem = document.querySelector(`.merge-item[data-idx="${mergeDrag.srcIdx}"]`);
+  if (srcItem) { srcItem.style.opacity = '1'; delete srcItem.dataset.dragging; }
+
+  const target = getCellUnderPoint(touch.clientX, touch.clientY);
+  const targetIdx = target ? parseInt(target.dataset.idx) : null;
+
+  mergeDrag.active = false;
+
+  if (targetIdx !== null && targetIdx !== mergeDrag.srcIdx) {
+    mergeDoAction(mergeDrag.srcIdx, targetIdx);
+  }
+
+  mergeDrag.srcIdx = null;
+}
+
+function getCellUnderPoint(x, y) {
+  const board = document.getElementById('mergeBoardEl');
+  if (!board) return null;
+  const cells = board.querySelectorAll('.merge-cell');
+  for (const cell of cells) {
+    const r = cell.getBoundingClientRect();
+    if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return cell;
+  }
+  return null;
 }
 
 // ── MERGE-LOGIK ───────────────────────────────────────────────
 async function mergeDoAction(srcIdx, dstIdx) {
   const src = mergeBoard[srcIdx];
   const dst = mergeBoard[dstIdx];
-
   if (!src) return;
 
   if (!dst) {
@@ -1797,13 +1898,19 @@ async function mergeDoAction(srcIdx, dstIdx) {
     mergeBoard[dstIdx] = src;
     mergeBoard[srcIdx] = null;
     renderMergeGame();
+    animateSpawn(dstIdx);
     saveMergeBoard();
     return;
   }
 
-  // Kolla om merge är möjlig
   if (src.type !== dst.type || src.level !== dst.level) {
-    showToast('Kan bara merga lika föremål av samma typ och nivå!');
+    showToast('Kan bara merga lika föremål av samma nivå!');
+    // Skaka mål-cellen
+    const dstEl = document.querySelector(`[data-idx="${dstIdx}"] .merge-item`);
+    if (dstEl) {
+      dstEl.style.animation = 'mergeShake .4s ease';
+      setTimeout(() => { if(dstEl) dstEl.style.animation = ''; }, 400);
+    }
     return;
   }
 
@@ -1820,17 +1927,13 @@ async function mergeDoAction(srcIdx, dstIdx) {
   mergeBoard[dstIdx] = { type: src.type, level: newLevel };
   mergeBoard[srcIdx] = null;
 
-  // XP
   const xpGain = MERGE_XP[src.level] || 10;
-  const gold = Math.floor(xpGain / 10);
-
-  // Uppdatera lokal state
+  const gold   = Math.floor(xpGain / 10);
   state.totalXP = (state.totalXP || 0) + xpGain;
-  state.gold = (state.gold || 0) + gold;
+  state.gold    = (state.gold || 0) + gold;
   updateGoldDisplay();
   runAchievementCheck();
 
-  // Skicka XP till server
   try {
     await fetch('/api/merge/xp', {
       method: 'POST',
@@ -1842,26 +1945,46 @@ async function mergeDoAction(srcIdx, dstIdx) {
   const newEmoji = chain.items[newLevel];
   const isMax = newLevel === chain.items.length - 1;
 
+  renderMergeGame();
+
+  // Merge-animation på målcellen
+  setTimeout(() => {
+    const dstEl = document.querySelector(`[data-idx="${dstIdx}"] .merge-item`);
+    if (dstEl) {
+      dstEl.style.animation = 'none';
+      dstEl.style.transform = 'scale(0)';
+      dstEl.style.transition = 'transform .35s cubic-bezier(.34,1.56,.64,1)';
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        dstEl.style.transform = 'scale(1)';
+      }));
+    }
+  }, 10);
+
   if (isMax) {
-    showToast('🏆 MAX! ' + newEmoji + ' upplåst! +' + xpGain + ' XP');
-    // Liten konfetti-animation
-    mergeCelebrate(dstIdx);
+    showToast('🏆 MAX NIVÅ! ' + newEmoji + ' +' + xpGain + ' XP!');
+    setTimeout(() => mergeCelebrate(dstIdx), 100);
   } else {
-    showToast(newEmoji + ' skapad! +' + xpGain + ' XP 🪙+' + gold);
+    showToast(newEmoji + ' skapad! +' + xpGain + ' XP' + (gold ? ' 🪙+' + gold : ''));
   }
 
-  renderMergeGame();
   saveMergeBoard();
 }
 
 function mergeCelebrate(idx) {
   const el = document.querySelector(`[data-idx="${idx}"] .merge-emoji`);
   if (!el) return;
-  el.style.transition = 'transform .3s';
-  el.style.transform = 'scale(1.8)';
-  setTimeout(() => { el.style.transform = 'scale(1)'; }, 400);
+  el.style.animation = 'mergeBounce .6s ease';
+  setTimeout(() => { if(el) el.style.animation = ''; }, 700);
 }
 
+function showMergeInfo() {
+  const el = document.getElementById('mergeInfoModal');
+  if (el) el.classList.add('open');
+}
+function closeMergeInfo() {
+  const el = document.getElementById('mergeInfoModal');
+  if (el) el.classList.remove('open');
+}
 
 // ═══════════════════════════════════════════════════════════════
 // SOUMAYA RPG — KOMPLETT STRIDSSYSTEM v2
