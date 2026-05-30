@@ -1998,9 +1998,9 @@ function renderGlucoseCard(val){
   if(val){if(val<state.settings.lowTarget)ctx='low'; else if(val>state.settings.highTarget)ctx='high'; else ctx='good';}
   const sp=document.getElementById('omniSpeechHome');
   if(sp){
-    const src=CHAR_IMGS.omni_speech||'';
+    const src=CHAR_IMGS_LOADED ? getJarJarImg() : '';
     sp.innerHTML=src
-      ?'<div class="companion-row" style="margin:0;"><div class="companion-img" style="width:60px;"><img src="'+src+'" style="width:60px;height:auto;"></div><div style="flex:1;"><div class="companion-name" style="color:var(--pulse-red-deep);">OMNI-MAN</div><div class="speech-bubble" style="font-size:13px;">'+omniLine(ctx)+'</div></div></div>'
+      ?'<div class="companion-row" style="margin:0;"><div class="companion-img" style="width:120px;flex-shrink:0;"><img src="'+src+'" style="width:100%;height:auto;object-fit:contain;"></div><div style="flex:1;"><div class="companion-name" style="color:var(--pulse-red-deep);">JAR JAR BINKS</div><div class="speech-bubble" style="font-size:13px;">'+omniLine(ctx)+'</div></div></div>'
       :'<div class="speech-bubble" style="font-size:13px;">'+omniLine(ctx)+'</div>';
   }
 }
@@ -2607,7 +2607,14 @@ function renderAchievementsWidget() {
 }
 
 
-function renderHome(){setAvatars();const last=state.glucoseHistory[state.glucoseHistory.length-1];if(last){renderGlucoseCard(last.val);const t=new Date(last.time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});const gt=document.getElementById('glucoseTime');if(gt)gt.textContent=(state.cgmConnected?'xDrip · ':'Manuell · ')+t;}else renderGlucoseCard(null);const gsp=document.getElementById('groguHomeSpeech');const lastFood=state.foodLog[0];const gCtx=!lastFood||Date.now()-lastFood.time>4*3600000?'hungry':Date.now()-lastFood.time<2*3600000?'eating':'default';if(gsp)gsp.textContent=groguLine(gCtx);renderStreak();renderRings();const ms=document.getElementById('morningStatus');if(ms){const today=todayStr();const meals=state.foodLog.filter(f=>todayStr(f.time)===today).length;const walked=state.walkLog.some(w=>todayStr(w.time)===today);if(meals===0&&!walked)ms.textContent='Inget loggat än idag — dags att börja! 💪';else if(meals>0&&walked)ms.textContent=meals+' måltid'+(meals>1?'er':'')+' · Promenad klar · Bra jobbat! ⚡';else if(meals>0)ms.textContent=meals+' måltid'+(meals>1?'er':'')+' loggad · Glöm inte promenaden!';else ms.textContent='Promenad klar! Glöm inte att logga mat 🍽️';}}
+function renderHome(){
+  setAvatars();
+  // Rotera Jar Jar-bild på startsidan
+  if (CHAR_IMGS_LOADED) {
+    const el = document.getElementById('omniHomeImg');
+    if (el) { el.src = getJarJarImg(); el.style.cssText='width:100%;height:auto;object-fit:contain;display:block;'; }
+  }
+const last=state.glucoseHistory[state.glucoseHistory.length-1];if(last){renderGlucoseCard(last.val);const t=new Date(last.time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});const gt=document.getElementById('glucoseTime');if(gt)gt.textContent=(state.cgmConnected?'xDrip · ':'Manuell · ')+t;}else renderGlucoseCard(null);const gsp=document.getElementById('groguHomeSpeech');const lastFood=state.foodLog[0];const gCtx=!lastFood||Date.now()-lastFood.time>4*3600000?'hungry':Date.now()-lastFood.time<2*3600000?'eating':'default';if(gsp)gsp.textContent=groguLine(gCtx);renderStreak();renderRings();const ms=document.getElementById('morningStatus');if(ms){const today=todayStr();const meals=state.foodLog.filter(f=>todayStr(f.time)===today).length;const walked=state.walkLog.some(w=>todayStr(w.time)===today);if(meals===0&&!walked)ms.textContent='Inget loggat än idag — dags att börja! 💪';else if(meals>0&&walked)ms.textContent=meals+' måltid'+(meals>1?'er':'')+' · Promenad klar · Bra jobbat! ⚡';else if(meals>0)ms.textContent=meals+' måltid'+(meals>1?'er':'')+' loggad · Glöm inte promenaden!';else ms.textContent='Promenad klar! Glöm inte att logga mat 🍽️';}}
 
 // ═══════════════════════════════════════════════════
 // HJÄLTE-SIDA
@@ -3143,13 +3150,18 @@ let toastTimeout;
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>t.classList.remove('show'),2800);}
 function updateClock(){const now=new Date();const ht=document.getElementById('headerTime');if(ht)ht.textContent=now.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});const hd=document.getElementById('headerDate');if(hd)hd.textContent=now.toLocaleDateString('sv-SE',{weekday:'short',day:'numeric',month:'short'});}
 let _jarjarIdx = 0;
-const JARJAR_KEYS = ['omni_avatar','omni_speech','omni_badge','jarjar_1','jarjar_2','jarjar_3','jarjar_4'];
+let _allenIdx = 0;
 
 function getJarJarImg() {
-  // Rotera bland alla 4 unika bilder
   const keys = ['jarjar_1','jarjar_2','jarjar_3','jarjar_4'];
   _jarjarIdx = (_jarjarIdx + 1) % keys.length;
   return CHAR_IMGS[keys[_jarjarIdx]] || CHAR_IMGS['omni_avatar'] || '';
+}
+
+function getAllenImg() {
+  const keys = ['allen_1','allen_2','allen_3','allen_4'];
+  _allenIdx = (_allenIdx + 1) % keys.length;
+  return CHAR_IMGS[keys[_allenIdx]] || CHAR_IMGS['allen_avatar'] || '';
 }
 
 function setAvatars(){
@@ -3163,8 +3175,14 @@ function setAvatars(){
   }
 
   setImg('groguHomeImg', CHAR_IMGS.grogu_avatar);
-  setImg('groguFoodImg', CHAR_IMGS.grogu_avatar);
-  setImg('allenWalkImg', CHAR_IMGS.allen_avatar);
+  // Grogu på matsidan = animated gif
+  const groguFood = document.getElementById('groguFoodImg');
+  if (groguFood && !groguFood.dataset.gifSet) {
+    groguFood.src = 'https://i.pinimg.com/originals/0b/d5/3b/0bd53bc439762d0ac07975721780117d.gif';
+    groguFood.style.cssText = 'width:100%;height:auto;object-fit:contain;display:block;';
+    groguFood.dataset.gifSet = '1';
+  }
+  setImg('allenWalkImg', CHAR_IMGS.allen_1 || CHAR_IMGS.allen_avatar);
   // Jar Jar ersätter Omni-Man — rotera bland bilderna
   setImg('omniHomeImg', CHAR_IMGS.jarjar_2 || CHAR_IMGS.omni_avatar);
   setImg('omniGlucoseImg', CHAR_IMGS.jarjar_4 || CHAR_IMGS.omni_avatar);
