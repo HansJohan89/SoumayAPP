@@ -86,7 +86,10 @@ const MERGE_CHAINS = {
   walk:    ['👟','🏃','⚡','🌟','🏅','🏆','💎'],
   glucose: ['💧','🩸','💚','✨','🌈','🔮','🪄'],
   bird:    ['🪺','🐣','🐤','🐦','🦜','🦅','🦉'],
+  basic:   ['🪨','🪵','🧱','⚗️','🌱','🌿','🍀','⭐'],
 };
+// Grundföremål som basic-maxen slumpas till
+const BASIC_REWARDS = ['food','walk','glucose','bird'];
 
 // Starta med en av varje grundvariant på brädet
 function createDefaultBoard() {
@@ -102,7 +105,8 @@ function createDefaultBoard() {
 
 const DEFAULT_MERGE = {
   board: createDefaultBoard(),
-  spawnerCharges: { food: 3, walk: 3, glucose: 3, bird: 3 },
+  spawnerCharges: { food: 3, walk: 3, glucose: 3, bird: 3, basic: 50 },
+  lastBasicRefill: 0,
   xpEarned: 0,
 };
 let mergeState = readJSON(MERGE_FILE, DEFAULT_MERGE);
@@ -843,6 +847,19 @@ app.post('/api/merge/spawn', (req, res) => {
   res.json({ ok: true, board: mergeState.board, spawnerCharges: mergeState.spawnerCharges, spawnedIdx });
 });
 
+// Merge-endpoint: hantera basic max-nivå → slumpa grundföremål
+app.post('/api/merge/convert', (req, res) => {
+  const { idx } = req.body;
+  const cell = mergeState.board[idx];
+  if (!cell || cell.type !== 'basic' || cell.level !== MERGE_CHAINS.basic.length - 1)
+    return res.status(400).json({ error: 'Inte ett max basic-föremål' });
+  // Slumpa ett av fyra grundföremål
+  const rewardType = BASIC_REWARDS[Math.floor(Math.random() * BASIC_REWARDS.length)];
+  mergeState.board[idx] = { type: rewardType, level: 0 };
+  writeJSON(MERGE_FILE, mergeState);
+  res.json({ ok: true, board: mergeState.board, rewardType, emoji: MERGE_CHAINS[rewardType][0] });
+});
+
 // Ge XP för merge (anropas från klienten efter lyckad merge)
 app.post('/api/merge/xp', (req, res) => {
   const { xp } = req.body;
@@ -1154,6 +1171,18 @@ setInterval(async () => {
   writeJSON(SCHEDULED_FILE, scheduledPush);
 
 }, 60*1000); // var 60:e sekund
+
+// Basic-spawner: fyll på 50 var timme
+setInterval(() => {
+  const now = Date.now();
+  const oneHour = 60 * 60 * 1000;
+  if (now - (mergeState.lastBasicRefill || 0) >= oneHour) {
+    mergeState.spawnerCharges.basic = 50;
+    mergeState.lastBasicRefill = now;
+    writeJSON(MERGE_FILE, mergeState);
+    console.log('Basic-spawner fylld på: 50 laddningar');
+  }
+}, 60 * 1000);
 
 // ── STARTA ───────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {

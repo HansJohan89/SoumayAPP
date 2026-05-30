@@ -469,6 +469,15 @@ body{
   position:absolute;bottom:1px;right:3px;
   font-size:8px;font-weight:800;color:var(--ink-muted);
 }
+.merge-basic-spawner {
+  border:2.5px solid #9b8ea0;border-radius:12px;padding:10px 14px;
+  display:flex;align-items:center;gap:8px;cursor:pointer;
+  background:var(--paper-soft);margin-top:8px;margin-bottom:4px;
+  transition:transform .1s;-webkit-tap-highlight-color:transparent;
+}
+.merge-basic-spawner.charged { box-shadow:0 3px 10px rgba(155,142,160,.2); }
+.merge-basic-spawner.empty   { opacity:.55;cursor:default; }
+.merge-basic-spawner:active  { transform:scale(.97); }
 .merge-info-btn {
   position:absolute;top:0;right:0;
   background:var(--paper-soft);border:2px solid var(--ink-muted);
@@ -801,6 +810,15 @@ body{
       <div>👟 <strong>Rörelse</strong> — +3 laddningar per km promenerad</div>
       <div>💧 <strong>Blodsocker</strong> — +3 per 3 timmar inom målvärdet</div>
       <div>🪺 <strong>Fåglar</strong> — +3 när "Fota en fågel" godkänns av admin</div>
+      <div>🪨 <strong>Basic</strong> — 50 laddningar varje timme automatiskt</div>
+    </div>
+
+    <div class="card-label" style="margin-bottom:8px;">🪨 Basic-systemet</div>
+    <div style="background:rgba(155,142,160,.12);border:1.5px solid #9b8ea0;border-radius:10px;padding:12px;margin-bottom:14px;font-size:13px;line-height:1.9;">
+      <div>⏰ Basic-spawner fylls på med <strong>50 laddningar varje timme</strong></div>
+      <div>🪨 Spawna ett grundföremål och merga det 8 gånger för att nå ⭐</div>
+      <div>⭐ Merga <strong>två ⭐</strong> → slumpmässigt grundföremål (🥦👟💧🪺)</div>
+      <div style="margin-top:6px;font-size:11px;color:var(--ink-muted);">Tips: du behöver 256 🪨 för att skapa ett grundföremål (2⁸)</div>
     </div>
 
     <div class="card-label" style="margin-bottom:8px;">XP-belöningar per merge</div>
@@ -813,6 +831,7 @@ body{
         <div style="font-weight:600;">Nivå 5 → 6</div><div style="color:var(--high);">+50 XP, +5 🪙</div>
         <div style="font-weight:600;">Nivå 6 → 7</div><div style="color:var(--high);">+75 XP, +7 🪙</div>
         <div style="font-weight:600;">🏆 MAX (7→8)</div><div style="color:var(--power-yellow);">+150 XP, +15 🪙</div>
+        <div style="font-weight:600;color:#9b8ea0;">⭐ Basic → grundföremål</div><div style="color:#9b8ea0;">+20 XP, +2 🪙</div>
       </div>
     </div>
 
@@ -833,6 +852,11 @@ body{
       <div style="background:rgba(184,134,11,.1);border:1.5px solid var(--primary-dark);border-radius:8px;padding:10px;">
         <div style="font-size:10px;font-weight:800;color:var(--primary-dark);margin-bottom:4px;">🪺 FÅGLAR</div>
         <div style="font-size:18px;letter-spacing:4px;">🪺→🐣→🐤→🐦→🦜→🦅→🦉</div>
+      </div>
+      <div style="background:rgba(155,142,160,.1);border:1.5px solid #9b8ea0;border-radius:8px;padding:10px;">
+        <div style="font-size:10px;font-weight:800;color:#9b8ea0;margin-bottom:4px;">🪨 BASIC (50 per timme)</div>
+        <div style="font-size:16px;letter-spacing:3px;">🪨→🪵→🧱→⚗️→🌱→🌿→🍀→⭐</div>
+        <div style="font-size:11px;color:var(--ink-muted);margin-top:4px;">Merga två ⭐ → slumpmässigt grundföremål (🥦/👟/💧/🪺)</div>
       </div>
     </div>
 
@@ -1631,6 +1655,7 @@ const MERGE_CHAINS = {
   walk:    { name:'Rörelse',    items:['👟','🏃','⚡','🌟','🏅','🏆','💎'], color:'#169ee7' },
   glucose: { name:'Blodsocker', items:['💧','🩸','💚','✨','🌈','🔮','🪄'], color:'#FF8A00' },
   bird:    { name:'Fåglar',     items:['🪺','🐣','🐤','🐦','🦜','🦅','🦉'], color:'#b8860b' },
+  basic:   { name:'Basic',      items:['🪨','🪵','🧱','⚗️','🌱','🌿','🍀','⭐'], color:'#9b8ea0' },
 };
 
 const MERGE_XP = [5, 10, 20, 35, 50, 75, 150];
@@ -1640,6 +1665,31 @@ let mergeSpawnerCharges = { food: 0, walk: 0, glucose: 0, bird: 0 };
 let mergeLoaded = false;
 
 // Drag state
+let mergeLastRefill = 0;
+let _basicTimerInterval = null;
+
+function startBasicTimer() {
+  if (_basicTimerInterval) clearInterval(_basicTimerInterval);
+  _basicTimerInterval = setInterval(updateBasicTimer, 10000);
+  updateBasicTimer();
+}
+
+function updateBasicTimer() {
+  const el = document.getElementById('mergeBasicTimer');
+  if (!el) return;
+  const oneHour = 60 * 60 * 1000;
+  const elapsed = Date.now() - mergeLastRefill;
+  const remaining = Math.max(0, oneHour - elapsed);
+  if (remaining === 0) {
+    el.textContent = '✅ Klar';
+    el.style.color = 'var(--in-range-dark)';
+  } else {
+    const mins = Math.ceil(remaining / 60000);
+    el.textContent = mins + ' min';
+    el.style.color = 'var(--ink-muted)';
+  }
+}
+
 let mergeDrag = {
   active: false,
   srcIdx: null,
@@ -1657,7 +1707,9 @@ async function loadMergeGame() {
     if (!res.ok) return;
     const data = await res.json();
     mergeBoard = data.board || Array(MERGE_COLS * MERGE_ROWS).fill(null);
-    mergeSpawnerCharges = data.spawnerCharges || { food:0, walk:0, glucose:0, bird:0 };
+    mergeSpawnerCharges = data.spawnerCharges || { food:0, walk:0, glucose:0, bird:0, basic:0 };
+    mergeLastRefill = data.lastBasicRefill || 0;
+    startBasicTimer();
     mergeLoaded = true;
     renderMergeGame();
     setupMergeDrag();
@@ -1696,6 +1748,24 @@ function renderMergeGame() {
       </div>`;
   });
   spawnersHtml += '</div>';
+
+  // Basic-spawner — separat rad
+  const basicChain = MERGE_CHAINS.basic;
+  const basicCharges = mergeSpawnerCharges.basic || 0;
+  spawnersHtml += `<div class="merge-basic-spawner ${basicCharges > 0 ? 'charged' : 'empty'}"
+       data-spawn="basic">
+    <div style="display:flex;align-items:center;gap:10px;flex:1;">
+      <div style="font-size:26px;">${basicChain.items[0]}</div>
+      <div>
+        <div style="font-size:11px;font-weight:800;color:#9b8ea0;text-transform:uppercase;letter-spacing:.5px;">Basic</div>
+        <div style="font-size:10px;color:var(--ink-muted);">Merga 8× för att få ett grundföremål</div>
+      </div>
+    </div>
+    <div style="text-align:right;flex-shrink:0;">
+      <div style="font-size:14px;font-weight:800;color:${basicCharges>0?'#9b8ea0':'var(--ink-muted)'};">${basicCharges > 0 ? basicCharges + ' kvar' : 'Tomt'}</div>
+      <div style="font-size:10px;color:var(--ink-muted);">Nästa refill: <span id="mergeBasicTimer">...</span></div>
+    </div>
+  </div>`;
 
   // Info-knapp
   const infoBtn = `<button onclick="showMergeInfo()" class="merge-info-btn">?</button>`;
@@ -1918,6 +1988,11 @@ async function mergeDoAction(srcIdx, dstIdx) {
   if (!chain) return;
 
   if (src.level >= chain.items.length - 1) {
+    if (src.type === 'basic') {
+      // Basic max → konvertera till slumpmässigt grundföremål
+      mergeConvertBasic(dstIdx);
+      return;
+    }
     showToast('Redan max-nivå! 🏆');
     return;
   }
@@ -1968,6 +2043,28 @@ async function mergeDoAction(srcIdx, dstIdx) {
   }
 
   saveMergeBoard();
+}
+
+async function mergeConvertBasic(idx) {
+  try {
+    const res = await fetch('/api/merge/convert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idx }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      mergeBoard = data.board;
+      const chain = MERGE_CHAINS[data.rewardType];
+      showToast('✨ ' + data.emoji + ' ' + chain.name + ' upplåst! +20 XP');
+      state.totalXP = (state.totalXP || 0) + 20;
+      state.gold = (state.gold || 0) + 2;
+      updateGoldDisplay();
+      renderMergeGame();
+      setTimeout(() => mergeCelebrate(idx), 50);
+      saveMergeBoard();
+    }
+  } catch(e) { showToast('Fel vid konvertering'); }
 }
 
 function mergeCelebrate(idx) {

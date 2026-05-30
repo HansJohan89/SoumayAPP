@@ -10,6 +10,7 @@ const MERGE_CHAINS = {
   walk:    { name:'Rörelse',    items:['👟','🏃','⚡','🌟','🏅','🏆','💎'], color:'#169ee7' },
   glucose: { name:'Blodsocker', items:['💧','🩸','💚','✨','🌈','🔮','🪄'], color:'#FF8A00' },
   bird:    { name:'Fåglar',     items:['🪺','🐣','🐤','🐦','🦜','🦅','🦉'], color:'#b8860b' },
+  basic:   { name:'Basic',      items:['🪨','🪵','🧱','⚗️','🌱','🌿','🍀','⭐'], color:'#9b8ea0' },
 };
 
 const MERGE_XP = [5, 10, 20, 35, 50, 75, 150];
@@ -19,6 +20,31 @@ let mergeSpawnerCharges = { food: 0, walk: 0, glucose: 0, bird: 0 };
 let mergeLoaded = false;
 
 // Drag state
+let mergeLastRefill = 0;
+let _basicTimerInterval = null;
+
+function startBasicTimer() {
+  if (_basicTimerInterval) clearInterval(_basicTimerInterval);
+  _basicTimerInterval = setInterval(updateBasicTimer, 10000);
+  updateBasicTimer();
+}
+
+function updateBasicTimer() {
+  const el = document.getElementById('mergeBasicTimer');
+  if (!el) return;
+  const oneHour = 60 * 60 * 1000;
+  const elapsed = Date.now() - mergeLastRefill;
+  const remaining = Math.max(0, oneHour - elapsed);
+  if (remaining === 0) {
+    el.textContent = '✅ Klar';
+    el.style.color = 'var(--in-range-dark)';
+  } else {
+    const mins = Math.ceil(remaining / 60000);
+    el.textContent = mins + ' min';
+    el.style.color = 'var(--ink-muted)';
+  }
+}
+
 let mergeDrag = {
   active: false,
   srcIdx: null,
@@ -36,7 +62,9 @@ async function loadMergeGame() {
     if (!res.ok) return;
     const data = await res.json();
     mergeBoard = data.board || Array(MERGE_COLS * MERGE_ROWS).fill(null);
-    mergeSpawnerCharges = data.spawnerCharges || { food:0, walk:0, glucose:0, bird:0 };
+    mergeSpawnerCharges = data.spawnerCharges || { food:0, walk:0, glucose:0, bird:0, basic:0 };
+    mergeLastRefill = data.lastBasicRefill || 0;
+    startBasicTimer();
     mergeLoaded = true;
     renderMergeGame();
     setupMergeDrag();
@@ -75,6 +103,24 @@ function renderMergeGame() {
       </div>`;
   });
   spawnersHtml += '</div>';
+
+  // Basic-spawner — separat rad
+  const basicChain = MERGE_CHAINS.basic;
+  const basicCharges = mergeSpawnerCharges.basic || 0;
+  spawnersHtml += `<div class="merge-basic-spawner ${basicCharges > 0 ? 'charged' : 'empty'}"
+       data-spawn="basic">
+    <div style="display:flex;align-items:center;gap:10px;flex:1;">
+      <div style="font-size:26px;">${basicChain.items[0]}</div>
+      <div>
+        <div style="font-size:11px;font-weight:800;color:#9b8ea0;text-transform:uppercase;letter-spacing:.5px;">Basic</div>
+        <div style="font-size:10px;color:var(--ink-muted);">Merga 8× för att få ett grundföremål</div>
+      </div>
+    </div>
+    <div style="text-align:right;flex-shrink:0;">
+      <div style="font-size:14px;font-weight:800;color:${basicCharges>0?'#9b8ea0':'var(--ink-muted)'};">${basicCharges > 0 ? basicCharges + ' kvar' : 'Tomt'}</div>
+      <div style="font-size:10px;color:var(--ink-muted);">Nästa refill: <span id="mergeBasicTimer">...</span></div>
+    </div>
+  </div>`;
 
   // Info-knapp
   const infoBtn = `<button onclick="showMergeInfo()" class="merge-info-btn">?</button>`;
@@ -297,6 +343,11 @@ async function mergeDoAction(srcIdx, dstIdx) {
   if (!chain) return;
 
   if (src.level >= chain.items.length - 1) {
+    if (src.type === 'basic') {
+      // Basic max → konvertera till slumpmässigt grundföremål
+      mergeConvertBasic(dstIdx);
+      return;
+    }
     showToast('Redan max-nivå! 🏆');
     return;
   }
@@ -347,6 +398,28 @@ async function mergeDoAction(srcIdx, dstIdx) {
   }
 
   saveMergeBoard();
+}
+
+async function mergeConvertBasic(idx) {
+  try {
+    const res = await fetch('/api/merge/convert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idx }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      mergeBoard = data.board;
+      const chain = MERGE_CHAINS[data.rewardType];
+      showToast('✨ ' + data.emoji + ' ' + chain.name + ' upplåst! +20 XP');
+      state.totalXP = (state.totalXP || 0) + 20;
+      state.gold = (state.gold || 0) + 2;
+      updateGoldDisplay();
+      renderMergeGame();
+      setTimeout(() => mergeCelebrate(idx), 50);
+      saveMergeBoard();
+    }
+  } catch(e) { showToast('Fel vid konvertering'); }
 }
 
 function mergeCelebrate(idx) {
