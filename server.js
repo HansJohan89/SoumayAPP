@@ -450,8 +450,23 @@ app.post(['/api/v1/entries', '/api/v1/entries.json'], xdripAuth, (req, res) => {
     if (added > 0) {
       // Sortera och trimma
       glucoseLog.sort((a, b) => a.time - b.time);
-      if (glucoseLog.length > 500) glucoseLog = glucoseLog.slice(-500);
-      writeJSON(GLUCOSE_FILE, glucoseLog);
+
+    // Komprimera: behåll senaste 3h fullt, äldre = bara tid+värde+status
+    const cutoff3h = Date.now() - 3 * 60 * 60 * 1000;
+    glucoseLog = glucoseLog.map(g => {
+      if (g.time >= cutoff3h) return g; // senaste 3h — orörd
+      const low = 4.0, high = 8.0;
+      return {
+        time: g.time,
+        val: Math.round(g.val * 10) / 10,
+        status: g.val < low ? 'low' : g.val > high ? 'high' : 'in',
+        source: g.source || 'xdrip',
+      };
+    });
+
+    // Max 2000 mätningar totalt
+    if (glucoseLog.length > 2000) glucoseLog = glucoseLog.slice(-2000);
+    writeJSON(GLUCOSE_FILE, glucoseLog);
 
       // Auto-komplettera TIR-uppgifter
       const LOW = 4.0, HIGH = 8.0;
@@ -1196,6 +1211,17 @@ setInterval(async () => {
   writeJSON(SCHEDULED_FILE, scheduledPush);
 
 }, 60*1000); // var 60:e sekund
+
+// Veckorensning av glukosdata — behåll bara 7 dagar
+setInterval(() => {
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const before = glucoseLog.length;
+  glucoseLog = glucoseLog.filter(g => g.time >= sevenDaysAgo);
+  if (glucoseLog.length < before) {
+    writeJSON(GLUCOSE_FILE, glucoseLog);
+    console.log('Veckorensning: tog bort', before - glucoseLog.length, 'gamla glukosmätningar');
+  }
+}, 24 * 60 * 60 * 1000); // En gång per dygn
 
 // Basic-spawner: fyll på 50 var timme
 setInterval(() => {
