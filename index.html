@@ -2706,7 +2706,21 @@ function heroAC() {
   });
   return ac;
 }
-function canFightToday() { return state.lastFightDate!==new Date().toISOString().split('T')[0]; }
+function canFightToday(){
+  const today=new Date().toISOString().split('T')[0];
+  if (state.lastFightDate!==today) return true;   // daglig strid tillgänglig
+  return (state.extraFights || 0) > 0;            // bonus-strider från km
+}
+
+function useExtraFight(){
+  const today=new Date().toISOString().split('T')[0];
+  if (state.lastFightDate!==today) {
+    state.lastFightDate = today;  // använd daglig strid
+  } else {
+    state.extraFights = Math.max(0, (state.extraFights||0) - 1);
+  }
+  save();
+}
 function updateGoldDisplay() { const el=document.getElementById('headerGold'); if(el) el.textContent='🪙 '+(state.gold||0); }
 
 // ═══════════════════════════════════════════════════
