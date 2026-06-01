@@ -126,7 +126,7 @@ let scheduledPush = readJSON(SCHEDULED_FILE, []);
 
 // ── EXPRESS ──────────────────────────────────────────────────
 const app = express();
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '100mb' }));
 app.use(express.text({ type: 'text/plain', limit: '10mb' })); // xDrip text/plain
 app.use(express.static(path.join(__dirname), {
   setHeaders(res, fp) {
@@ -758,24 +758,46 @@ app.post('/api/admin/approvals/:id', adminAuth, (req, res) => {
       }
     }
 
-    // Uppdatera meal till approved
+    // Uppdatera meal till approved och ta bort bilderna (spara plats)
     if (approval.mealId) {
       const meal = meals.find(m => m.id === approval.mealId);
       if (meal) {
         meal.approvalStatus = 'approved';
+        meal.photoRemoved = true;
+        // Ta bort base64-bilderna — de tar massa plats och behövs inte längre
+        delete meal.before;
+        delete meal.after;
+        delete meal.beforeImage;
+        delete meal.afterImage;
         writeJSON(MEALS_FILE, meals);
       }
     }
   } else {
-    // Avvisad — rensa completion så hon kan försöka igen
+    // Avvisad — rensa completion och bilder så hon kan försöka igen
     if (approval.taskId) {
       const task = tasks.find(t => t.id === approval.taskId);
-      if (task && task.completions) {
-        delete task.completions[approval.date];
+      if (task) {
+        if (task.completions) delete task.completions[approval.date];
+        // Ta bort inskickade foton för denna dag
+        if (task.photoSubmissions && task.photoSubmissions[approval.date]) {
+          delete task.photoSubmissions[approval.date];
+        }
         writeJSON(TASKS_FILE, tasks);
       }
     }
+    if (approval.mealId) {
+      const meal = meals.find(m => m.id === approval.mealId);
+      if (meal) {
+        meal.approvalStatus = 'rejected';
+        delete meal.before; delete meal.after;
+        delete meal.beforeImage; delete meal.afterImage;
+        writeJSON(MEALS_FILE, meals);
+      }
+    }
   }
+
+  // Ta bort bilderna från approval-objektet (de är nu onödiga)
+  approval.photoUrls = [];
 
   writeJSON(APPROVALS_FILE, pendingApprovals);
   writeJSON(REWARDS_FILE, pendingRewards);

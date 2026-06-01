@@ -2952,24 +2952,36 @@ let currentMealId=null, mealPhotos={before:false,after:false};
 function triggerCamera(phase){document.getElementById(phase+'Input').click();}
 async function handlePhoto(phase,input){
   const file=input.files[0]; if(!file) return;
-  // Visa preview direkt
   const preview=document.getElementById(phase+'Preview');
-  const imageData = await fileToBase64(file);
-  if(preview) preview.innerHTML='<img src="'+imageData+'" style="width:100%;height:100%;object-fit:cover;">';
-  mealPhotos[phase]=true;
-  if(!currentMealId) currentMealId='meal-'+Date.now();
-  updatePhotoStatus();
-  // Ladda upp som base64
-  try{
+  // Visa spinner
+  if(preview) preview.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;">⏳</div>';
+  try {
+    const imageData = await fileToBase64(file);
+    // Visa preview
+    if(preview) preview.innerHTML='<img src="'+imageData+'" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">';
+    if(!currentMealId) currentMealId='meal-'+Date.now();
+    mealPhotos[phase]=true;
+    updatePhotoStatus();
+    // Ladda upp till server
     const res = await fetch('/api/meals/upload',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({ mealId:currentMealId, phase, imageData })
     });
-    const data = await res.json();
-    if(!data.ok) showToast('⚠️ Foto sparades inte: '+(data.error||'okänt fel'));
-    else updatePhotoStatus();
-  }catch(e){ showToast('❌ Foto-upload misslyckades'); }
+    if(!res.ok) {
+      const err = await res.text();
+      showToast('⚠️ Foto sparades inte ('+res.status+')');
+      console.error('Upload error:', err);
+    } else {
+      const data = await res.json();
+      if(!data.ok) showToast('⚠️ '+( data.error||'Okänt fel'));
+    }
+  } catch(e) {
+    showToast('❌ Foto-upload misslyckades: '+e.message);
+    console.error('handlePhoto:', e);
+    if(preview) preview.innerHTML='<div class="photo-box-icon">❌</div>';
+    mealPhotos[phase]=false;
+  }
 }
 function updatePhotoStatus(){
   const el=document.getElementById('photoStatus'); if(!el) return;
@@ -2981,16 +2993,24 @@ async function logFood(){
   const name=document.getElementById('foodName').value.trim();
   const carbs=parseFloat(document.getElementById('foodCarbs').value);
   if(!name){showToast('Ange en måltid!'); return;}
-  if(!mealPhotos.before){showToast('📷 Ta en bild innan du äter!'); return;}
   const mealId=currentMealId||('meal-'+Date.now());
+  const hasPhoto=mealPhotos.before||mealPhotos.after;
+  // Spara måltid på servern
+  try{
+    await fetch('/api/meals',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:mealId,name,carbs:isNaN(carbs)?0:carbs,mealType:state.selectedMealType})
+    });
+  }catch(e){}
   const entry={id:mealId,name,carbs:isNaN(carbs)?0:carbs,type:state.selectedMealType,time:Date.now(),complete:mealPhotos.before&&mealPhotos.after};
   state.foodLog.unshift(entry); if(state.foodLog.length>100) state.foodLog.pop();
-  try{await fetch('/api/meals',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:mealId,name,carbs:entry.carbs,mealType:entry.type})});}catch(e){}
   document.getElementById('foodName').value=''; document.getElementById('foodCarbs').value='';
   document.getElementById('beforePreview').innerHTML='<div class="photo-box-icon">📷</div><div style="font-size:10px;font-weight:700;color:var(--ink-muted);margin-top:4px;">TRYCK HÄR</div>';
   document.getElementById('afterPreview').innerHTML='<div class="photo-box-icon">📷</div><div style="font-size:10px;font-weight:700;color:var(--ink-muted);margin-top:4px;">TRYCK HÄR</div>';
   currentMealId=null; mealPhotos={before:false,after:false}; updatePhotoStatus();
-  save(); renderFoodPage(); showToast('Grogu är nöjd! 🐸');
+  renderFoodPage();
+  showToast(hasPhoto?'Grogu är nöjd! Väntar på godkännande 🐸':'Grogu är nöjd! 🐸');
 }
 function renderFoodPage(){
   const lastFood=state.foodLog[0];
