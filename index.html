@@ -540,6 +540,19 @@ body{
   100%{ transform:scale(1); }
 }
 
+
+.combat-log-line.event {
+  color:#c084fc;
+  font-style:italic;
+  font-weight:600;
+  padding:6px 8px;
+  background:rgba(192,132,252,.08);
+  border-left:3px solid #c084fc;
+  border-radius:0 6px 6px 0;
+  margin:4px 0;
+  line-height:1.5;
+}
+
 </style>
 </head>
 <body>
@@ -2259,38 +2272,38 @@ const ENEMY_TEMPLATES = [
   { id:'sugar_slime',   name:'Sockerblobben',     icon:'🟢', zone:1, minLevel:1, maxLevel:4,
     flavor:'En klibbig klump socker som rullar mot dig.',
     lore:'Uppstod ur ett övergett godispaket på parkeringshuset.',
-    stats:{STY:2,SMI:1,KON:2,INT:0}, hp:14, ac:8,
-    attacks:['Sockerblobben klibbsmachar!','Sockerblobben försöker omfamna dig!','Sockerblobben kastar klibbar!'],
+    stats:{STY:5,SMI:2,KON:5,INT:0}, hp:28, ac:11,
+    attacks:['Sockerblobben klibbsmachar!','Sockerblobben försöker omfamna dig med sina kladdiga tentakler!','Sockerblobben kastar en klibbboll rakt mot ansiktet!'],
     deathLine:'"...söttttt..." SPLAT. Sockerblobben exploderar i karamellrök.',
     winLine:'"Du smakar gott." Blobben absorberar dig sakta.',
-    xpReward:45, goldReward:12 },
+    xpReward:55, goldReward:14 },
 
   { id:'sugar_goblin',  name:'Sockergoblinen',    icon:'👺', zone:1, minLevel:1, maxLevel:4,
     flavor:'En liten grön varelse som skriker om glykosindex.',
     lore:'Lever i källaren och äter bara korvbröd och läsk.',
-    stats:{STY:3,SMI:4,KON:2,INT:2}, hp:18, ac:10,
-    attacks:['Goblinen kastar en godispåse!','Goblinen nappar med tänder!','Goblinen hyperventilerar och ruschar!'],
+    stats:{STY:6,SMI:7,KON:4,INT:3}, hp:32, ac:13,
+    attacks:['Goblinen kastar en godispåse med kirurgisk precision!','Goblinen nafsar med vassa sockertänder!','Goblinen hyperventilerar och ruschar med full fart!'],
     deathLine:'"Inga fler snacks..." Goblinen kraschar i tomma godispåsar.',
     winLine:'Goblinen stoppar en kola i fickan. "Du var tråkig." Sen springer den.',
-    xpReward:55, goldReward:15 },
+    xpReward:65, goldReward:18 },
 
   { id:'calorie_rat',   name:'Kalorieråttan',     icon:'🐀', zone:1, minLevel:1, maxLevel:4,
     flavor:'En onaturligt stor råtta med en miniräknare.',
     lore:'Muterade efter år i sjukhusmatsalens magasin.',
-    stats:{STY:2,SMI:6,KON:2,INT:3}, hp:15, ac:12,
-    attacks:['Råttan nafsar!','Råttan springer cirklar!','Råttan kastar miniräknaren!'],
+    stats:{STY:4,SMI:9,KON:4,INT:5}, hp:30, ac:14,
+    attacks:['Råttan nafsar med blixthastighet!','Råttan springer cirklar tills du tappar balansen!','Råttan kastar miniräknaren med dödlig precision!'],
     deathLine:'"Den... totala kalorimängden..." Råttan kollapsar.',
     winLine:'"Din insulindos är FEL!" Råttan springer iväg med ditt snacks.',
-    xpReward:50, goldReward:13 },
+    xpReward:60, goldReward:16 },
 
   { id:'lazy_golem',    name:'Latmasksgolemen',   icon:'🪨', zone:1, minLevel:2, maxLevel:5,
-    flavor:'En golem gjord av soffkuddar. Rör sig i slow motion.',
-    lore:'Skapades av ackumulerad couch-potato-energi.',
-    stats:{STY:5,SMI:1,KON:8,INT:0}, hp:40, ac:11,
-    attacks:['Golemen faller mot dig!','Golemen kastar en fjärrkontroll!','Golemen sätter sig på dig!'],
+    flavor:'En golem gjord av soffkuddar. Rör sig i slow motion — men varje slag är fruktansvärt.',
+    lore:'Skapades av ackumulerad couch-potato-energi. Tung som ett berg.',
+    stats:{STY:10,SMI:1,KON:14,INT:0}, hp:65, ac:13,
+    attacks:['Golemen faller mot dig med hela sin vikt!','Golemen kastar fjärrkontrollen som ett projektil!','Golemen sätter sig på dig — 60kg tyngd!'],
     deathLine:'"...hade kunnat se på film..." Golemen löses upp i sofffjädrar.',
-    winLine:'"Orkar inte..." Golemen kollar Netflix. Du är fortfarande där.',
-    xpReward:75, goldReward:22 },
+    winLine:'"Orkar inte..." Golemen kollar Netflix. Du är fortfarande under den.',
+    xpReward:90, goldReward:28 },
 
   // ZON 2 (lvl 3-7)
   { id:'burnout_wraith',name:'Utmattningsanden',  icon:'👻', zone:2, minLevel:3, maxLevel:7,
@@ -2420,7 +2433,7 @@ function getEnemiesForLevel(heroLevel) {
     .filter(e => heroLevel >= e.minLevel)
     .map(e => {
       const lvlDiff = Math.max(0, heroLevel - e.minLevel);
-      const scale = 1 + lvlDiff * 0.12;
+      const scale = 1 + lvlDiff * 0.18;
       return {
         ...e,
         scaledStats: {
@@ -2490,6 +2503,99 @@ if (typeof module !== 'undefined') {
   window.calcCombatReward = calcCombatReward;
   window.goldFromAchievement = goldFromAchievement;
   window.initHero = initHero;
+}
+
+// ── STRID-EVENTS ─────────────────────────────────────────────
+// Triggas vid ~50% HP på fienden, max 1 per strid
+// Returnerar { text, effect } eller null
+const COMBAT_EVENTS = [
+  // Fienden stärks
+  {
+    id:'slime_doubles', enemyId:'sugar_slime',
+    text:'Sockerblobben suger upp en pöl sirap från golvet — och DUBBLAS i storlek! Den fylls av socker-energi.',
+    effect: (c) => { c.enemyHp = Math.min(c.enemyMaxHp, c.enemyHp + 15); c.enemyStats.STY += 3; },
+    effectDesc: 'Blobben får +15 HP och +3 STY!'
+  },
+  {
+    id:'goblin_sugar_rush', enemyId:'sugar_goblin',
+    text:'Goblinen stoppar HELA godispåsen i munnen på en gång. En galning! Hans ögon glöder rött.',
+    effect: (c) => { c.enemyStats.STY += 4; c.enemyAc += 1; },
+    effectDesc: 'Sockerkick! Goblinen får +4 STY och +1 AC!'
+  },
+  {
+    id:'rat_calls_friends', enemyId:'calorie_rat',
+    text:'Kalorieråttan piper desperat — och tre mini-råttor störtar ut ur väggarna och biter dig!',
+    effect: (c) => { c.heroHp = Math.max(1, c.heroHp - 12); },
+    effectDesc: 'Mini-råttorna biter! Du förlorar 12 HP!'
+  },
+  {
+    id:'golem_second_wind', enemyId:'lazy_golem',
+    text:'Latmasksgolemen hittar fjärrkontrollen och ZAPPAR sig med 10 000 volt för att vakna upp. Han reser sig.',
+    effect: (c) => { c.enemyHp = Math.min(c.enemyMaxHp, c.enemyHp + 20); c.enemyStats.STY += 2; },
+    effectDesc: 'Golemen återhämtar 20 HP och +2 STY!'
+  },
+  // Hjälten får hjälp
+  {
+    id:'allen_assists', enemyId:null, // alla fiender
+    text:'Allen the Alien landar från skyn med ett BRAK. "Jag hade lite ledig tid." Han slår till fienden med en kosmisk knytnäve.',
+    effect: (c) => { c.enemyHp = Math.max(0, c.enemyHp - 18); },
+    effectDesc: 'Allen gör 18 skada på fienden!'
+  },
+  {
+    id:'grogu_snack', enemyId:null,
+    text:'Grogu trycker sig fram och räcker upp ett litet snacks. *blip bloop* Han verkar orolig.',
+    effect: (c) => { c.heroHp = Math.min(c.heroMaxHp, c.heroHp + 14); },
+    effectDesc: 'Grogu läker 14 HP!'
+  },
+  {
+    id:'blood_sugar_dip', enemyId:null,
+    text:'Blodsockret sjunker plötsligt. En svimningskänsla. Allt suddas ut i kanten. Men du håller stånd.',
+    effect: (c) => { c.heroHp = Math.max(1, c.heroHp - 8); c.heroAc -= 1; },
+    effectDesc: 'Du tappar 8 HP och -1 AC en runda.'
+  },
+  {
+    id:'cortisol_surge', enemyId:null,
+    text:'En kortisolvåg sköljer igenom kroppen. Adrenalin. Du ser allt klarare. Din nästa attack är starkare.',
+    effect: (c) => { c.heroStats.STY += 3; c._cortisolRounds = 2; },
+    effectDesc: '+3 STY i 2 rundor!'
+  },
+  {
+    id:'enemy_stumbles', enemyId:null,
+    text:'Fienden halkar på ett golvet och faller klumpigt. Ett ögonblicks sårbarhet — ta chansen!',
+    effect: (c) => { c._enemyStunned = true; },
+    effectDesc: 'Fienden missar nästa attack!'
+  },
+  {
+    id:'jarjar_distraction', enemyId:null,
+    text:'Jar Jar Binks störtar in genom en dörr. "MEESA SO SORRY!" Han snubblar rakt in i fienden och orsakar kaos.',
+    effect: (c) => { c.enemyHp = Math.max(0, c.enemyHp - 10); c._enemyStunned = true; },
+    effectDesc: 'Jar Jar gör 10 skada och fienden missar nästa slag!'
+  },
+  {
+    id:'hba1c_vision', enemyId:'hba1c_dragon',
+    text:'Draken visar ditt senaste HbA1c i ett flammande moln. Siffrorna bränner sig in i ögonen. Du fryser.',
+    effect: (c) => { c.heroAc -= 2; c.heroHp = Math.max(1, c.heroHp - 10); },
+    effectDesc: 'Draken skrämmer dig: -10 HP och -2 AC!'
+  },
+  {
+    id:'hypo_midnight', enemyId:'hypo_demon',
+    text:'Hypodemon viskar: "Klockan är tre om natten och du är ensam med ditt blodsocker." Du ryser till.',
+    effect: (c) => { c.heroStats.STY -= 2; c.heroStats.SMI -= 1; },
+    effectDesc: 'Rädslan tar kraft: -2 STY, -1 SMI!'
+  },
+];
+
+function getCombatEvent(c) {
+  if (c._eventFired) return null;
+  if (c.enemyHp > c.enemyMaxHp * 0.55) return null; // triggar vid 55% HP
+
+  // Fiende-specifika events
+  const specific = COMBAT_EVENTS.filter(e => e.enemyId === c.enemyId);
+  const generic  = COMBAT_EVENTS.filter(e => e.enemyId === null);
+  const pool = [...specific, ...generic];
+
+  if (!pool.length || Math.random() > 0.7) return null; // 70% chans att ett event triggas
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 // ═══════════════════════════════════════════════════
@@ -3343,7 +3449,8 @@ function renderCombatTab(){
 
   if(!canFight){
     const last=(state.combatLog||[])[0];
-    el.innerHTML='<div class="card paper" style="text-align:center;padding:20px;"><div style="font-size:40px;margin-bottom:8px;">'+(last&&last.won?'🏆':'💀')+'</div><div class="burst burst-sm" style="margin-bottom:6px;">DAGENS STRID AVKLARAD</div><div style="font-size:13px;color:var(--ink-muted);font-weight:600;">Kom tillbaka imorgon!</div>'+(last?'<div style="margin-top:12px;font-family:var(--font-script);font-size:16px;color:var(--ink-soft);">'+last.summary+'</div>':'')+'</div>'+renderCombatHistory();
+    const extra = state.extraFights || 0;
+    el.innerHTML='<div class="card paper" style="text-align:center;padding:20px;"><div style="font-size:40px;margin-bottom:8px;">'+(last&&last.won?'🏆':'💀')+'</div><div class="burst burst-sm" style="margin-bottom:6px;">DAGENS STRID AVKLARAD</div><div style="font-size:13px;color:var(--ink-muted);font-weight:600;">Gå fler km för bonus-strider!</div>'+(extra>0?'<div style="margin-top:10px;background:var(--hero-blue);color:#fff;border-radius:10px;padding:6px 14px;font-weight:700;font-size:14px;display:inline-block;">⚔️ '+extra+' bonus-strider kvar</div>':'')+(last?'<div style="margin-top:12px;font-family:var(--font-script);font-size:16px;color:var(--ink-soft);">'+last.summary+'</div>':'')+'</div>'+renderCombatHistory();
     return;
   }
 
@@ -3364,7 +3471,13 @@ function renderCombatTab(){
     legendary:{bg:'#F3E8FF', border:'#5b21b6', text:'#5b21b6',  shadow:'#5b21b6', label:'💀 LEGENDAR'},
   };
 
-  let html = '<div class="card dark" style="text-align:center;padding:14px;margin-bottom:12px;"><div class="burst burst-sm" style="color:var(--power-yellow);letter-spacing:2px;margin-bottom:4px;">VÄLJ DIN MOTSTÅNDARE</div><div style="font-size:11px;color:rgba(255,255,255,.6);font-weight:600;">En strid per dag · Nivå '+heroLvl+'</div></div>';
+  const extra = state.extraFights || 0;
+  const today = new Date().toISOString().split('T')[0];
+  const usedDaily = state.lastFightDate === today;
+  const fightInfo = usedDaily
+    ? (extra > 0 ? '⚔️ ' + extra + ' bonus-strider kvar' : 'Inga fler strider idag')
+    : '1 daglig strid + ' + extra + ' bonus';
+  let html = '<div class="card dark" style="text-align:center;padding:14px;margin-bottom:12px;"><div class="burst burst-sm" style="color:var(--power-yellow);letter-spacing:2px;margin-bottom:4px;">VÄLJ DIN MOTSTÅNDARE</div><div style="font-size:11px;color:rgba(255,255,255,.6);font-weight:600;">'+fightInfo+' · Nivå '+heroLvl+'</div></div>';
 
   zones.forEach(zone => {
     const zoneEnemies = allEnemies.filter(e => e.zone === zone.z);
@@ -3404,6 +3517,7 @@ function renderCombatHistory(){const log=(state.combatLog||[]).slice(0,5);if(!lo
 function startCombat(enemyId){
   const ld=heroLevelData(),enemies=getEnemiesForLevel(ld.current.level),et=enemies.find(e=>e.id===enemyId); if(!et) return;
   const stats=heroStats(),maxHp=heroMaxHp();
+  useExtraFight();
   state.activeCombat={enemyId,enemyName:et.name,enemyIcon:et.icon,enemyDiff:et.difficulty,enemyHp:et.scaledHp,enemyMaxHp:et.scaledHp,enemyStats:et.scaledStats,enemyAc:et.scaledAc,enemyAttacks:et.attacks,enemyDeathLine:et.deathLine,enemyWinLine:et.winLine,enemyXpReward:et.scaledXp||et.xpReward||100,enemyGoldReward:et.scaledGold||et.goldReward||30,heroHp:maxHp,heroMaxHp:maxHp,heroAc:heroAC(),heroStats:stats,log:[{type:'system',text:'⚔️ Striden börjar! '+et.name+' tar positionen. '+et.flavor}],done:false,defendBonus:0};
   save(); renderActiveCombat();
 }
@@ -3446,8 +3560,8 @@ function renderActiveCombat(){
     // ── Stridslogg ──
     '<div class="combat-log" id="combatLogEl">'+
       (c.log.length===0?'<div class="combat-log-empty">Striden börjar...</div>':
-      c.log.filter(l=>l.type!=='dice').slice(-10).map(l=>'<div class="combat-log-line '+l.type+'">'+
-        (l.type==='hero'?'🗡️ ':l.type==='enemy'?'💢 ':l.type==='system'?'⚡ ':'')+
+      c.log.filter(l=>l.type!=='dice').slice(-12).map(l=>'<div class="combat-log-line '+l.type+'">'+
+        (l.type==='hero'?'🗡️ ':l.type==='enemy'?'💢 ':l.type==='system'?'⚡ ':l.type==='event'?'✨ ':'')+
         l.text+'</div>').join(''))+
     '</div>'+
 
@@ -3587,10 +3701,12 @@ function doAction(actionId){
 
   if(!enemyKilled){
     enemyLogs.push({type:'enemy', text:'━━━ '+c.enemyName.toUpperCase()+' SVARAR ━━━'});
-    const eD20=roll(20); const eHitRoll=eD20+c.enemyStats.STY; const effAc=c.heroAc+c.defendBonus; const eHit=eHitRoll>=effAc;
+    const eStunned = c._enemyStunned;
+    const eD20=roll(20); const eHitRoll=eD20+c.enemyStats.STY; const effAc=c.heroAc+c.defendBonus; const eHit=!eStunned && eHitRoll>=effAc;
+    if (eStunned) enemyLogs.push({type:'system', text:c.enemyName+' är stunnad och missar!'});
     enemyLogs.push({type:'dice', text:'[d20='+eD20+'] + STY'+c.enemyStats.STY+' = '+eHitRoll+' mot din AC'+effAc+(c.defendBonus>0?' (+4 försvar)':'')+' → '+(eHit?'TRÄFF!':'Miss')});
     if(eHit){
-      const eDmgDie=roll(8); const eDmg=Math.max(1,eDmgDie+Math.floor(c.enemyStats.STY/2));
+      const eDmgDie=roll(10); const eDmg=Math.max(1,eDmgDie+Math.floor(c.enemyStats.STY/1.5));
       enemyLogs.push({type:'dice', text:'Skadeslag: [d8='+eDmgDie+'] + '+Math.floor(c.enemyStats.STY/2)+' = '+eDmg});
       c.heroHp=Math.max(0,c.heroHp-eDmg);
       const atkList=c.enemyAttacks||[c.enemyName+' attackerar!'];
@@ -3607,6 +3723,32 @@ function doAction(actionId){
   }
 
   c.defendBonus=0;
+
+  // Stäng av stunned
+  if (c._enemyStunned) c._enemyStunned = false;
+  // Tick cortisol
+  if (c._cortisolRounds > 0) {
+    c._cortisolRounds--;
+    if (c._cortisolRounds === 0) { c.heroStats.STY -= 3; }
+  }
+
+  // Kolla om ett event triggas
+  if (!enemyKilled) {
+    const ev = getCombatEvent(c);
+    if (ev) {
+      c._eventFired = true;
+      ev.effect(c);
+      enemyLogs.push({type:'event', text:'✨ ' + ev.text});
+      enemyLogs.push({type:'event', text:'→ ' + ev.effectDesc});
+      // Om event dödar fienden
+      if (c.enemyHp <= 0) {
+        enemyLogs.push({type:'system', text:'💥 ' + c.enemyName + ' är besegrad av event!'});
+      }
+    }
+  }
+
+  if(!enemyKilled && c.enemyHp <= 0) { enemyKilled = true; }
+
   if(!enemyKilled && c.heroHp<=0){
     enemyLogs.push({type:'system', text:'💀 Soumaya faller i strid...'});
   }

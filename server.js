@@ -71,6 +71,7 @@ const DEFAULT_PLAYER = {
   equipped: { weapon: null, armor: null, accessory: null, potion: null, rune: null },
   combatLog: [],
   lastFightDate: null,
+  extraFights: 0,   // Bonus-strider från promenader
   unlockedAchievements: [],
   appOpens: 0,
   settings: { lowTarget: 4.0, highTarget: 8.0 },
@@ -294,6 +295,14 @@ app.post('/api/walks/finish', (req, res) => {
     // Ladda merge-spawner: 3 per km (minst 1 om > 0.1km)
     const kmCharge = Math.max(walk.distance >= 0.1 ? 1 : 0, Math.floor(walk.distance));
     if (kmCharge > 0) chargeSpawner('walk', kmCharge * 3);
+
+    // Extra strider: +1 per km promenerad
+    const fightBonus = Math.floor(walk.distance);
+    if (fightBonus > 0) {
+      player.extraFights = (player.extraFights || 0) + fightBonus;
+      writeJSON(PLAYER_FILE, player);
+      console.log('Extra strider:', fightBonus, '→ totalt:', player.extraFights);
+    }
 
     // Auto-komplettera distance/minuter-uppgifter
     const today = new Date().toISOString().split('T')[0];
@@ -795,7 +804,7 @@ app.get('/api/player', (req, res) => {
 });
 
 app.post('/api/player', (req, res) => {
-  const allowed = ['totalXP','gold','inventory','equipped','combatLog','lastFightDate','unlockedAchievements','appOpens','settings'];
+  const allowed = ['totalXP','gold','inventory','equipped','combatLog','lastFightDate','extraFights','unlockedAchievements','appOpens','settings'];
   allowed.forEach(key => {
     if (req.body[key] !== undefined) player[key] = req.body[key];
   });
