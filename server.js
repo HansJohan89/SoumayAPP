@@ -687,7 +687,8 @@ app.get('/api/tasks', (req, res) => {
         km:         calcKm(periodWalks),
         minutes:    calcMin(periodWalks),
         tirMinutes: Math.round(calcTIR(periodGlucose)),
-        runCount:   periodRuns.length,
+        runCount:    periodRuns.length,
+        runKm:       periodRuns.reduce((a,w)=>a+(w.distance||0),0),
         period,
       }
     };

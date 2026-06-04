@@ -257,6 +257,8 @@ tr:hover td{background:#1a1a1a}
             <option value="minutes">⏱ Automatiskt — promenadminuter</option>
             <option value="glucose_tir">🩸 Automatiskt — blodsocker i mål (min)</option>
             <option value="run_count">🏃 Automatiskt — antal löpningar</option>
+            <option value="run_distance">🏃 Automatiskt — löpdistans (km)</option>
+            <option value="run_pace">🏃 Automatiskt — löptempo (min/km)</option>
             <option value="combo">🎯 Kombination (manuell + datakrav)</option>
           </select>
         </div>
@@ -270,8 +272,19 @@ tr:hover td{background:#1a1a1a}
             <input type="number" class="form-input" id="taskTargetMinutes" placeholder="30" min="1" max="300">
           </div>
           <div id="runCountField" style="display:none;">
-            <label class="form-label">Antal löpningar</label>
+            <label class="form-label">Antal löpningar (per period)</label>
             <input type="number" class="form-input" id="taskTargetCount" placeholder="3" min="1" max="30">
+            <div class="form-hint" style="margin-top:4px;font-size:11px;color:#666;">T.ex. 3 = spring 3 gånger per vecka</div>
+          </div>
+          <div id="runDistanceField" style="display:none;">
+            <label class="form-label">Löpdistans (km)</label>
+            <input type="number" class="form-input" id="taskTargetRunDistance" placeholder="5.0" min="0.1" max="100" step="0.1">
+            <div class="form-hint" style="margin-top:4px;font-size:11px;color:#666;">T.ex. 5.0 = spring totalt 5 km per vecka</div>
+          </div>
+          <div id="runPaceField" style="display:none;">
+            <label class="form-label">Måltempo (min/km, lägre = snabbare)</label>
+            <input type="number" class="form-input" id="taskTargetPace" placeholder="6.0" min="2.0" max="15.0" step="0.5">
+            <div class="form-hint" style="margin-top:4px;font-size:11px;color:#666;">T.ex. 6.0 = håll under 6:00 min/km</div>
           </div>
           <div id="tirField" style="display:none;">
             <label class="form-label">Minuter i målzonen (4–8 mmol/L)</label>
@@ -954,9 +967,18 @@ function setTaskFilter(filter, btn) {
 function showCompletionFields() {
   const type = document.getElementById('taskCompletionType').value;
   const container = document.getElementById('completionFields');
-  const fields = ['distanceField','minutesField','tirField','comboField'];
-  const map = {distance:'distanceField', minutes:'minutesField', glucose_tir:'tirField', combo:'comboField'};
-  fields.forEach(f => document.getElementById(f).style.display = 'none');
+  const fields = ['distanceField','minutesField','tirField','comboField',
+                  'runCountField','runDistanceField','runPaceField'];
+  const map = {
+    distance:     'distanceField',
+    minutes:      'minutesField',
+    glucose_tir:  'tirField',
+    combo:        'comboField',
+    run_count:    'runCountField',
+    run_distance: 'runDistanceField',
+    run_pace:     'runPaceField',
+  };
+  fields.forEach(f => { const el = document.getElementById(f); if(el) el.style.display = 'none'; });
   if (map[type]) {
     container.style.display = 'block';
     document.getElementById(map[type]).style.display = 'block';
@@ -1000,7 +1022,7 @@ async function loadTasks() {
         '</div>' +
         '<div class="task-meta">' +
           '<span class="badge badge-blue">' + (t.type==='daily'?'🔁 Daglig':t.type==='once'?'1️⃣ Engång':'📅 Veckovis') + '</span>' +
-          (t.completionType && t.completionType!=='manual' ? '<span class="badge badge-purple">' + {distance:'🚶 Km',minutes:'⏱ Min',glucose_tir:'🩸 TIR',run_count:'🏃 Löpning',combo:'🎯 Kombo'}[t.completionType] + '</span>' : '') +
+          (t.completionType && t.completionType!=='manual' ? '<span class="badge badge-purple">' + {distance:'🚶 Km',minutes:'⏱ Min',glucose_tir:'🩸 TIR',run_count:'🏃 Löpningar',run_distance:'🏃 Löpdistans',run_pace:'🏃 Löptempo',combo:'🎯 Kombo'}[t.completionType] + '</span>' : '') +
           (t.xpReward ? '<span class="badge badge-green">+' + t.xpReward + ' XP</span>' : '') +
           (t.goldReward ? '<span class="badge badge-yellow">+' + t.goldReward + ' 🪙</span>' : '') +
           (t.requirePhotos ? '<span class="badge badge-purple">📷 kräver godkännande</span>' : '') +
