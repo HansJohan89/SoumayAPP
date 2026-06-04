@@ -39,6 +39,7 @@ const SETTINGS_FILE  = path.join(DATA_DIR, 'notif_settings.json');
 const SCHEDULED_FILE = path.join(DATA_DIR, 'scheduled_push.json');
 const PLAYER_FILE    = path.join(DATA_DIR, 'player.json');
 const MERGE_FILE     = path.join(DATA_DIR, 'merge.json');
+const JOURNAL_FILE   = path.join(DATA_DIR, 'journal.json');
 
 function readJSON(file, def) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch(e) { return def; }
@@ -76,7 +77,8 @@ const DEFAULT_PLAYER = {
   appOpens: 0,
   settings: { lowTarget: 4.0, highTarget: 8.0 },
 };
-let player = readJSON(PLAYER_FILE, DEFAULT_PLAYER);
+let player  = readJSON(PLAYER_FILE, DEFAULT_PLAYER);
+let journal = readJSON(JOURNAL_FILE, []);
 
 const BOARD_COLS = 7;
 const BOARD_ROWS = 9;
@@ -671,14 +673,21 @@ app.get('/api/tasks', (req, res) => {
   // Progress beräknas per period (daily/weekly) för varje uppgift
   const enriched = tasks.map(t => {
     const period = t.type === 'weekly' ? 'weekly' : 'daily';
+    const today  = new Date().toISOString().split('T')[0];
     const periodWalks   = getWalksForPeriod(period);
     const periodGlucose = getGlucoseForPeriod(period);
+    const periodRuns    = walks.filter(w => {
+      if (w.active || !w.endTime || w.type !== 'run') return false;
+      if (period === 'daily') return new Date(w.endTime).toISOString().split('T')[0] === today;
+      return w.endTime >= weekStart();
+    });
     return {
       ...t,
       progress: {
         km:         calcKm(periodWalks),
         minutes:    calcMin(periodWalks),
         tirMinutes: Math.round(calcTIR(periodGlucose)),
+        runCount:   periodRuns.length,
         period,
       }
     };
@@ -961,6 +970,31 @@ function chargeSpawner(type, amount) {
   console.log('Merge spawner:', type, '+' + amount, '→', mergeState.spawnerCharges[type]);
 }
 
+
+// ── DAGBOK / MÅENDE ───────────────────────────────────────────
+app.get('/api/journal', (req, res) => {
+  res.json(journal.slice(-90)); // senaste 90 dagarna
+});
+
+app.post('/api/journal', (req, res) => {
+  const { date, mood, note, energy, stress } = req.body;
+  if (!date || !mood) return res.status(400).json({ error: 'Saknar date/mood' });
+  // Ta bort eventuell gammal post för samma dag
+  const idx = journal.findIndex(j => j.date === date);
+  const entry = {
+    date, mood: parseInt(mood), note: note||'',
+    energy: parseInt(energy)||mood,
+    stress: parseInt(stress)||3,
+    createdAt: Date.now(),
+  };
+  if (idx >= 0) journal[idx] = entry;
+  else journal.push(entry);
+  journal.sort((a,b) => a.date.localeCompare(b.date));
+  writeJSON(JOURNAL_FILE, journal);
+  res.json({ ok: true, entry });
+});
+
+// Journal i export
 // ── EXPORT / IMPORT ──────────────────────────────────────────
 app.get('/api/admin/export', adminAuth, (req, res) => {
   // Rensa bilder INNAN export — de ska aldrig lagras i backup
@@ -988,6 +1022,7 @@ app.get('/api/admin/export', adminAuth, (req, res) => {
     meals: cleanMeals,
     walks,
     tasks: cleanTasks,
+    journal,
     glucoseLog,
     pendingApprovals,
     pendingRewards,
@@ -1016,6 +1051,7 @@ app.post('/api/admin/import', adminAuth, (req, res) => {
     if (d.scheduledPush)    { scheduledPush = d.scheduledPush;       writeJSON(SCHEDULED_FILE, scheduledPush); }
     if (d.player)           { player = { ...DEFAULT_PLAYER, ...d.player }; writeJSON(PLAYER_FILE, player); }
     if (d.mergeState)       { mergeState = { ...DEFAULT_MERGE, ...d.mergeState }; writeJSON(MERGE_FILE, mergeState); }
+    if (d.journal)          { journal = d.journal; writeJSON(JOURNAL_FILE, journal); }
     res.json({ ok: true, message: 'Import klar', counts: {
       meals: meals.length, walks: walks.length, tasks: tasks.length,
       glucose: glucoseLog.length, approvals: pendingApprovals.length,
