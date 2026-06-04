@@ -256,6 +256,7 @@ tr:hover td{background:#1a1a1a}
             <option value="distance">🚶 Automatiskt — gångavstånd (km)</option>
             <option value="minutes">⏱ Automatiskt — promenadminuter</option>
             <option value="glucose_tir">🩸 Automatiskt — blodsocker i mål (min)</option>
+            <option value="run_count">🏃 Automatiskt — antal löpningar</option>
             <option value="combo">🎯 Kombination (manuell + datakrav)</option>
           </select>
         </div>
@@ -267,6 +268,10 @@ tr:hover td{background:#1a1a1a}
           <div id="minutesField" style="display:none;">
             <label class="form-label">Målminuter promenad</label>
             <input type="number" class="form-input" id="taskTargetMinutes" placeholder="30" min="1" max="300">
+          </div>
+          <div id="runCountField" style="display:none;">
+            <label class="form-label">Antal löpningar</label>
+            <input type="number" class="form-input" id="taskTargetCount" placeholder="3" min="1" max="30">
           </div>
           <div id="tirField" style="display:none;">
             <label class="form-label">Minuter i målzonen (4–8 mmol/L)</label>
@@ -995,7 +1000,7 @@ async function loadTasks() {
         '</div>' +
         '<div class="task-meta">' +
           '<span class="badge badge-blue">' + (t.type==='daily'?'🔁 Daglig':t.type==='once'?'1️⃣ Engång':'📅 Veckovis') + '</span>' +
-          (t.completionType && t.completionType!=='manual' ? '<span class="badge badge-purple">' + {distance:'🚶 Km',minutes:'⏱ Min',glucose_tir:'🩸 TIR',combo:'🎯 Kombo'}[t.completionType] + '</span>' : '') +
+          (t.completionType && t.completionType!=='manual' ? '<span class="badge badge-purple">' + {distance:'🚶 Km',minutes:'⏱ Min',glucose_tir:'🩸 TIR',run_count:'🏃 Löpning',combo:'🎯 Kombo'}[t.completionType] + '</span>' : '') +
           (t.xpReward ? '<span class="badge badge-green">+' + t.xpReward + ' XP</span>' : '') +
           (t.goldReward ? '<span class="badge badge-yellow">+' + t.goldReward + ' 🪙</span>' : '') +
           (t.requirePhotos ? '<span class="badge badge-purple">📷 kräver godkännande</span>' : '') +

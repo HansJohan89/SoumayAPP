@@ -593,6 +593,42 @@ body{
 /* ── WELLBEING PAGE ── */
 #page-wellbeing { }
 
+
+/* ── LÖPRAPPORT MODAL ── */
+#walkReportModal {
+  position:fixed;inset:0;z-index:600;display:none;
+  align-items:flex-end;justify-content:center;
+  background:rgba(0,0,0,.6);
+}
+#walkReportModal.open { display:flex !important; }
+.walk-report-box {
+  position:relative;z-index:1;width:100%;max-width:500px;
+  background:var(--paper);border:var(--border-thick);
+  border-radius:24px 24px 0 0;padding:20px;
+  max-height:92vh;overflow-y:auto;
+}
+.report-stat-grid {
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;
+}
+.report-stat {
+  background:var(--paper-soft);border:var(--border);border-radius:12px;
+  padding:12px;text-align:center;
+}
+.report-stat-val { font-family:var(--font-burst);font-size:28px;font-weight:900;line-height:1; }
+.report-stat-label { font-size:10px;font-weight:700;color:var(--ink-muted);letter-spacing:1px;text-transform:uppercase;margin-top:3px; }
+.report-splits { margin:12px 0; }
+.report-split-row { display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--paper-dark); font-size:12px; }
+.report-split-row:last-child { border-bottom:none; }
+.report-allen {
+  display:flex;gap:12px;align-items:flex-start;
+  background:var(--paper-soft);border:var(--border);border-radius:14px;
+  padding:14px;margin-bottom:16px;
+}
+.report-allen img { width:70px;height:auto;object-fit:contain;flex-shrink:0; }
+.report-allen-bubble { flex:1; }
+.report-allen-name { font-family:var(--font-burst);font-size:11px;color:var(--hero-blue);margin-bottom:6px; }
+.report-allen-text { font-family:var(--font-script);font-size:15px;line-height:1.5; }
+
 </style>
 </head>
 <body>
@@ -756,6 +792,12 @@ body{
         <div style="font-size:12px;font-weight:700;">Kartan visas när du startar GPS</div>
       </div>
     </div>
+    <div class="walk-type-toggle" id="walkTypeToggle">
+      <button class="walk-type-btn active" data-type="walk"
+        onclick="setWalkType('walk')">🚶 PROMENAD</button>
+      <button class="walk-type-btn" data-type="run"
+        onclick="setWalkType('run')">🏃 SPRING</button>
+    </div>
     <div style="display:flex;gap:10px;margin-bottom:10px;">
       <button class="btn btn-blue btn-sm" id="walkStartBtn" onclick="toggleWalk()" style="flex:2;">STARTA GPS</button>
       <button class="btn btn-ghost btn-sm" onclick="resetWalk()" style="flex:1;font-size:12px;">NOLLST.</button>
@@ -889,6 +931,12 @@ body{
 
 <div class="page" id="page-wellbeing"></div>
 <div id="journalModal"></div>
+
+<!-- LÖPRAPPORT MODAL -->
+<div id="walkReportModal">
+  <div class="walk-report-box" id="walkReportContent"></div>
+</div>
+
 <!-- MERGE INFO-MODAL -->
 <div id="mergeInfoModal" style="position:fixed;inset:0;z-index:600;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);padding:16px;">
   <div style="background:var(--paper);border:var(--border-thick);border-radius:20px;width:100%;max-width:420px;max-height:85vh;overflow-y:auto;padding:20px;">
@@ -3413,7 +3461,255 @@ async function toggleWalk(){
 function onGPSUpdate(pos){const{latitude:lat,longitude:lng,accuracy}=pos.coords;if(accuracy>50)return;const point={lat,lng,ts:Date.now()};const prev=currentWalkCoords[currentWalkCoords.length-1];if(prev){const d=haversine(prev.lat,prev.lng,lat,lng);if(d<0.005)return;walkTotalDist+=d;}currentWalkCoords.push(point);pendingCoords.push(point);if(walkMap){walkPolyline.setLatLngs(currentWalkCoords.map(c=>[c.lat,c.lng]));walkMarker.setLatLng([lat,lng]);walkMap.panTo([lat,lng],{animate:true,duration:0.5});}if(pendingCoords.length>=10)flushCoordsToServer();}
 async function flushCoordsToServer(){if(!pendingCoords.length||!currentWalkId)return;const batch=[...pendingCoords];pendingCoords=[];try{await fetch('/api/walks/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({walkId:currentWalkId,coords:batch})});}catch(e){pendingCoords=[...batch,...pendingCoords];}}
 function updateWalkDisplay(){if(!walkStartTime)return;const elapsed=Math.floor((Date.now()-walkStartTime)/1000),m=Math.floor(elapsed/60),s=elapsed%60;const td=document.getElementById('walkTimerDisplay');if(td)td.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');const dd=document.getElementById('walkDistDisplay');if(dd)dd.textContent=walkTotalDist.toFixed(2);if(walkTotalDist>0.1){const pace=(elapsed/60)/walkTotalDist,pm=Math.floor(pace),ps=Math.round((pace-pm)*60);const pd=document.getElementById('walkPaceDisplay');if(pd)pd.textContent=pm+':'+String(ps).padStart(2,'0');}}
-async function finishWalk(){if(!currentWalkId)return;clearInterval(walkInterval);if(gpsWatchId!==null){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}state.walkActive=false;await flushCoordsToServer();const elapsed=walkStartTime?Math.round((Date.now()-walkStartTime)/60000):0;try{await fetch('/api/walks/finish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({walkId:currentWalkId,minutes:elapsed})});}catch(e){}const entry={id:currentWalkId,minutes:elapsed,distance:walkTotalDist,time:Date.now()};state.walkLog.unshift(entry);if(state.walkLog.length>100)state.walkLog.pop();save();const sb=document.getElementById('walkStartBtn');if(sb){sb.textContent='STARTA GPS';sb.className='btn btn-blue btn-sm';}const fb=document.getElementById('finishWalkBtn');if(fb)fb.style.display='none';const td=document.getElementById('walkTimerDisplay');if(td)td.textContent='00:00';const dd=document.getElementById('walkDistDisplay');if(dd)dd.textContent='0.00';const pd=document.getElementById('walkPaceDisplay');if(pd)pd.textContent='--';currentWalkId=null;walkStartTime=null;walkTotalDist=0;renderWalkPage();showToast('Allen är imponerad! '+elapsed+' min · '+entry.distance.toFixed(1)+' km 💪');}
+function setWalkType(type) {
+  state.walkType = type;
+  // Uppdatera toggle-knappar
+  document.querySelectorAll('.walk-type-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.type === type);
+  });
+  // Uppdatera start-knappens text och färg
+  const startBtn = document.getElementById('walkStartBtn');
+  if (startBtn) {
+    startBtn.textContent = type === 'run' ? 'STARTA LÖPNING' : 'STARTA GPS';
+    startBtn.className   = type === 'run' ? 'btn btn-sm' + ' ' : 'btn btn-blue btn-sm';
+    startBtn.style.background = type === 'run' ? '#e67e22' : '';
+    startBtn.style.color      = type === 'run' ? '#fff' : '';
+  }
+}
+
+async function finishWalk() {
+  if (!currentWalkId) return;
+  clearInterval(walkInterval);
+  if (gpsWatchId !== null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+  state.walkActive = false;
+  await flushCoordsToServer();
+
+  const totalSecs = walkStartTime ? Math.floor((Date.now() - walkStartTime) / 1000) : 0;
+  const elapsed   = Math.round(totalSecs / 60);
+  const dist      = walkTotalDist;
+  const type      = state.walkType || 'walk';
+
+  // Beräkna statistik
+  const avgPaceMin = dist > 0.05 ? (totalSecs / 60) / dist : 0;
+  const avgPaceSec = Math.round((avgPaceMin - Math.floor(avgPaceMin)) * 60);
+  const paceStr    = dist > 0.05 ? Math.floor(avgPaceMin) + ':' + String(avgPaceSec).padStart(2,'0') + ' min/km' : '–';
+  const speedKmh   = dist > 0 && elapsed > 0 ? (dist / (elapsed / 60)).toFixed(1) : '–';
+
+  // Km-splits (varje km)
+  const splits = [];
+  if (currentWalkCoords.length > 1) {
+    let splitDist = 0, splitStart = currentWalkCoords[0].ts, splitNum = 1;
+    for (let i = 1; i < currentWalkCoords.length; i++) {
+      const d = haversine(currentWalkCoords[i-1].lat, currentWalkCoords[i-1].lng,
+                          currentWalkCoords[i].lat, currentWalkCoords[i].lng);
+      splitDist += d;
+      if (splitDist >= splitNum) {
+        const secs = (currentWalkCoords[i].ts - splitStart) / 1000;
+        const pm = Math.floor(secs/60), ps = Math.round(secs%60);
+        splits.push({ km: splitNum, pace: pm+':'+String(ps).padStart(2,'0') });
+        splitStart = currentWalkCoords[i].ts;
+        splitNum++;
+      }
+    }
+  }
+
+  // Spara på server
+  try {
+    await fetch('/api/walks/finish', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ walkId: currentWalkId, minutes: elapsed, type })
+    });
+  } catch(e) {}
+
+  const entry = { id: currentWalkId, duration: elapsed, distance: dist, endTime: Date.now(), type };
+  state.walkLog.unshift(entry);
+  if (state.walkLog.length > 100) state.walkLog.pop();
+  save();
+
+  // Återställ UI
+  const sb = document.getElementById('walkStartBtn');
+  if (sb) { sb.textContent = 'STARTA GPS'; sb.style.background=''; sb.style.color=''; sb.className='btn btn-blue btn-sm'; }
+  const fb = document.getElementById('finishWalkBtn'); if (fb) fb.style.display='none';
+  const td = document.getElementById('walkTimerDisplay'); if (td) td.textContent='00:00';
+  const dd = document.getElementById('walkDistDisplay'); if (dd) dd.textContent='0.00';
+  const pd = document.getElementById('walkPaceDisplay'); if (pd) pd.textContent='--';
+  const savedId = currentWalkId;
+  currentWalkId = null; walkStartTime = null; walkTotalDist = 0;
+
+  // Visa Allen-rapport
+  showWalkReport({ dist, elapsed, totalSecs, paceStr, speedKmh, splits, type });
+  renderWalkPage();
+}
+
+function showWalkReport({ dist, elapsed, totalSecs, paceStr, speedKmh, splits, type }) {
+  const modal = document.getElementById('walkReportModal');
+  if (!modal) return;
+
+  const isRun = type === 'run';
+  const km    = dist.toFixed(2);
+
+  // Hitta föregående aktivitet av samma typ
+  const prevEntry = state.walkLog.find(w =>
+    !w.active && w.type === type &&
+    w.endTime && w.endTime !== entry?.endTime &&
+    (w.duration||w.minutes||0) > 0 && (w.distance||0) > 0.1
+  );
+
+  let compareHtml = '';
+  let compareText = '';
+
+  if (prevEntry) {
+    const prevDist   = prevEntry.distance || 0;
+    const prevMins   = prevEntry.duration || prevEntry.minutes || 0;
+    const prevPace   = prevDist > 0 ? (prevMins / prevDist) : 0;
+    const curPaceMin = dist > 0 && elapsed > 0 ? elapsed / dist : 0;
+
+    const distDiff   = dist - prevDist;
+    const paceDiff   = curPaceMin - prevPace; // negativt = snabbare
+    const timeDiff   = elapsed - prevMins;
+
+    const fmtDiff = (v, unit, invertColor) => {
+      const sign = v > 0 ? '+' : '';
+      const color = invertColor
+        ? (v < 0 ? 'var(--in-range-dark)' : v > 0 ? 'var(--pulse-red)' : 'var(--ink-muted)')
+        : (v > 0 ? 'var(--in-range-dark)' : v < 0 ? 'var(--pulse-red)' : 'var(--ink-muted)');
+      return `<span style="color:${color};font-weight:800;">${sign}${v.toFixed(unit==='km'?2:0)} ${unit}</span>`;
+    };
+
+    const fmtPaceDiff = (pd) => {
+      const secs = Math.round(pd * 60);
+      const sign = secs > 0 ? '+' : '';
+      const color = secs < 0 ? 'var(--in-range-dark)' : secs > 0 ? 'var(--pulse-red)' : 'var(--ink-muted)';
+      const abs = Math.abs(secs);
+      return `<span style="color:${color};font-weight:800;">${sign}${Math.floor(abs/60)}:${String(abs%60).padStart(2,'0')} min/km</span>`;
+    };
+
+    const prevDate = new Date(prevEntry.endTime).toLocaleDateString('sv-SE', {day:'numeric',month:'short'});
+
+    // Allen-kommentar om jämförelsen
+    if (isRun) {
+      if (paceDiff < -0.25)      compareText = `Du var ${Math.abs(Math.round(paceDiff*60))} sekunder per km snabbare än sist. Det märks.`;
+      else if (paceDiff > 0.25)  compareText = `Lite långsammare än sist, men distansen räknas. Återhämtning är del av träningen.`;
+      else                       compareText = `Nästan exakt samma tempo som sist. Konsekvent.`;
+    } else {
+      if (distDiff > 0.3)        compareText = `Längre promenad än sist. Bra.`;
+      else if (distDiff < -0.3)  compareText = `Kortare än sist, men rörelse är rörelse.`;
+      else                       compareText = `Ungefär samma distans som förra gången.`;
+    }
+
+    compareHtml = `
+      <div class="card" style="padding:12px 14px;margin:10px 0;background:var(--paper-soft);">
+        <div class="card-label" style="margin-bottom:8px;">VS FÖRRA (${prevDate})</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
+          <div>
+            <div style="font-size:10px;color:var(--ink-muted);font-weight:700;margin-bottom:3px;">DISTANS</div>
+            <div style="font-size:13px;">${fmtDiff(distDiff,'km',false)}</div>
+            <div style="font-size:10px;color:var(--ink-muted);">${prevDist.toFixed(2)} km</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--ink-muted);font-weight:700;margin-bottom:3px;">TID</div>
+            <div style="font-size:13px;">${fmtDiff(timeDiff,'min',true)}</div>
+            <div style="font-size:10px;color:var(--ink-muted);">${prevMins} min</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--ink-muted);font-weight:700;margin-bottom:3px;">TEMPO</div>
+            <div style="font-size:13px;">${fmtPaceDiff(paceDiff)}</div>
+            <div style="font-size:10px;color:var(--ink-muted);">${Math.floor(prevPace)}:${String(Math.round((prevPace%1)*60)).padStart(2,'0')} m/k</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Välj Allen-bild och replik
+  const allenImg = CHAR_IMGS_LOADED ? (getAllenImg()) : '';
+  const replies = isRun ? [
+    `${km} km! Oi, du springer nästan lika snabbt som en genomsnittlig Unopan nu! Imponerande för en människa.`,
+    `${km} km på ${elapsed} minuter — det är faktiskt riktigt bra. Jag har kikat på ditt tempo. ${paceStr} är solitt.`,
+    `Löpning bekräftad. ${km} km. Galaktiska rådet noterar ditt framsteg. Jag likaså.`,
+    `Det där var ${elapsed} minuter av ren disciplin. Kroppen tackade dig antagligen. Fortsätt.`,
+  ] : [
+    `${km} km promenad! Friska luft är bra för blodsockret. Jag mätte. Det stämmer.`,
+    `${elapsed} minuter ute i rörelse — det är just det här som gör skillnad. Bra jobbat.`,
+    `Promenad klar. ${km} km noterat. Kroppen mår bra av det här, även om det inte syns direkt.`,
+  ];
+  let reply = replies[Math.floor(Math.random() * replies.length)];
+  if (compareText) reply = reply + ' ' + compareText;
+
+  // Splits-tabell
+  let splitsHtml = '';
+  if (splits.length > 0) {
+    splitsHtml = `
+      <div class="card-label" style="margin-bottom:6px;">KM-SPLITS</div>
+      <div class="report-splits">
+        ${splits.map(s => `
+          <div class="report-split-row">
+            <span style="font-weight:700;">Km ${s.km}</span>
+            <span style="font-family:var(--font-mono);color:var(--ink-mid);">${s.pace} min/km</span>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  // Bedöm prestationen
+  let grade = '', gradeColor = '';
+  const avgPaceMinFloat = dist > 0 && totalSecs > 0 ? (totalSecs/60)/dist : 0;
+  if (isRun && avgPaceMinFloat > 0) {
+    const p = parseFloat(paceStr);
+    if (p < 5)       { grade = 'UTMÄRKT'; gradeColor = 'var(--in-range-dark)'; }
+    else if (p < 6.5){ grade = 'BRA';     gradeColor = 'var(--hero-blue)'; }
+    else             { grade = 'KLAR';    gradeColor = 'var(--ink-mid)'; }
+  } else if (isRun) { grade = 'KLAR'; gradeColor = 'var(--ink-mid)'; }
+
+  const m = Math.floor(totalSecs/60), s = totalSecs%60;
+  const timeStr = m + ':' + String(s).padStart(2,'0');
+
+  document.getElementById('walkReportContent').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div class="burst burst-sm">${isRun ? '🏃 LÖPRAPPORT' : '🚶 PROMENADRAPPORT'}</div>
+      ${grade ? `<div style="font-family:var(--font-burst);font-size:11px;color:${gradeColor};letter-spacing:2px;">${grade}</div>` : ''}
+    </div>
+
+    <div class="report-allen">
+      ${allenImg ? `<img src="${allenImg}" alt="Allen">` : '<div style="font-size:40px;">🏃</div>'}
+      <div class="report-allen-bubble">
+        <div class="report-allen-name">ALLEN THE ALIEN</div>
+        <div class="report-allen-text">"${reply}"</div>
+      </div>
+    </div>
+
+    <div class="report-stat-grid">
+      <div class="report-stat">
+        <div class="report-stat-val" style="color:var(--hero-blue);">${km}</div>
+        <div class="report-stat-label">KM</div>
+      </div>
+      <div class="report-stat">
+        <div class="report-stat-val" style="color:var(--in-range-dark);">${timeStr}</div>
+        <div class="report-stat-label">TID</div>
+      </div>
+      <div class="report-stat">
+        <div class="report-stat-val" style="color:var(--power-yellow);font-size:20px;">${paceStr}</div>
+        <div class="report-stat-label">TEMPO</div>
+      </div>
+      <div class="report-stat">
+        <div class="report-stat-val" style="color:var(--high);">${speedKmh}</div>
+        <div class="report-stat-label">KM/H</div>
+      </div>
+    </div>
+
+    ${compareHtml}
+    ${splitsHtml}
+
+    <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="closeWalkReport()">
+      FORTSÄTT
+    </button>
+  `;
+
+  modal.classList.add('open');
+}
+
+function closeWalkReport() {
+  const modal = document.getElementById('walkReportModal');
+  if (modal) modal.classList.remove('open');
+}
 function resetWalk(){if(state.walkActive){clearInterval(walkInterval);if(gpsWatchId!==null){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}state.walkActive=false;}currentWalkId=null;walkStartTime=null;walkTotalDist=0;currentWalkCoords=[];pendingCoords=[];const sb=document.getElementById('walkStartBtn');if(sb){sb.textContent='STARTA GPS';sb.className='btn btn-blue btn-sm';}const fb=document.getElementById('finishWalkBtn');if(fb)fb.style.display='none';const td=document.getElementById('walkTimerDisplay');if(td)td.textContent='00:00';const dd=document.getElementById('walkDistDisplay');if(dd)dd.textContent='0.00';const pd=document.getElementById('walkPaceDisplay');if(pd)pd.textContent='--';const container=document.getElementById('walkMap');if(container)container.innerHTML='<div style="text-align:center;color:var(--ink-muted);padding:20px;"><div style="font-size:28px;margin-bottom:6px;">🗺️</div><div style="font-size:12px;font-weight:700;">Kartan visas när du startar GPS</div></div>';if(walkMap){walkMap.remove();walkMap=null;}}
 function renderWalkPage(){const today=todayStr();const walkedToday=state.walkLog.filter(w=>!w.active).some(w=>todayStr(w.endTime||w.startTime||0)===today);const sp=document.getElementById('allenWalkSpeech');if(sp)sp.textContent=allenLine(walkedToday?'walked':'noWalk');const todayMins=state.walkLog.filter(w=>todayStr(w.endTime||w.startTime||0)===today).reduce((a,w)=>a+(w.duration||w.minutes||0),0);const todayKm=state.walkLog.filter(w=>todayStr(w.endTime||w.startTime||0)===today).reduce((a,w)=>a+(w.distance||0),0);const wt=document.getElementById('walkTotal');if(wt)wt.textContent=todayMins;const wd=document.getElementById('walkDistToday');if(wd)wd.textContent=todayKm.toFixed(1);const el=document.getElementById('walkLog');if(!el)return;if(!state.walkLog.length){el.innerHTML='<div style="color:var(--ink-muted);text-align:center;padding:16px 0;font-weight:600;">Inga promenader än</div>';return;}el.innerHTML=state.walkLog.slice(0,10).map(e=>{
   const ts=e.endTime||e.startTime||0;
