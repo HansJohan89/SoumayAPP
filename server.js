@@ -147,6 +147,53 @@ app.use(express.static(path.join(__dirname), {
 }));
 // /uploads middleware borttagen — bilder sparas som base64
 
+
+// ── PERIOD-HJÄLPARE ───────────────────────────────────────────
+function weekStart() {
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() - d.getDay() + (d.getDay()===0?-6:1)); // Måndag
+  return d.getTime();
+}
+
+function getWalksForPeriod(type) {
+  const now = Date.now();
+  const today = new Date().toISOString().split('T')[0];
+  const weekMs = weekStart();
+  return walks.filter(w => {
+    if (w.active || !w.endTime) return false;
+    if (type === 'daily') return new Date(w.endTime).toISOString().split('T')[0] === today;
+    if (type === 'weekly') return w.endTime >= weekMs;
+    return false;
+  });
+}
+
+function getGlucoseForPeriod(type) {
+  const now = Date.now();
+  const today = new Date().toISOString().split('T')[0];
+  const weekMs = weekStart();
+  return glucoseLog.filter(g => {
+    if (type === 'daily') return new Date(g.time).toISOString().split('T')[0] === today;
+    if (type === 'weekly') return g.time >= weekMs;
+    return false;
+  });
+}
+
+function calcTIR(glucoseEntries) {
+  const LOW = 4.0, HIGH = 8.0;
+  let mins = 0;
+  const sorted = [...glucoseEntries].sort((a,b) => a.time - b.time);
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = sorted[i-1], curr = sorted[i];
+    const gap = (curr.time - prev.time) / 60000;
+    if (gap < 120 && prev.val >= LOW && prev.val <= HIGH) mins += gap;
+  }
+  return mins;
+}
+
+function calcKm(walkList) { return walkList.reduce((a,w) => a+(w.distance||0), 0); }
+function calcMin(walkList) { return walkList.reduce((a,w) => a+(w.duration||0), 0); }
+
 // ── EXPLICIT HTML-ROUTES (ingen cache) ───────────────────────
 app.get('/', (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
@@ -304,31 +351,27 @@ app.post('/api/walks/finish', (req, res) => {
       console.log('Extra strider:', fightBonus, '→ totalt:', player.extraFights);
     }
 
-    // Auto-komplettera distance/minuter-uppgifter
+    // Auto-komplettera distance/minuter-uppgifter (daily och weekly)
     const today = new Date().toISOString().split('T')[0];
-    const todayWalks = walks.filter(w =>
-      !w.active && w.endTime && new Date(w.endTime).toISOString().split('T')[0] === today
-    );
-    const totalKmToday  = todayWalks.reduce((a,w) => a + (w.distance||0), 0);
-    const totalMinToday = todayWalks.reduce((a,w) => a + (w.duration||0), 0);
-
     let autoCompleted = [];
     tasks.forEach(task => {
       if (!task.active) return;
-      if (task.completions && task.completions[today]) return;
-      if (task.completionType === 'distance' && task.targetDistance > 0) {
-        if (totalKmToday >= task.targetDistance) {
-          if (!task.completions) task.completions = {};
-          task.completions[today] = { status: 'approved', auto: true };
-          autoCompleted.push({ taskId: task.id, xpReward: task.xpReward||0, goldReward: task.goldReward||0, title: task.title });
-        }
+      // Kolla rätt period för uppgiften
+      const period = task.type === 'weekly' ? 'weekly' : 'daily';
+      const periodKey = period === 'weekly' ? 'week-' + weekStart() : today;
+      if (task.completions && task.completions[periodKey]) return;
+      const periodWalks = getWalksForPeriod(period);
+      const totalKm  = calcKm(periodWalks);
+      const totalMin = calcMin(periodWalks);
+      if (task.completionType === 'distance' && task.targetDistance > 0 && totalKm >= task.targetDistance) {
+        if (!task.completions) task.completions = {};
+        task.completions[periodKey] = { status: 'approved', auto: true };
+        autoCompleted.push({ taskId: task.id, xpReward: task.xpReward||0, goldReward: task.goldReward||0, title: task.title });
       }
-      if (task.completionType === 'minutes' && task.targetMinutes > 0) {
-        if (totalMinToday >= task.targetMinutes) {
-          if (!task.completions) task.completions = {};
-          task.completions[today] = { status: 'approved', auto: true };
-          autoCompleted.push({ taskId: task.id, xpReward: task.xpReward||0, goldReward: task.goldReward||0, title: task.title });
-        }
+      if (task.completionType === 'minutes' && task.targetMinutes > 0 && totalMin >= task.targetMinutes) {
+        if (!task.completions) task.completions = {};
+        task.completions[periodKey] = { status: 'approved', auto: true };
+        autoCompleted.push({ taskId: task.id, xpReward: task.xpReward||0, goldReward: task.goldReward||0, title: task.title });
       }
     });
 
@@ -625,33 +668,21 @@ app.get('/api/glucose', adminAuth, (req, res) => {
 
 // ── UPPGIFTER ─────────────────────────────────────────────────
 app.get('/api/tasks', (req, res) => {
-  // Beräkna progress för data-kopplade uppgifter
-  const today = new Date().toISOString().split('T')[0];
-  const todayStart = new Date(today).getTime();
-  const todayWalks = walks.filter(w =>
-    !w.active && w.endTime && new Date(w.endTime).toISOString().split('T')[0] === today
-  );
-  const totalKmToday  = todayWalks.reduce((a,w) => a + (w.distance||0), 0);
-  const totalMinToday = todayWalks.reduce((a,w) => a + (w.duration||0), 0);
-
-  // TIR idag
-  const todayGlucose = glucoseLog.filter(g => g.time >= todayStart);
-  let tirMinutes = 0;
-  const LOW = 4.0, HIGH = 8.0;
-  for (let i = 1; i < todayGlucose.length; i++) {
-    const prev = todayGlucose[i-1], curr = todayGlucose[i];
-    const mins = (curr.time - prev.time) / 60000;
-    if (mins < 120 && prev.val >= LOW && prev.val <= HIGH) tirMinutes += mins;
-  }
-
-  const enriched = tasks.map(t => ({
-    ...t,
-    progress: {
-      km: totalKmToday,
-      minutes: totalMinToday,
-      tirMinutes: Math.round(tirMinutes),
-    }
-  }));
+  // Progress beräknas per period (daily/weekly) för varje uppgift
+  const enriched = tasks.map(t => {
+    const period = t.type === 'weekly' ? 'weekly' : 'daily';
+    const periodWalks   = getWalksForPeriod(period);
+    const periodGlucose = getGlucoseForPeriod(period);
+    return {
+      ...t,
+      progress: {
+        km:         calcKm(periodWalks),
+        minutes:    calcMin(periodWalks),
+        tirMinutes: Math.round(calcTIR(periodGlucose)),
+        period,
+      }
+    };
+  });
   res.json(enriched);
 });
 
@@ -773,18 +804,28 @@ app.post('/api/admin/approvals/:id', adminAuth, (req, res) => {
       }
     }
 
-    // Uppdatera meal till approved och ta bort bilderna (spara plats)
+    // Uppdatera meal och rensa bilder oavsett beslut
     if (approval.mealId) {
       const meal = meals.find(m => m.id === approval.mealId);
       if (meal) {
-        meal.approvalStatus = 'approved';
+        meal.approvalStatus = action;
         meal.photoRemoved = true;
-        // Ta bort base64-bilderna — de tar massa plats och behövs inte längre
-        delete meal.before;
-        delete meal.after;
-        delete meal.beforeImage;
-        delete meal.afterImage;
+        ['before','after','beforeImage','afterImage'].forEach(k => delete meal[k]);
         writeJSON(MEALS_FILE, meals);
+      }
+    }
+    // Rensa foton från task-submissions direkt vid beslut
+    if (approval.taskId) {
+      const task = tasks.find(t => t.id === approval.taskId);
+      if (task && task.photoSubmissions) {
+        // Ta bort alla bilddata men behåll submission-strukturen
+        Object.keys(task.photoSubmissions).forEach(day => {
+          task.photoSubmissions[day] = (task.photoSubmissions[day]||[]).map(p => ({
+            uploadedAt: p.uploadedAt,
+            url: null,  // bilddata raderad
+          }));
+        });
+        writeJSON(TASKS_FILE, tasks);
       }
     }
   } else {
@@ -922,12 +963,31 @@ function chargeSpawner(type, amount) {
 
 // ── EXPORT / IMPORT ──────────────────────────────────────────
 app.get('/api/admin/export', adminAuth, (req, res) => {
+  // Rensa bilder INNAN export — de ska aldrig lagras i backup
+  const cleanMeals = meals.map(m => {
+    const c = {...m};
+    ['before','after','beforeImage','afterImage'].forEach(k => delete c[k]);
+    return c;
+  });
+  const cleanTasks = tasks.map(t => {
+    const c = {...t};
+    if (c.photoSubmissions) {
+      c.photoSubmissions = Object.fromEntries(
+        Object.entries(c.photoSubmissions).map(([day, photos]) => [
+          day,
+          (photos||[]).map(p => ({ uploadedAt: p.uploadedAt, url: null }))
+        ])
+      );
+    }
+    return c;
+  });
+
   const exportData = {
-    version: 4,
+    version: 5,
     exportedAt: new Date().toISOString(),
-    meals,
+    meals: cleanMeals,
     walks,
-    tasks,
+    tasks: cleanTasks,
     glucoseLog,
     pendingApprovals,
     pendingRewards,

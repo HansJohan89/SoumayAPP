@@ -69,7 +69,7 @@ const ACHIEVEMENTS = [
     char: 'food', tier: 'bronze', type: 'daily',
     icon: '🌄',
     check: s => s.foodLog.some(f => {
-      const d = new Date(f.time);
+      const d = new Date(f.createdAt||f.time||0);
       return d.toDateString() === new Date().toDateString() &&
              f.mealType === 'frukost' && d.getHours() < 9;
     }),
@@ -241,7 +241,7 @@ const ACHIEVEMENTS = [
     char: 'walk', tier: 'bronze', type: 'daily',
     icon: '🌅',
     check: s => s.walkLog.some(w => {
-      const d = new Date(w.time);
+      const d = new Date(w.endTime||w.startTime||0);
       return d.toDateString() === new Date().toDateString() && d.getHours() < 8;
     }),
     xp: 200,
@@ -254,7 +254,7 @@ const ACHIEVEMENTS = [
     char: 'walk', tier: 'silver', type: 'milestone',
     icon: '🌧️',
     check: s => s.walkLog.some(w => {
-      const m = new Date(w.time).getMonth();
+      const m = new Date(w.endTime||w.startTime||0).getMonth();
       return [10,11,0,1].includes(m);
     }),
     xp: 300,
@@ -478,7 +478,7 @@ const ACHIEVEMENTS = [
     flavor: '*Butcher höjer ögonbrynet* Sent snack. Jag säger inget. Den här gången.',
     char: 'special', tier: 'bronze', type: 'milestone',
     icon: '🦉',
-    check: s => s.foodLog.some(f => new Date(f.time).getHours() >= 22),
+    check: s => s.foodLog.some(f => new Date(f.createdAt||f.time||0).getHours() >= 22),
     xp: 50,
   },
   {
@@ -528,7 +528,7 @@ const ACHIEVEMENTS = [
     char: 'walk', tier: 'bronze', type: 'milestone',
     icon: '🏄',
     check: s => {
-      const days = new Set(s.foodLog.map(f => new Date(f.time).getDay()));
+      const days = new Set(s.foodLog.map(f => new Date(f.createdAt||f.time||0).getDay()));
       return days.has(6) && days.has(0);
     },
     xp: 150,
@@ -573,12 +573,12 @@ function todayStr(ts) {
 
 function mealsToday(s) {
   const today = todayStr();
-  return s.foodLog.filter(f => todayStr(f.time) === today).length;
+  return s.foodLog.filter(f => todayStr(f.createdAt||f.time||0) === today).length;
 }
 
 function walkMinsToday(s) {
   const today = todayStr();
-  return s.walkLog.filter(w => todayStr(w.time) === today).reduce((a,w) => a + w.minutes, 0);
+  return s.walkLog.filter(w => todayStr(w.endTime||w.startTime||0) === today).reduce((a,w) => a + (w.duration||w.minutes||0), 0);
 }
 
 function glucoseToday(s) {
@@ -606,7 +606,7 @@ function foodStreak(s) {
   const d = new Date();
   while (streak < 365) {
     const str = d.toISOString().split('T')[0];
-    if (s.foodLog.some(f => todayStr(f.time) === str)) { streak++; d.setDate(d.getDate()-1); }
+    if (s.foodLog.some(f => todayStr(f.createdAt||f.time||0) === str)) { streak++; d.setDate(d.getDate()-1); }
     else break;
   }
   return streak;
@@ -617,7 +617,7 @@ function walkStreak(s) {
   const d = new Date();
   while (streak < 365) {
     const str = d.toISOString().split('T')[0];
-    if (s.walkLog.some(w => todayStr(w.time) === str)) { streak++; d.setDate(d.getDate()-1); }
+    if (s.walkLog.some(w => todayStr(w.endTime||w.startTime||0) === str)) { streak++; d.setDate(d.getDate()-1); }
     else break;
   }
   return streak;
@@ -639,8 +639,8 @@ function perfectDayStreak(s) {
   const d = new Date();
   while (streak < 365) {
     const str = d.toISOString().split('T')[0];
-    const hm = s.foodLog.some(f => todayStr(f.time) === str);
-    const hw = s.walkLog.some(w => todayStr(w.time) === str);
+    const hm = s.foodLog.some(f => todayStr(f.createdAt||f.time||0) === str);
+    const hw = s.walkLog.filter(w=>!w.active).some(w => todayStr(w.endTime||w.startTime||0) === str);
     const hg = s.glucoseHistory.some(g => todayStr(g.time) === str);
     if (hm && hw && hg) { streak++; d.setDate(d.getDate()-1); }
     else break;

@@ -1053,7 +1053,7 @@ const ACHIEVEMENTS = [
     char: 'food', tier: 'bronze', type: 'daily',
     icon: '🌄',
     check: s => s.foodLog.some(f => {
-      const d = new Date(f.time);
+      const d = new Date(f.createdAt||f.time||0);
       return d.toDateString() === new Date().toDateString() &&
              f.mealType === 'frukost' && d.getHours() < 9;
     }),
@@ -1225,7 +1225,7 @@ const ACHIEVEMENTS = [
     char: 'walk', tier: 'bronze', type: 'daily',
     icon: '🌅',
     check: s => s.walkLog.some(w => {
-      const d = new Date(w.time);
+      const d = new Date(w.endTime||w.startTime||0);
       return d.toDateString() === new Date().toDateString() && d.getHours() < 8;
     }),
     xp: 200,
@@ -1238,7 +1238,7 @@ const ACHIEVEMENTS = [
     char: 'walk', tier: 'silver', type: 'milestone',
     icon: '🌧️',
     check: s => s.walkLog.some(w => {
-      const m = new Date(w.time).getMonth();
+      const m = new Date(w.endTime||w.startTime||0).getMonth();
       return [10,11,0,1].includes(m);
     }),
     xp: 300,
@@ -1462,7 +1462,7 @@ const ACHIEVEMENTS = [
     flavor: '*Butcher höjer ögonbrynet* Sent snack. Jag säger inget. Den här gången.',
     char: 'special', tier: 'bronze', type: 'milestone',
     icon: '🦉',
-    check: s => s.foodLog.some(f => new Date(f.time).getHours() >= 22),
+    check: s => s.foodLog.some(f => new Date(f.createdAt||f.time||0).getHours() >= 22),
     xp: 50,
   },
   {
@@ -1512,7 +1512,7 @@ const ACHIEVEMENTS = [
     char: 'walk', tier: 'bronze', type: 'milestone',
     icon: '🏄',
     check: s => {
-      const days = new Set(s.foodLog.map(f => new Date(f.time).getDay()));
+      const days = new Set(s.foodLog.map(f => new Date(f.createdAt||f.time||0).getDay()));
       return days.has(6) && days.has(0);
     },
     xp: 150,
@@ -1557,12 +1557,12 @@ function todayStr(ts) {
 
 function mealsToday(s) {
   const today = todayStr();
-  return s.foodLog.filter(f => todayStr(f.time) === today).length;
+  return s.foodLog.filter(f => todayStr(f.createdAt||f.time||0) === today).length;
 }
 
 function walkMinsToday(s) {
   const today = todayStr();
-  return s.walkLog.filter(w => todayStr(w.time) === today).reduce((a,w) => a + w.minutes, 0);
+  return s.walkLog.filter(w => todayStr(w.endTime||w.startTime||0) === today).reduce((a,w) => a + (w.duration||w.minutes||0), 0);
 }
 
 function glucoseToday(s) {
@@ -1590,7 +1590,7 @@ function foodStreak(s) {
   const d = new Date();
   while (streak < 365) {
     const str = d.toISOString().split('T')[0];
-    if (s.foodLog.some(f => todayStr(f.time) === str)) { streak++; d.setDate(d.getDate()-1); }
+    if (s.foodLog.some(f => todayStr(f.createdAt||f.time||0) === str)) { streak++; d.setDate(d.getDate()-1); }
     else break;
   }
   return streak;
@@ -1601,7 +1601,7 @@ function walkStreak(s) {
   const d = new Date();
   while (streak < 365) {
     const str = d.toISOString().split('T')[0];
-    if (s.walkLog.some(w => todayStr(w.time) === str)) { streak++; d.setDate(d.getDate()-1); }
+    if (s.walkLog.some(w => todayStr(w.endTime||w.startTime||0) === str)) { streak++; d.setDate(d.getDate()-1); }
     else break;
   }
   return streak;
@@ -1623,8 +1623,8 @@ function perfectDayStreak(s) {
   const d = new Date();
   while (streak < 365) {
     const str = d.toISOString().split('T')[0];
-    const hm = s.foodLog.some(f => todayStr(f.time) === str);
-    const hw = s.walkLog.some(w => todayStr(w.time) === str);
+    const hm = s.foodLog.some(f => todayStr(f.createdAt||f.time||0) === str);
+    const hw = s.walkLog.filter(w=>!w.active).some(w => todayStr(w.endTime||w.startTime||0) === str);
     const hg = s.glucoseHistory.some(g => todayStr(g.time) === str);
     if (hm && hw && hg) { streak++; d.setDate(d.getDate()-1); }
     else break;
@@ -2648,6 +2648,7 @@ async function savePlayerToServer() {
         totalXP: state.totalXP, gold: state.gold,
         inventory: state.inventory, equipped: state.equipped,
         combatLog: state.combatLog, lastFightDate: state.lastFightDate,
+        extraFights: state.extraFights || 0,
         unlockedAchievements: state.unlockedAchievements,
         appOpens: state.appOpens, settings: state.settings,
       })
@@ -2668,6 +2669,7 @@ async function loadAllData() {
       state.combatLog = p.combatLog || [];
       state.lastFightDate = p.lastFightDate || null;
       state.unlockedAchievements = p.unlockedAchievements || [];
+      state.extraFights = p.extraFights || 0;
       state.appOpens = (p.appOpens || 0) + 1;
       if (p.settings) state.settings = { ...state.settings, ...p.settings };
     }
@@ -3028,15 +3030,17 @@ async function logFood(){
 }
 function renderFoodPage(){
   const lastFood=state.foodLog[0];
-  const ctx=!lastFood||Date.now()-lastFood.time>4*3600000?'hungry':Date.now()-lastFood.time<2*3600000?'eating':'default';
+  const lft=lastFood?(lastFood.createdAt||lastFood.time||0):0;const ctx=!lastFood||Date.now()-lft>4*3600000?'hungry':Date.now()-lft<2*3600000?'eating':'default';
   const sp=document.getElementById('groguFoodSpeech'); if(sp) sp.textContent=groguLine(ctx);
   const el=document.getElementById('foodLog'); if(!el) return;
   if(!state.foodLog.length){el.innerHTML='<div style="color:var(--ink-muted);text-align:center;padding:16px 0;font-weight:600;">Inga måltider än</div>'; return;}
   el.innerHTML=state.foodLog.slice(0,12).map(e=>{
-    const t=new Date(e.time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
-    const d=new Date(e.time).toLocaleDateString('sv-SE',{day:'numeric',month:'short'});
+    const ts=e.createdAt||e.time||e.beforeTime||0;
+    const t=ts?new Date(ts).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'}):'?';
+    const d=ts?new Date(ts).toLocaleDateString('sv-SE',{day:'numeric',month:'short'}):'?';
+    const mtype=e.mealType||e.type||'';
     const badge=e.complete?'<span class="pill green" style="font-size:10px;">✅ Komplett</span>':'<span class="pill" style="font-size:10px;">📷 Saknar</span>';
-    return '<div class="log-item"><div class="log-icon">🍽️</div><div class="log-main"><div class="log-title">'+e.name+'</div><div class="log-meta">'+e.type+' · '+d+' '+t+'</div>'+badge+'</div><div style="font-size:12px;font-weight:700;color:var(--ink-muted);">'+e.carbs+'g kh</div></div>';
+    return '<div class="log-item"><div class="log-icon">🍽️</div><div class="log-main"><div class="log-title">'+e.name+'</div><div class="log-meta">'+mtype+' · '+d+' '+t+'</div>'+badge+'</div><div style="font-size:12px;font-weight:700;color:var(--ink-muted);">'+e.carbs+'g kh</div></div>';
   }).join('');
 }
 document.querySelectorAll('#mealTypeTags .tag').forEach(btn=>{
@@ -3074,14 +3078,21 @@ async function flushCoordsToServer(){if(!pendingCoords.length||!currentWalkId)re
 function updateWalkDisplay(){if(!walkStartTime)return;const elapsed=Math.floor((Date.now()-walkStartTime)/1000),m=Math.floor(elapsed/60),s=elapsed%60;const td=document.getElementById('walkTimerDisplay');if(td)td.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');const dd=document.getElementById('walkDistDisplay');if(dd)dd.textContent=walkTotalDist.toFixed(2);if(walkTotalDist>0.1){const pace=(elapsed/60)/walkTotalDist,pm=Math.floor(pace),ps=Math.round((pace-pm)*60);const pd=document.getElementById('walkPaceDisplay');if(pd)pd.textContent=pm+':'+String(ps).padStart(2,'0');}}
 async function finishWalk(){if(!currentWalkId)return;clearInterval(walkInterval);if(gpsWatchId!==null){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}state.walkActive=false;await flushCoordsToServer();const elapsed=walkStartTime?Math.round((Date.now()-walkStartTime)/60000):0;try{await fetch('/api/walks/finish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({walkId:currentWalkId,minutes:elapsed})});}catch(e){}const entry={id:currentWalkId,minutes:elapsed,distance:walkTotalDist,time:Date.now()};state.walkLog.unshift(entry);if(state.walkLog.length>100)state.walkLog.pop();save();const sb=document.getElementById('walkStartBtn');if(sb){sb.textContent='STARTA GPS';sb.className='btn btn-blue btn-sm';}const fb=document.getElementById('finishWalkBtn');if(fb)fb.style.display='none';const td=document.getElementById('walkTimerDisplay');if(td)td.textContent='00:00';const dd=document.getElementById('walkDistDisplay');if(dd)dd.textContent='0.00';const pd=document.getElementById('walkPaceDisplay');if(pd)pd.textContent='--';currentWalkId=null;walkStartTime=null;walkTotalDist=0;renderWalkPage();showToast('Allen är imponerad! '+elapsed+' min · '+entry.distance.toFixed(1)+' km 💪');}
 function resetWalk(){if(state.walkActive){clearInterval(walkInterval);if(gpsWatchId!==null){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}state.walkActive=false;}currentWalkId=null;walkStartTime=null;walkTotalDist=0;currentWalkCoords=[];pendingCoords=[];const sb=document.getElementById('walkStartBtn');if(sb){sb.textContent='STARTA GPS';sb.className='btn btn-blue btn-sm';}const fb=document.getElementById('finishWalkBtn');if(fb)fb.style.display='none';const td=document.getElementById('walkTimerDisplay');if(td)td.textContent='00:00';const dd=document.getElementById('walkDistDisplay');if(dd)dd.textContent='0.00';const pd=document.getElementById('walkPaceDisplay');if(pd)pd.textContent='--';const container=document.getElementById('walkMap');if(container)container.innerHTML='<div style="text-align:center;color:var(--ink-muted);padding:20px;"><div style="font-size:28px;margin-bottom:6px;">🗺️</div><div style="font-size:12px;font-weight:700;">Kartan visas när du startar GPS</div></div>';if(walkMap){walkMap.remove();walkMap=null;}}
-function renderWalkPage(){const today=todayStr();const walkedToday=state.walkLog.some(w=>todayStr(w.time)===today);const sp=document.getElementById('allenWalkSpeech');if(sp)sp.textContent=allenLine(walkedToday?'walked':'noWalk');const todayMins=state.walkLog.filter(w=>todayStr(w.time)===today).reduce((a,w)=>a+w.minutes,0);const todayKm=state.walkLog.filter(w=>todayStr(w.time)===today).reduce((a,w)=>a+(w.distance||0),0);const wt=document.getElementById('walkTotal');if(wt)wt.textContent=todayMins;const wd=document.getElementById('walkDistToday');if(wd)wd.textContent=todayKm.toFixed(1);const el=document.getElementById('walkLog');if(!el)return;if(!state.walkLog.length){el.innerHTML='<div style="color:var(--ink-muted);text-align:center;padding:16px 0;font-weight:600;">Inga promenader än</div>';return;}el.innerHTML=state.walkLog.slice(0,10).map(e=>{const t=new Date(e.time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});const d=new Date(e.time).toLocaleDateString('sv-SE',{day:'numeric',month:'short'});const dist=e.distance?' · '+e.distance.toFixed(1)+' km':'';return '<div class="log-item"><div class="log-icon">🚶</div><div class="log-main"><div class="log-title">Promenad'+dist+'</div><div class="log-meta">'+d+' '+t+'</div></div><div class="log-val ok">'+e.minutes+' min</div></div>';}).join('');}
+function renderWalkPage(){const today=todayStr();const walkedToday=state.walkLog.filter(w=>!w.active).some(w=>todayStr(w.endTime||w.startTime||0)===today);const sp=document.getElementById('allenWalkSpeech');if(sp)sp.textContent=allenLine(walkedToday?'walked':'noWalk');const todayMins=state.walkLog.filter(w=>todayStr(w.endTime||w.startTime||0)===today).reduce((a,w)=>a+(w.duration||w.minutes||0),0);const todayKm=state.walkLog.filter(w=>todayStr(w.endTime||w.startTime||0)===today).reduce((a,w)=>a+(w.distance||0),0);const wt=document.getElementById('walkTotal');if(wt)wt.textContent=todayMins;const wd=document.getElementById('walkDistToday');if(wd)wd.textContent=todayKm.toFixed(1);const el=document.getElementById('walkLog');if(!el)return;if(!state.walkLog.length){el.innerHTML='<div style="color:var(--ink-muted);text-align:center;padding:16px 0;font-weight:600;">Inga promenader än</div>';return;}el.innerHTML=state.walkLog.slice(0,10).map(e=>{
+  const ts=e.endTime||e.startTime||0;
+  const t=ts?new Date(ts).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'}):'?';
+  const d=ts?new Date(ts).toLocaleDateString('sv-SE',{day:'numeric',month:'short'}):'?';
+  const dist=e.distance?' · '+e.distance.toFixed(1)+' km':'';
+  const mins=e.duration||e.minutes||0;
+  return '<div class="log-item"><div class="log-icon">🚶</div><div class="log-main"><div class="log-title">Promenad'+dist+'</div><div class="log-meta">'+d+' '+t+'</div></div><div class="log-val ok">'+mins+' min</div></div>';
+}).join('');}
 
 // ═══════════════════════════════════════════════════
 // HEM
 // ═══════════════════════════════════════════════════
 function todayStr(ts){const d=ts?new Date(ts):new Date();return d.toISOString().split('T')[0];}
-function renderStreak(){const days=['Mån','Tis','Ons','Tor','Fre','Lör','Sön'],today=new Date();const row=document.getElementById('streakRow');if(!row)return;row.innerHTML='';for(let i=6;i>=0;i--){const d=new Date(today);d.setDate(d.getDate()-i);const str=d.toISOString().split('T')[0],isToday=i===0;const hasFood=state.foodLog.some(f=>todayStr(f.time)===str),hasWalk=state.walkLog.some(w=>todayStr(w.time)===str);const done=hasFood&&hasWalk;const div=document.createElement('div');div.className='streak-day'+(done?' done':isToday?' today':'');div.innerHTML='<span>'+days[(d.getDay()+6)%7]+'</span><div class="day-dot"></div>';row.appendChild(div);}let streak=0;const d=new Date();while(streak<365){const s=d.toISOString().split('T')[0];if(state.foodLog.some(f=>todayStr(f.time)===s)&&state.walkLog.some(w=>todayStr(w.time)===s)){streak++;d.setDate(d.getDate()-1);}else break;}const sc=document.getElementById('streakCount');if(sc)sc.textContent=streak;const st=document.getElementById('streakText');if(st)st.textContent=streak>0?'dagar streak 🔥':'– starta idag!';}
-function renderRings(){const today=todayStr();const foodToday=state.foodLog.filter(f=>todayStr(f.time)===today).length;const walkToday=state.walkLog.filter(w=>todayStr(w.time)===today).reduce((a,w)=>a+w.minutes,0);const glucoseToday=state.glucoseHistory.filter(g=>todayStr(g.time)===today).length;const rings=[{label:'Måltider',val:foodToday,max:4,color:'#2DD881',unit:'/4'},{label:'Promenad',val:walkToday,max:30,color:'#169ee7',unit:'min'},{label:'Mätningar',val:glucoseToday,max:6,color:'#E63946',unit:'/6'}];const C=2*Math.PI*30;const row=document.getElementById('ringsRow');if(!row)return;row.innerHTML=rings.map(r=>{const pct=Math.min(1,r.val/r.max),offset=C*(1-pct);return '<div class="ring-wrap"><div style="position:relative;width:72px;height:72px;"><svg class="ring-svg" viewBox="0 0 72 72"><circle class="ring-track" cx="36" cy="36" r="30"/><circle class="ring-fill" cx="36" cy="36" r="30" stroke="'+r.color+'" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"/></svg><div class="ring-center"><div class="ring-val" style="color:'+r.color+'">'+r.val+'</div><div class="ring-unit">'+r.unit+'</div></div></div><div class="ring-label">'+r.label+'</div></div>';}).join('');}
+function renderStreak(){const days=['Mån','Tis','Ons','Tor','Fre','Lör','Sön'],today=new Date();const row=document.getElementById('streakRow');if(!row)return;row.innerHTML='';for(let i=6;i>=0;i--){const d=new Date(today);d.setDate(d.getDate()-i);const str=d.toISOString().split('T')[0],isToday=i===0;const hasFood=state.foodLog.some(f=>todayStr(f.createdAt||f.time||0)===str),hasWalk=state.walkLog.filter(w=>!w.active).some(w=>todayStr(w.endTime||w.startTime||0)===str);const done=hasFood&&hasWalk;const div=document.createElement('div');div.className='streak-day'+(done?' done':isToday?' today':'');div.innerHTML='<span>'+days[(d.getDay()+6)%7]+'</span><div class="day-dot"></div>';row.appendChild(div);}let streak=0;const d=new Date();while(streak<365){const s=d.toISOString().split('T')[0];if(state.foodLog.some(f=>todayStr(f.createdAt||f.time||0)===s)&&state.walkLog.filter(w=>!w.active).some(w=>todayStr(w.endTime||w.startTime||0)===s)){streak++;d.setDate(d.getDate()-1);}else break;}const sc=document.getElementById('streakCount');if(sc)sc.textContent=streak;const st=document.getElementById('streakText');if(st)st.textContent=streak>0?'dagar streak 🔥':'– starta idag!';}
+function renderRings(){const today=todayStr();const foodToday=state.foodLog.filter(f=>todayStr(f.createdAt||f.time||0)===today).length;const walkToday=state.walkLog.filter(w=>!w.active&&todayStr(w.endTime||w.startTime||0)===today).reduce((a,w)=>a+(w.duration||w.minutes||0),0);const glucoseToday=state.glucoseHistory.filter(g=>todayStr(g.time)===today).length;const rings=[{label:'Måltider',val:foodToday,max:4,color:'#2DD881',unit:'/4'},{label:'Promenad',val:walkToday,max:30,color:'#169ee7',unit:'min'},{label:'Mätningar',val:glucoseToday,max:6,color:'#E63946',unit:'/6'}];const C=2*Math.PI*30;const row=document.getElementById('ringsRow');if(!row)return;row.innerHTML=rings.map(r=>{const pct=Math.min(1,r.val/r.max),offset=C*(1-pct);return '<div class="ring-wrap"><div style="position:relative;width:72px;height:72px;"><svg class="ring-svg" viewBox="0 0 72 72"><circle class="ring-track" cx="36" cy="36" r="30"/><circle class="ring-fill" cx="36" cy="36" r="30" stroke="'+r.color+'" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"/></svg><div class="ring-center"><div class="ring-val" style="color:'+r.color+'">'+r.val+'</div><div class="ring-unit">'+r.unit+'</div></div></div><div class="ring-label">'+r.label+'</div></div>';}).join('');}
 
 // ═══════════════════════════════════════════════════
 // UPPGIFTER (TASKS)
@@ -3176,7 +3187,10 @@ function renderTasksWidget() {
 
   const visibleTasks = activeTasks.filter(t => {
     if (t.type === 'once') {
-      const comp = t.completions && t.completions[today];
+      // Kolla rätt period-nyckel (daily=today, weekly=week-X)
+    const weekKey = 'week-' + (()=>{const d=new Date();d.setHours(0,0,0);d.setDate(d.getDate()-d.getDay()+(d.getDay()===0?-6:1));return d.getTime();})();
+    const compKey = t.type==='weekly' ? weekKey : today;
+    const comp = t.completions && (t.completions[compKey] || t.completions[today]);
       if (!comp) return true;
       if (comp && (comp.status === 'approved' || comp === true)) return false;
       return true; // pending = visa fortfarande
@@ -3452,7 +3466,7 @@ function renderHome(){
     const el = document.getElementById('omniHomeImg');
     if (el) { el.src = getJarJarImg(); el.style.cssText='width:100%;height:auto;object-fit:contain;display:block;'; }
   }
-const last=state.glucoseHistory[state.glucoseHistory.length-1];if(last){renderGlucoseCard(last.val);const t=new Date(last.time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});const gt=document.getElementById('glucoseTime');if(gt)gt.textContent=(state.cgmConnected?'xDrip · ':'Manuell · ')+t;}else renderGlucoseCard(null);const gsp=document.getElementById('groguHomeSpeech');const lastFood=state.foodLog[0];const gCtx=!lastFood||Date.now()-lastFood.time>4*3600000?'hungry':Date.now()-lastFood.time<2*3600000?'eating':'default';if(gsp)gsp.textContent=groguLine(gCtx);renderStreak();renderRings();const ms=document.getElementById('morningStatus');if(ms){const today=todayStr();const meals=state.foodLog.filter(f=>todayStr(f.time)===today).length;const walked=state.walkLog.some(w=>todayStr(w.time)===today);if(meals===0&&!walked)ms.textContent='Inget loggat än idag — dags att börja! 💪';else if(meals>0&&walked)ms.textContent=meals+' måltid'+(meals>1?'er':'')+' · Promenad klar · Bra jobbat! ⚡';else if(meals>0)ms.textContent=meals+' måltid'+(meals>1?'er':'')+' loggad · Glöm inte promenaden!';else ms.textContent='Promenad klar! Glöm inte att logga mat 🍽️';}}
+const last=state.glucoseHistory[state.glucoseHistory.length-1];if(last){renderGlucoseCard(last.val);const t=new Date(last.time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});const gt=document.getElementById('glucoseTime');if(gt)gt.textContent=(state.cgmConnected?'xDrip · ':'Manuell · ')+t;}else renderGlucoseCard(null);const gsp=document.getElementById('groguHomeSpeech');const lastFood=state.foodLog[0];const lft2=lastFood?(lastFood.createdAt||lastFood.time||0):0;const gCtx=!lastFood||Date.now()-lft2>4*3600000?'hungry':Date.now()-lft2<2*3600000?'eating':'default';if(gsp)gsp.textContent=groguLine(gCtx);renderStreak();renderRings();const ms=document.getElementById('morningStatus');if(ms){const today=todayStr();const meals=state.foodLog.filter(f=>todayStr(f.createdAt||f.time||0)===today).length;const walked=state.walkLog.filter(w=>!w.active).some(w=>todayStr(w.endTime||w.startTime||0)===today);if(meals===0&&!walked)ms.textContent='Inget loggat än idag — dags att börja! 💪';else if(meals>0&&walked)ms.textContent=meals+' måltid'+(meals>1?'er':'')+' · Promenad klar · Bra jobbat! ⚡';else if(meals>0)ms.textContent=meals+' måltid'+(meals>1?'er':'')+' loggad · Glöm inte promenaden!';else ms.textContent='Promenad klar! Glöm inte att logga mat 🍽️';}}
 
 // ═══════════════════════════════════════════════════
 // HJÄLTE-SIDA
@@ -4171,6 +4185,7 @@ async function refreshPlayer() {
     state.combatLog = p.combatLog || [];
     state.lastFightDate = p.lastFightDate || null;
     state.unlockedAchievements = p.unlockedAchievements || [];
+    state.extraFights = p.extraFights || 0;
     if (p.settings) state.settings = { ...state.settings, ...p.settings };
     // Uppdatera UI om något ändrats
     if (state.gold !== oldGold) updateGoldDisplay();
