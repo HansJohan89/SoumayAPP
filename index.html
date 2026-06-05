@@ -3520,6 +3520,10 @@ async function finishWalk() {
     }
   }
 
+  // Hämta type från toggle-knappen (säkrare än state)
+  const activeToggle = document.querySelector('.walk-type-btn.active');
+  const finalType = activeToggle ? activeToggle.dataset.type : (state.walkType || 'walk');
+
   // Spara på server
   try {
     await fetch('/api/walks/finish', {
@@ -3527,10 +3531,6 @@ async function finishWalk() {
       body: JSON.stringify({ walkId: currentWalkId, minutes: elapsed, type: finalType, distance: dist })
     });
   } catch(e) {}
-
-  // Spara type explicit (hämta direkt från toggle-knappen för säkerhet)
-  const activeToggle = document.querySelector('.walk-type-btn.active');
-  const finalType = activeToggle ? activeToggle.dataset.type : (state.walkType || 'walk');
   const entry = { id: currentWalkId, duration: elapsed, distance: dist, endTime: Date.now(), type: finalType };
   state.walkLog.unshift(entry);
   if (state.walkLog.length > 100) state.walkLog.pop();
