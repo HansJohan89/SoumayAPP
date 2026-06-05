@@ -3486,74 +3486,79 @@ function setWalkType(type) {
 
 async function finishWalk() {
   if (!currentWalkId) return;
-  clearInterval(walkInterval);
-  if (gpsWatchId !== null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
-  state.walkActive = false;
-  await flushCoordsToServer();
-
-  const totalSecs = walkStartTime ? Math.floor((Date.now() - walkStartTime) / 1000) : 0;
-  const elapsed   = Math.round(totalSecs / 60);
-  const dist      = walkTotalDist;
-  const type      = state.walkType || 'walk';
-
-  // Beräkna statistik
-  const avgPaceMin = dist > 0.05 ? (totalSecs / 60) / dist : 0;
-  const avgPaceSec = Math.round((avgPaceMin - Math.floor(avgPaceMin)) * 60);
-  const paceStr    = dist > 0.05 ? Math.floor(avgPaceMin) + ':' + String(avgPaceSec).padStart(2,'0') + ' min/km' : '–';
-  const speedKmh   = dist > 0 && elapsed > 0 ? (dist / (elapsed / 60)).toFixed(1) : '–';
-
-  // Km-splits (varje km)
-  const splits = [];
-  if (currentWalkCoords.length > 1) {
-    let splitDist = 0, splitStart = currentWalkCoords[0].ts, splitNum = 1;
-    for (let i = 1; i < currentWalkCoords.length; i++) {
-      const d = haversine(currentWalkCoords[i-1].lat, currentWalkCoords[i-1].lng,
-                          currentWalkCoords[i].lat, currentWalkCoords[i].lng);
-      splitDist += d;
-      if (splitDist >= splitNum) {
-        const secs = (currentWalkCoords[i].ts - splitStart) / 1000;
-        const pm = Math.floor(secs/60), ps = Math.round(secs%60);
-        splits.push({ km: splitNum, pace: pm+':'+String(ps).padStart(2,'0') });
-        splitStart = currentWalkCoords[i].ts;
-        splitNum++;
-      }
-    }
-  }
-
-  // Hämta type från toggle-knappen (säkrare än state)
-  const activeToggle = document.querySelector('.walk-type-btn.active');
-  const finalType = activeToggle ? activeToggle.dataset.type : (state.walkType || 'walk');
-
-  // Spara på server
   try {
-    await fetch('/api/walks/finish', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ walkId: currentWalkId, minutes: elapsed, type: finalType, distance: dist })
-    });
-  } catch(e) {}
-  const entry = { id: currentWalkId, duration: elapsed, distance: dist, endTime: Date.now(), type: finalType };
-  state.walkLog.unshift(entry);
-  if (state.walkLog.length > 100) state.walkLog.pop();
-  save();
+    clearInterval(walkInterval);
+    if (gpsWatchId !== null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+    state.walkActive = false;
+    await flushCoordsToServer();
 
-  // Återställ UI
-  const sb = document.getElementById('walkStartBtn');
-  if (sb) { sb.textContent = 'STARTA GPS'; sb.style.background=''; sb.style.color=''; sb.className='btn btn-blue btn-sm'; }
-  const fb = document.getElementById('finishWalkBtn'); if (fb) fb.style.display='none';
-  const td = document.getElementById('walkTimerDisplay'); if (td) td.textContent='00:00';
-  const dd = document.getElementById('walkDistDisplay'); if (dd) dd.textContent='0.00';
-  const pd = document.getElementById('walkPaceDisplay'); if (pd) pd.textContent='--';
-  const savedId = currentWalkId;
-  currentWalkId = null; walkStartTime = null; walkTotalDist = 0;
+    const totalSecs = walkStartTime ? Math.floor((Date.now() - walkStartTime) / 1000) : 0;
+    const elapsed   = Math.round(totalSecs / 60);
+    const dist      = walkTotalDist;
 
-  // Hämta uppdaterade tasks och rewards direkt efter avslutad aktivitet
-  await fetchTasks();
-  renderTasksWidget();
-  await claimPendingRewards();
+    // Hämta type från toggle (gör detta TIDIGT)
+    const activeToggle = document.querySelector('.walk-type-btn.active');
+    const finalType = activeToggle ? activeToggle.dataset.type : (state.walkType || 'walk');
 
-  // Visa Allen-rapport
-  showWalkReport({ dist, elapsed, totalSecs, paceStr, speedKmh, splits, type: finalType });
-  renderWalkPage();
+    // Beräkna statistik
+    const avgPaceMin = dist > 0.05 ? (totalSecs / 60) / dist : 0;
+    const avgPaceSec = Math.round((avgPaceMin - Math.floor(avgPaceMin)) * 60);
+    const paceStr    = dist > 0.05 ? Math.floor(avgPaceMin) + ':' + String(avgPaceSec).padStart(2,'0') + ' min/km' : '–';
+    const speedKmh   = dist > 0 && elapsed > 0 ? (dist / (elapsed / 60)).toFixed(1) : '–';
+
+    // Km-splits
+    const splits = [];
+    if (currentWalkCoords && currentWalkCoords.length > 1) {
+      try {
+        let splitDist = 0, splitStart = currentWalkCoords[0].ts, splitNum = 1;
+        for (let i = 1; i < currentWalkCoords.length; i++) {
+          const d = haversine(currentWalkCoords[i-1].lat, currentWalkCoords[i-1].lng,
+                              currentWalkCoords[i].lat, currentWalkCoords[i].lng);
+          splitDist += d;
+          if (splitDist >= splitNum) {
+            const secs = (currentWalkCoords[i].ts - splitStart) / 1000;
+            splits.push({ km: splitNum, pace: Math.floor(secs/60)+':'+String(Math.round(secs%60)).padStart(2,'0') });
+            splitStart = currentWalkCoords[i].ts;
+            splitNum++;
+          }
+        }
+      } catch(splitErr) { console.warn('splits error:', splitErr); }
+    }
+
+    // Spara på server
+    try {
+      await fetch('/api/walks/finish', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ walkId: currentWalkId, minutes: elapsed, type: finalType, distance: dist })
+      });
+    } catch(fetchErr) { console.warn('finish fetch error:', fetchErr); }
+
+    // Spara i state
+    const entry = { id: currentWalkId, duration: elapsed, distance: dist, endTime: Date.now(), type: finalType };
+    state.walkLog.unshift(entry);
+    if (state.walkLog.length > 100) state.walkLog.pop();
+    save();
+
+    // Återställ UI
+    const sb = document.getElementById('walkStartBtn');
+    if (sb) { sb.textContent = 'STARTA GPS'; sb.style.background=''; sb.style.color=''; sb.className='btn btn-blue btn-sm'; }
+    const fb = document.getElementById('finishWalkBtn'); if (fb) fb.style.display='none';
+    const td = document.getElementById('walkTimerDisplay'); if (td) td.textContent='00:00';
+    const dd = document.getElementById('walkDistDisplay'); if (dd) dd.textContent='0.00';
+    const pd = document.getElementById('walkPaceDisplay'); if (pd) pd.textContent='--';
+    currentWalkId = null; walkStartTime = null; walkTotalDist = 0;
+
+    // Hämta tasks och rewards
+    try { await fetchTasks(); renderTasksWidget(); await claimPendingRewards(); } catch(e) {}
+
+    // Visa rapport
+    showWalkReport({ dist, elapsed, totalSecs, paceStr, speedKmh, splits, type: finalType });
+    renderWalkPage();
+
+  } catch(err) {
+    console.error('finishWalk error:', err);
+    showToast('❌ Fel vid avslutning: ' + err.message);
+  }
 }
 
 function showWalkReport({ dist, elapsed, totalSecs, paceStr, speedKmh, splits, type }) {
@@ -3563,10 +3568,10 @@ function showWalkReport({ dist, elapsed, totalSecs, paceStr, speedKmh, splits, t
   const isRun = type === 'run';
   const km    = dist.toFixed(2);
 
-  // Hitta föregående aktivitet av samma typ
-  const prevEntry = state.walkLog.find(w =>
+  // Hitta föregående aktivitet av samma typ (hoppa över den senast tillagda = index 0)
+  const prevEntry = state.walkLog.slice(1).find(w =>
     !w.active && w.type === type &&
-    w.endTime && w.endTime !== entry?.endTime &&
+    w.endTime &&
     (w.duration||w.minutes||0) > 0 && (w.distance||0) > 0.1
   );
 
