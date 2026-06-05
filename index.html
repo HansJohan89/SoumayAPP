@@ -3092,6 +3092,13 @@ function heroAC() {
   });
   return ac;
 }
+function weekStart() {
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() - d.getDay() + (d.getDay()===0 ? -6 : 1)); // Måndag
+  return d.getTime();
+}
+
 function canFightToday(){
   const today=new Date().toISOString().split('T')[0];
   if (state.lastFightDate!==today) return true;   // daglig strid tillgänglig
@@ -3459,7 +3466,7 @@ async function toggleWalk(){
   }
 }
 function onGPSUpdate(pos){const{latitude:lat,longitude:lng,accuracy}=pos.coords;if(accuracy>50)return;const point={lat,lng,ts:Date.now()};const prev=currentWalkCoords[currentWalkCoords.length-1];if(prev){const d=haversine(prev.lat,prev.lng,lat,lng);if(d<0.005)return;walkTotalDist+=d;}currentWalkCoords.push(point);pendingCoords.push(point);if(walkMap){walkPolyline.setLatLngs(currentWalkCoords.map(c=>[c.lat,c.lng]));walkMarker.setLatLng([lat,lng]);walkMap.panTo([lat,lng],{animate:true,duration:0.5});}if(pendingCoords.length>=10)flushCoordsToServer();}
-async function flushCoordsToServer(){if(!pendingCoords.length||!currentWalkId)return;const batch=[...pendingCoords];pendingCoords=[];try{await fetch('/api/walks/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({walkId:currentWalkId,coords:batch})});}catch(e){pendingCoords=[...batch,...pendingCoords];}}
+async function flushCoordsToServer(){if(!pendingCoords.length||!currentWalkId)return;const batch=[...pendingCoords];pendingCoords=[];try{await fetch('/api/walks/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({walkId:currentWalkId,coords:batch,type:state.walkType||'walk'})});}catch(e){pendingCoords=[...batch,...pendingCoords];}}
 function updateWalkDisplay(){if(!walkStartTime)return;const elapsed=Math.floor((Date.now()-walkStartTime)/1000),m=Math.floor(elapsed/60),s=elapsed%60;const td=document.getElementById('walkTimerDisplay');if(td)td.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');const dd=document.getElementById('walkDistDisplay');if(dd)dd.textContent=walkTotalDist.toFixed(2);if(walkTotalDist>0.1){const pace=(elapsed/60)/walkTotalDist,pm=Math.floor(pace),ps=Math.round((pace-pm)*60);const pd=document.getElementById('walkPaceDisplay');if(pd)pd.textContent=pm+':'+String(ps).padStart(2,'0');}}
 function setWalkType(type) {
   state.walkType = type;
@@ -3517,11 +3524,14 @@ async function finishWalk() {
   try {
     await fetch('/api/walks/finish', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ walkId: currentWalkId, minutes: elapsed, type })
+      body: JSON.stringify({ walkId: currentWalkId, minutes: elapsed, type: finalType, distance: dist })
     });
   } catch(e) {}
 
-  const entry = { id: currentWalkId, duration: elapsed, distance: dist, endTime: Date.now(), type };
+  // Spara type explicit (hämta direkt från toggle-knappen för säkerhet)
+  const activeToggle = document.querySelector('.walk-type-btn.active');
+  const finalType = activeToggle ? activeToggle.dataset.type : (state.walkType || 'walk');
+  const entry = { id: currentWalkId, duration: elapsed, distance: dist, endTime: Date.now(), type: finalType };
   state.walkLog.unshift(entry);
   if (state.walkLog.length > 100) state.walkLog.pop();
   save();
@@ -3537,7 +3547,7 @@ async function finishWalk() {
   currentWalkId = null; walkStartTime = null; walkTotalDist = 0;
 
   // Visa Allen-rapport
-  showWalkReport({ dist, elapsed, totalSecs, paceStr, speedKmh, splits, type });
+  showWalkReport({ dist, elapsed, totalSecs, paceStr, speedKmh, splits, type: finalType });
   renderWalkPage();
 }
 
@@ -3819,15 +3829,10 @@ function renderTasksWidget() {
   const activeTasks = cachedTasks.filter(t => t.active);
 
   const visibleTasks = activeTasks.filter(t => {
-    if (t.type === 'once') {
-      // Kolla rätt period-nyckel (daily=today, weekly=week-X)
-    const weekKey = 'week-' + (()=>{const d=new Date();d.setHours(0,0,0);d.setDate(d.getDate()-d.getDay()+(d.getDay()===0?-6:1));return d.getTime();})();
-    const compKey = t.type==='weekly' ? weekKey : today;
+    const compKey = t.type === 'weekly' ? 'week-' + weekStart() : today;
     const comp = t.completions && (t.completions[compKey] || t.completions[today]);
-      if (!comp) return true;
-      if (comp && (comp.status === 'approved' || comp === true)) return false;
-      return true; // pending = visa fortfarande
-    }
+    // Dölj engångsuppgifter som är klara, visa annars alltid (daily/weekly visas med progress)
+    if (t.type === 'once' && comp && (comp.status === 'approved' || comp === true)) return false;
     return true;
   });
 
@@ -3837,7 +3842,9 @@ function renderTasksWidget() {
   }
 
   el.innerHTML = visibleTasks.map(t => {
-    const comp = t.completions && t.completions[today];
+    // Rätt nyckel beroende på period
+    const compKey = t.type === 'weekly' ? 'week-' + weekStart() : today;
+    const comp = t.completions && (t.completions[compKey] || t.completions[today]);
     const doneToday = comp && (comp.status === 'approved' || comp === true);
     const pendingToday = comp && comp.status === 'pending';
 
@@ -3934,7 +3941,8 @@ function closeTaskModal() {
 function renderTaskModal(task, photoStatus) {
   const el = document.getElementById('taskModalContent');
   const today = new Date().toISOString().split('T')[0];
-  const comp = task.completions && task.completions[today];
+  const modalCompKey = task.type === 'weekly' ? 'week-' + weekStart() : today;
+  const comp = task.completions && (task.completions[modalCompKey] || task.completions[today]);
   const doneToday = comp && (comp.status === 'approved' || comp === true);
   const pendingToday = comp && comp.status === 'pending';
   const diffColor = {easy:'var(--in-range-dark)',normal:'var(--hero-blue)',hard:'var(--pulse-red-deep)'}[task.difficulty||'normal'];

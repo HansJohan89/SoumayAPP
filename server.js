@@ -332,13 +332,19 @@ app.post('/api/walks/track', (req, res) => {
 });
 
 app.post('/api/walks/finish', (req, res) => {
-  const { walkId, minutes } = req.body;
+  const { walkId, minutes, type } = req.body;
   const walk = walks.find(w => w.id === walkId);
   if (walk) {
     walk.active   = false;
     walk.endTime  = Date.now();
     walk.duration = minutes || Math.round((walk.endTime - walk.startTime) / 60000);
-    walk.distance = calcDistance(walk.coords);
+    // Använd distans från appen (mer korrekt — GPS räknat i realtid)
+    // Faller tillbaka på calcDistance från coords om ej skickat
+    const clientDistance = parseFloat(req.body.distance);
+    walk.distance = (!isNaN(clientDistance) && clientDistance > 0)
+      ? Math.round(clientDistance * 100) / 100
+      : calcDistance(walk.coords);
+    if (type) walk.type = type;
     writeJSON(WALKS_FILE, walks);
 
     // Ladda merge-spawner: 3 per km (minst 1 om > 0.1km)
