@@ -3546,6 +3546,11 @@ async function finishWalk() {
   const savedId = currentWalkId;
   currentWalkId = null; walkStartTime = null; walkTotalDist = 0;
 
+  // Hämta uppdaterade tasks och rewards direkt efter avslutad aktivitet
+  await fetchTasks();
+  renderTasksWidget();
+  await claimPendingRewards();
+
   // Visa Allen-rapport
   showWalkReport({ dist, elapsed, totalSecs, paceStr, speedKmh, splits, type: finalType });
   renderWalkPage();
