@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Soumaya">
-<meta name="theme-color" content="#169ee7">
+<meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=Caveat:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -637,7 +637,7 @@ body{
   --power-yellow:#FFE600;--pulse-red:#E63946;--paper:#F5EFE2;--ink:#0A0A0A;}
 #soumay-splash-overlay.splash-fading{animation:_sp-fade 0.8s ease-in forwards;}
 @keyframes _sp-fade{0%{opacity:1}100%{opacity:0}}
-#soumay-splash-overlay.splash-done{display:none}
+#soumay-splash-overlay.splash-done{display:none!important;animation:none!important}
 #soumay-splash-overlay .splash-inner{width:min(100vw,calc((100dvh - 210px)*16/9));display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:2.4vh}
 #soumay-splash-overlay .splash-top{width:100%;display:flex;align-items:center;justify-content:space-between;padding:0 5vw}
 #soumay-splash-overlay .tag{font-family:var(--font-burst);color:var(--power-yellow);letter-spacing:.2em;font-size:clamp(11px,3.4vw,16px);display:flex;align-items:center;gap:8px;padding:0;border:none;border-radius:0;background:transparent;cursor:default;font-weight:400}
@@ -682,10 +682,7 @@ body{
   #soumay-splash-overlay .frame-stack .f3,#soumay-splash-overlay .frame-stack .f4,
   #soumay-splash-overlay .frame-stack .f5{opacity:1}
 }
-/* Hide app behind splash until done */
-body:has(#soumay-splash-overlay:not(.splash-done)) > *:not(#soumay-splash-overlay) {
-  visibility: hidden;
-}
+
 /* ═══════════════════════════════════════ */
 
 </style>
@@ -705,6 +702,7 @@ body:has(#soumay-splash-overlay:not(.splash-done)) > *:not(#soumay-splash-overla
     overlay.classList.add('splash-fading');
     setTimeout(function(){overlay.classList.add('splash-done');},820);
   };
+
 })();
 /* ═══════════════════════════════════ */
 </script>
