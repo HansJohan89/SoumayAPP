@@ -2583,6 +2583,9 @@ Du vet vem du är. Det glömmer du inte.`,
 // ═══════════════════════════════════════════════════════════════════════
 
 function initAdventureProgress() {
+  // Bridge: in the main app, state lives as a local var, not on window
+  if (!window.state) { try { window.state = state; } catch(e) { return; } }
+  if (!window.state) return;
   if (!window.state.adventureProgress) {
     window.state.adventureProgress = {
       currentDay: 1,
@@ -2596,8 +2599,9 @@ function initAdventureProgress() {
 }
 
 function getAP() {
+  if (!window.state) { try { window.state = state; } catch(e) {} }
   initAdventureProgress();
-  return window.state.adventureProgress;
+  return window.state && window.state.adventureProgress;
 }
 
 function canPlayToday() {

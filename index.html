@@ -3022,7 +3022,7 @@ let state = {
   unlockedAchievements: [], appOpens: 0,
   walkActive: false, walkType: 'walk', selectedMealType: 'frukost',
   activeCombat: null, shopFilter: 'weapon',
-  activeAdventure: null, lastAdventureDate: null,
+  activeAdventure: null, lastAdventureDate: null, adventureProgress: null,
 };
 
 let _savePlayerTimer = null;
@@ -3046,7 +3046,7 @@ async function savePlayerToServer() {
         extraFights: state.extraFights || 0,
         unlockedAchievements: state.unlockedAchievements,
         appOpens: state.appOpens, settings: state.settings,
-        activeAdventure: state.activeAdventure, lastAdventureDate: state.lastAdventureDate,
+        activeAdventure: state.activeAdventure, lastAdventureDate: state.lastAdventureDate, adventureProgress: state.adventureProgress||null,
       })
     });
   } catch(e) { console.warn('savePlayer:', e.message); }
@@ -3070,6 +3070,7 @@ async function loadAllData() {
       if (p.settings) state.settings = { ...state.settings, ...p.settings };
       state.activeAdventure  = p.activeAdventure  || null;
       state.lastAdventureDate = p.lastAdventureDate || null;
+      state.adventureProgress = p.adventureProgress || null;
     }
   } catch(e) { console.warn('loadPlayer:', e.message); }
   // Glukos
@@ -4583,6 +4584,9 @@ function endCombatFlow(won){
   if(c.isAdventureCombat){
     const xp=won?(c.enemyXpReward||60):0;
     if(xp>0) state.totalXP=Math.max(0,(state.totalXP||0)+xp);
+    // New story system: delegate to adventure.js
+    if(window.resolveStoryCombat) { window.resolveStoryCombat(won); return; }
+    // Legacy fallback
     if(state.activeAdventure) state.activeAdventure.lastCombatWon=won;
     return;
   }
