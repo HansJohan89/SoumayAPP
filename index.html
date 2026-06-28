@@ -629,6 +629,13 @@ body{
 .report-allen-name { font-family:var(--font-burst);font-size:11px;color:var(--hero-blue);margin-bottom:6px; }
 .report-allen-text { font-family:var(--font-script);font-size:15px;line-height:1.5; }
 
+/* ── ÄVENTYR ───────────────────────────────────────── */
+.adv-choice-btn:active { transform:translate(2px,2px); box-shadow:1px 1px 0 rgba(0,0,0,.2) !important; }
+.adv-choice-btn:hover  { filter:brightness(0.96); }
+.adv-reward-row { display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:12px 0; }
+.adv-reward-chip { padding:8px 16px;border-radius:12px;font-family:var(--font-mono);font-weight:700;font-size:14px; }
+.adv-xp-chip   { background:var(--hero-blue);color:white; }
+.adv-gold-chip { background:var(--power-yellow);color:var(--ink); }
 </style>
 </head>
 <body>
@@ -863,10 +870,12 @@ body{
 <div class="page" id="page-hero">
   <div id="heroProfileCard" class="card blue" style="padding:20px;"></div>
   <div class="filter-tabs">
+    <div class="filter-tab" onclick="heroTab('adventure',this)">🗺️ Äventyr</div>
     <div class="filter-tab active" onclick="heroTab('combat',this)">⚔️ Strid</div>
     <div class="filter-tab" onclick="heroTab('shop',this)">🏪 Butik</div>
     <div class="filter-tab" onclick="heroTab('stats',this)">📊 Stats</div>
   </div>
+  <div id="heroTabAdventure" style="display:none;"></div>
   <div id="heroTabCombat"></div>
   <div id="heroTabShop" style="display:none;"></div>
   <div id="heroTabStats" style="display:none;"></div>
@@ -1075,6 +1084,7 @@ body{
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="adventure.js"></script>
 <script>
 /**
  * SOUMAYA — Achievement System
@@ -3012,6 +3022,7 @@ let state = {
   unlockedAchievements: [], appOpens: 0,
   walkActive: false, walkType: 'walk', selectedMealType: 'frukost',
   activeCombat: null, shopFilter: 'weapon',
+  activeAdventure: null, lastAdventureDate: null,
 };
 
 let _savePlayerTimer = null;
@@ -3035,6 +3046,7 @@ async function savePlayerToServer() {
         extraFights: state.extraFights || 0,
         unlockedAchievements: state.unlockedAchievements,
         appOpens: state.appOpens, settings: state.settings,
+        activeAdventure: state.activeAdventure, lastAdventureDate: state.lastAdventureDate,
       })
     });
   } catch(e) { console.warn('savePlayer:', e.message); }
@@ -3056,6 +3068,8 @@ async function loadAllData() {
       state.extraFights = p.extraFights || 0;
       state.appOpens = (p.appOpens || 0) + 1;
       if (p.settings) state.settings = { ...state.settings, ...p.settings };
+      state.activeAdventure  = p.activeAdventure  || null;
+      state.lastAdventureDate = p.lastAdventureDate || null;
     }
   } catch(e) { console.warn('loadPlayer:', e.message); }
   // Glukos
@@ -4123,15 +4137,20 @@ const last=state.glucoseHistory[state.glucoseHistory.length-1];if(last){renderGl
 // HJÄLTE-SIDA
 // ═══════════════════════════════════════════════════
 let currentHeroTab='combat';
-function renderHeroPage(){renderHeroProfile();heroTab(currentHeroTab,document.querySelector('#page-hero .filter-tab.active')||document.querySelector('#page-hero .filter-tab'));}
+function renderHeroPage(){
+  renderHeroProfile();
+  if(state.activeAdventure && !state.activeCombat){ currentHeroTab='adventure'; }
+  heroTab(currentHeroTab,document.querySelector('#page-hero .filter-tab.active')||document.querySelector('#page-hero .filter-tab'));
+}
 function heroTab(tab,el){
   currentHeroTab=tab;
   document.querySelectorAll('#page-hero .filter-tab').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
-  ['combat','shop','stats'].forEach(t=>{const e=document.getElementById('heroTab'+t.charAt(0).toUpperCase()+t.slice(1));if(e)e.style.display=t===tab?'block':'none';});
-  if(tab==='combat') renderCombatTab();
-  if(tab==='shop')   renderShopTab();
-  if(tab==='stats')  renderStatsTab();
+  ['adventure','combat','shop','stats'].forEach(t=>{const e=document.getElementById('heroTab'+t.charAt(0).toUpperCase()+t.slice(1));if(e)e.style.display=t===tab?'block':'none';});
+  if(tab==='adventure') { if(typeof renderAdventureTab==='function') renderAdventureTab(); }
+  if(tab==='combat')    renderCombatTab();
+  if(tab==='shop')      renderShopTab();
+  if(tab==='stats')     renderStatsTab();
 }
 function renderHeroProfile(){
   const ld=heroLevelData(),xp=state.totalXP||0,gold=state.gold||0;
@@ -4561,6 +4580,12 @@ function updateCombatUI(c){
 function endCombatFlow(won){
   const c=state.activeCombat; if(!c) return;
   const ld=heroLevelData();
+  if(c.isAdventureCombat){
+    const xp=won?(c.enemyXpReward||60):0;
+    if(xp>0) state.totalXP=Math.max(0,(state.totalXP||0)+xp);
+    if(state.activeAdventure) state.activeAdventure.lastCombatWon=won;
+    return;
+  }
   const reward = won
     ? { xp: c.enemyXpReward||100, gold: c.enemyGoldReward||30 }
     : { xp: -Math.round((c.enemyXpReward||100)*0.25), gold: 0 };
@@ -4574,8 +4599,31 @@ function endCombatFlow(won){
   state.combatLog.unshift({won,enemy:c.enemyName,date:state.lastFightDate,xpDelta:reward.xp,summary:won?'Besegrade '+c.enemyName+'! +'+reward.xp+' XP, +'+reward.gold+' 🪙':'Besegrad av '+c.enemyName+'. '+reward.xp+' XP'});
   if(state.combatLog.length>20) state.combatLog.pop();
 }
-function endCombat(){state.activeCombat=null; save(); renderHeroPage();}
-function fleeCombat(){state.activeCombat=null; state.lastFightDate=new Date().toISOString().split('T')[0]; save(); showToast('Du flydde... ingen XP.'); renderCombatTab();}
+function endCombat(){
+  if(state.activeCombat&&state.activeCombat.isAdventureCombat&&state.activeAdventure){
+    const won=state.activeAdventure.lastCombatWon;
+    const nextScene=won?state.activeAdventure.pendingWinScene:state.activeAdventure.pendingLossScene;
+    state.activeAdventure.inCombat=false;
+    state.activeAdventure.sceneId=nextScene||(won?'victory':'defeat');
+    state.activeCombat=null; save();
+    const advTab=document.querySelector('#page-hero .filter-tab');
+    heroTab('adventure',advTab); return;
+  }
+  state.activeCombat=null; save(); renderHeroPage();
+}
+function fleeCombat(){
+  if(state.activeCombat&&state.activeCombat.isAdventureCombat&&state.activeAdventure){
+    state.activeAdventure.inCombat=false;
+    state.activeAdventure.lastCombatWon=false;
+    const nextScene=state.activeAdventure.pendingLossScene||'defeat';
+    state.activeAdventure.sceneId=nextScene;
+    state.activeCombat=null; save();
+    showToast('Du flydde från striden...');
+    const advTab=document.querySelector('#page-hero .filter-tab');
+    heroTab('adventure',advTab); return;
+  }
+  state.activeCombat=null; state.lastFightDate=new Date().toISOString().split('T')[0]; save(); showToast('Du flydde... ingen XP.'); renderCombatTab();
+}
 
 function renderShopTab(){
   const el=document.getElementById('heroTabShop'); if(!el) return;
