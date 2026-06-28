@@ -2937,19 +2937,50 @@ function startAdventureCombat(enemyId, nextOnWin, nextOnLoss) {
   const ap = getAP();
   ap._pendingWin  = nextOnWin;
   ap._pendingLoss = nextOnLoss;
+
+  const tpl = STORY_ENEMIES[enemyId] || {};
+  const enemyName    = tpl.name  || 'Fiende';
+  const enemyIcon    = tpl.icon  || '👾';
+  const enemyHp      = tpl.hp    || 100;
+  const enemyAtk     = tpl.atk   || 15;
+  const enemyDef     = tpl.def   || 5;
+  const enemyXp      = tpl.xp    || 60;
+  const enemyGold    = tpl.gold  || 15;
+
+  // Get hero stats from index.html globals (available at call time)
+  const hStats  = (typeof heroStats  === 'function') ? heroStats()  : { STY:10, SMI:10, KON:10, INT:10, VIS:10, KAR:10 };
+  const hAc     = (typeof heroAC     === 'function') ? heroAC()     : 10;
+  const hMaxHp  = (typeof heroMaxHp  === 'function') ? heroMaxHp()  : 100;
+
   if (window.state) {
     window.state.activeCombat = {
       isAdventureCombat: true,
       enemyId, nextOnWin, nextOnLoss,
-      enemyXpReward: (STORY_ENEMIES[enemyId]||{}).xp || 60,
+      // Enemy fields expected by renderActiveCombat
+      enemyName, enemyIcon,
+      enemyHp, enemyMaxHp: enemyHp,
+      enemyStats: { STY: enemyAtk, SMI: enemyAtk, AC: enemyDef },
+      enemyAc: enemyDef,
+      enemyAttacks: [{ name: 'Attack', dmg: enemyAtk }],
+      enemyXpReward: enemyXp,
+      enemyGoldReward: enemyGold,
+      enemyDeathLine: tpl.deathLine || '\u2620 Fienden besegras!',
+      enemyWinLine:   tpl.winLine   || '\uD83D\uDCA5 Du faller...',
+      // Hero fields
+      heroHp: hMaxHp, heroMaxHp: hMaxHp,
+      heroStats: hStats,
+      heroAc: hAc,
+      // Combat state
+      log: [{ type:'system', text:'\u2694\uFE0F Striden mot ' + enemyName + ' börjar!' }],
+      done: false,
+      defendBonus: 0,
     };
   }
-  // Trigger combat UI if in full app
-  if (typeof showCombatPage === 'function') {
-    const tpl = (STORY_ENEMIES[enemyId]) || {};
-    const enemy = Object.assign({ name:'Fiende', icon:'👾', hp:100, atk:15, def:5 }, tpl);
-    window.state.activeCombat.enemy = enemy;
-    showCombatPage();
+
+  // Navigate to combat tab
+  if (typeof heroTab === 'function') {
+    const el = document.querySelector('#page-hero .filter-tab[onclick*=\'combat\']');
+    heroTab('combat', el);
   }
 }
 

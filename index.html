@@ -4584,11 +4584,9 @@ function endCombatFlow(won){
   if(c.isAdventureCombat){
     const xp=won?(c.enemyXpReward||60):0;
     if(xp>0) state.totalXP=Math.max(0,(state.totalXP||0)+xp);
-    // New story system: delegate to adventure.js
-    if(window.resolveStoryCombat) { window.resolveStoryCombat(won); return; }
-    // Legacy fallback
-    if(state.activeAdventure) state.activeAdventure.lastCombatWon=won;
-    return;
+    // Store won flag so endCombat() can use it
+    if(state.activeCombat) state.activeCombat._won = won;
+    return; // endCombat() will call resolveStoryCombat
   }
   const reward = won
     ? { xp: c.enemyXpReward||100, gold: c.enemyGoldReward||30 }
@@ -4604,27 +4602,20 @@ function endCombatFlow(won){
   if(state.combatLog.length>20) state.combatLog.pop();
 }
 function endCombat(){
-  if(state.activeCombat&&state.activeCombat.isAdventureCombat&&state.activeAdventure){
-    const won=state.activeAdventure.lastCombatWon;
-    const nextScene=won?state.activeAdventure.pendingWinScene:state.activeAdventure.pendingLossScene;
-    state.activeAdventure.inCombat=false;
-    state.activeAdventure.sceneId=nextScene||(won?'victory':'defeat');
-    state.activeCombat=null; save();
-    const advTab=document.querySelector('#page-hero .filter-tab');
-    heroTab('adventure',advTab); return;
+  if(state.activeCombat&&state.activeCombat.isAdventureCombat){
+    const won=!!(state.activeCombat._won);
+    state.activeCombat=null;
+    if(window.resolveStoryCombat){ window.resolveStoryCombat(won); save(); return; }
+    save(); renderHeroPage(); return;
   }
   state.activeCombat=null; save(); renderHeroPage();
 }
 function fleeCombat(){
-  if(state.activeCombat&&state.activeCombat.isAdventureCombat&&state.activeAdventure){
-    state.activeAdventure.inCombat=false;
-    state.activeAdventure.lastCombatWon=false;
-    const nextScene=state.activeAdventure.pendingLossScene||'defeat';
-    state.activeAdventure.sceneId=nextScene;
-    state.activeCombat=null; save();
+  if(state.activeCombat&&state.activeCombat.isAdventureCombat){
+    state.activeCombat=null;
     showToast('Du flydde från striden...');
-    const advTab=document.querySelector('#page-hero .filter-tab');
-    heroTab('adventure',advTab); return;
+    if(window.resolveStoryCombat){ window.resolveStoryCombat(false); save(); return; }
+    save(); renderHeroPage(); return;
   }
   state.activeCombat=null; state.lastFightDate=new Date().toISOString().split('T')[0]; save(); showToast('Du flydde... ingen XP.'); renderCombatTab();
 }
