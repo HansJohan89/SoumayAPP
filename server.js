@@ -106,15 +106,22 @@ const DEFAULT_BOARD = {
   showBus: true,
   showSpotify: false,
   // Fri lista, valfritt antal rutter. Lokaltrafik-knappen på macropaden
-  // visar ALLA här. Hemskärmen visar bara den första som en snabb koll.
+  // visar ALLA här. Hemskärmen visar bara den som pekas ut av
+  // homeStopIndex (default 0 = första i listan) som en snabb koll.
   busDestinations: [
     { label: 'Stockholm C', stopId: '', directionFilter: '' },
   ],
+  homeStopIndex: 0,
   refreshMinutes: 15,
   spotifyDevice: 'Vardagsrum',
   activeImageId: null,   // null = visa dashboarden, annars visas denna bild istället
   images: [],            // [{ id, name, data (base64), addedAt }]
 };
+// Senast Pi:n faktiskt hörde av sig (uppdateras av /api/board/command/poll,
+// som bara den fysiska/simulerade Pi-processen anropar — ALDRIG webbläsaren).
+// Används för att visa en RIKTIG anslutningsstatus i appen istället för att
+// bara anta "Ansluten" varje gång sidan öppnas och GET /api/board lyckas.
+let lastPiSeenAt = null;
 let boardState = readJSON(BOARD_FILE, DEFAULT_BOARD);
 let pendingCommand = null; // fjärrkommando från appens simulerade macropad, konsumeras av Pi:n
 
@@ -1054,12 +1061,13 @@ app.get('/api/board', (req, res) => {
   res.json({
     ...settings,
     images: images.map(({ id, name, addedAt }) => ({ id, name, addedAt })),
+    lastPiSeenAt, // null om Pi:n aldrig hörts av — appen använder detta för statusen
   });
 });
 
 // Spara inställningar (toggles, bussdestinationer, intervall, Spotify-enhet)
 app.post('/api/board', (req, res) => {
-  const allowed = ['showGlucose', 'showWeather', 'showBus', 'showSpotify', 'busDestinations', 'refreshMinutes', 'spotifyDevice'];
+  const allowed = ['showGlucose', 'showWeather', 'showBus', 'showSpotify', 'busDestinations', 'homeStopIndex', 'refreshMinutes', 'spotifyDevice'];
   allowed.forEach(key => {
     if (req.body[key] !== undefined) boardState[key] = req.body[key];
   });
@@ -1137,8 +1145,12 @@ app.post('/api/board/command', (req, res) => {
 });
 
 // Pi:n pollar den här och plockar (och tömmer) kön — POST för att signalera
-// att det är en side-effect (konsumerar kommandot), inte en ren hämtning
+// att det är en side-effect (konsumerar kommandot), inte en ren hämtning.
+// Detta är den ENDA endpointen bara den fysiska Pi-processen anropar
+// (webbläsaren/appen anropar den aldrig), så den är rätt plats att
+// registrera "Pi:n är faktiskt igång och pratar med servern" på.
 app.post('/api/board/command/poll', (req, res) => {
+  lastPiSeenAt = Date.now();
   const cmd = pendingCommand;
   pendingCommand = null;
   res.json({ command: cmd });
