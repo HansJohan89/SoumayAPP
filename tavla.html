@@ -3,17 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tavlan">
 <meta name="theme-color" content="#169ee7">
+<link rel="manifest" href="tavla-manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-<title>Tavlan — Soumaya</title>
+<title>Tavlan</title>
 <style>
 :root {
   --paper:#F5EFE2; --paper-soft:#EAE2D0; --paper-dark:#D9CEB8;
   --ink:#0A0A0A; --ink-muted:#666;
   --hero-blue:#169ee7; --hero-blue-dark:#003E7A;
   --pulse-red:#E63946;
-  --in-range:#2DD881;
+  --in-range:#2DD881; --in-range-dark:#1a8a4a;
   --white:#FFFFFF;
   --font-burst:'Bungee',Impact,sans-serif;
   --font-ui:'Space Grotesk',system-ui,sans-serif;
@@ -23,14 +29,37 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:var(--paper);color:var(--ink);font-family:var(--font-ui);overscroll-behavior:none}
 .header{background:var(--hero-blue);border-bottom:var(--border-thick);box-shadow:0 3px 0 var(--hero-blue-dark);
-  padding:14px 16px;display:flex;align-items:center;justify-content:space-between;}
+  padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px 16px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:20;}
 .title{font-family:var(--font-burst);font-size:20px;letter-spacing:1px;color:#FFE600;text-shadow:2px 2px 0 var(--ink);}
 .status{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:white;}
 .status-dot{width:10px;height:10px;border-radius:50%;background:var(--ink-muted);flex-shrink:0;}
+.tabbar{display:flex;gap:8px;background:var(--paper-dark);border-bottom:var(--border-thick);padding:10px 16px;
+  position:sticky;top:62px;z-index:19;}
+.tab-btn{flex:1;border:2px solid var(--ink);border-radius:10px;background:var(--white);padding:10px;
+  font-weight:700;font-size:13px;font-family:var(--font-ui);cursor:pointer;box-shadow:2px 2px 0 var(--ink);}
+.tab-btn.active{background:var(--hero-blue);color:white;}
 main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
 .card{background:var(--white);border:var(--border-thick);border-radius:14px;padding:16px;
   box-shadow:4px 4px 0 var(--ink);margin-bottom:20px;}
+.card.yellow{background:#FFF7D6;}
 .card-label{font-family:var(--font-burst);font-size:13px;letter-spacing:1px;margin-bottom:10px;}
+.hint{font-size:12px;color:var(--ink-muted);margin-bottom:10px;}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--paper-soft);}
+.setting-row:last-child{border-bottom:none;}
+.setting-label{font-size:14px;font-weight:600;}
+.input-field{border:2px solid var(--ink);border-radius:8px;padding:10px 12px;font-family:var(--font-ui);
+  font-size:14px;width:100%;background:var(--white);}
+.btn{border:2px solid var(--ink);border-radius:10px;font-weight:700;font-family:var(--font-ui);
+  cursor:pointer;box-shadow:2px 2px 0 var(--ink);transition:transform .1s;}
+.btn:active{transform:translate(2px,2px);box-shadow:none;}
+.btn-primary{background:var(--hero-blue);color:white;padding:10px 16px;}
+.btn-ghost{background:var(--white);padding:10px 16px;}
+.btn-sm{font-size:12px;padding:8px 12px;}
+.btn-green{background:var(--in-range);color:white;}
+.btn-inline{width:auto;}
 .view-frame{border:2px solid var(--ink);border-radius:8px;overflow:hidden;background:#111;
   aspect-ratio:800/480;display:flex;align-items:center;justify-content:center;}
 .view-frame img{width:100%;height:100%;object-fit:contain;display:block;}
@@ -50,8 +79,6 @@ main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
 .knob{width:64px;height:64px;border-radius:50%;background:#D9CEB8;border:2px solid var(--ink);
   display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
 .keys-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-.settings-link{display:block;text-align:center;padding:14px;font-weight:700;color:var(--hero-blue-dark);
-  text-decoration:none;font-size:14px;}
 </style>
 </head>
 <body>
@@ -64,90 +91,142 @@ main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
   </div>
 </div>
 
-<main>
-  <div class="card">
-    <div class="card-label">AKTUELL VY</div>
-    <div class="view-frame" id="viewFrame">
-      <div class="view-empty" id="viewEmpty">Ingen vy rapporterad än.<br>Tavlan visar detta första gången<br>den gör en riktig uppdatering.</div>
-      <img id="viewImg" style="display:none;">
-    </div>
-    <div class="view-meta">
-      <span id="viewMode">—</span>
-      <span id="viewAge">—</span>
-    </div>
-  </div>
+<div class="tabbar">
+  <button class="tab-btn active" id="tabBtnView" onclick="showTab('view')">🖼️ Tavlan</button>
+  <button class="tab-btn" id="tabBtnSettings" onclick="showTab('settings')">⚙️ Inställningar</button>
+</div>
 
-  <div class="card">
-    <div class="card-label">SIMULERAD MACROPAD</div>
-    <div style="font-size:12px;color:var(--ink-muted);margin-bottom:14px;">
-      Samma sex knappar och vred som TogKey Pad Plus — fungerar identiskt med den riktiga när den är inkopplad.
+<main>
+
+  <!-- ═══════════════════════ FLIK: LIVE-VY + MACROPAD ═══════════════════════ -->
+  <div class="tab-panel active" id="tab-view">
+    <div class="card">
+      <div class="card-label">AKTUELL VY</div>
+      <div class="view-frame" id="viewFrame">
+        <div class="view-empty" id="viewEmpty">Ingen vy rapporterad än.<br>Tavlan visar detta första gången<br>den gör en riktig uppdatering.</div>
+        <img id="viewImg" style="display:none;">
+      </div>
+      <div class="view-meta">
+        <span id="viewMode">—</span>
+        <span id="viewAge">—</span>
+      </div>
     </div>
-    <div class="macropad-body">
-      <div class="oled-row">
-        <div id="macropadOled">Redo</div>
-        <div class="knob">
-          <button class="mp-knob-btn" onclick="sendMacropadCommand('knob',null,1)">▲</button>
-          <button class="mp-knob-btn" onclick="sendMacropadCommand('knob',null,-1)">▼</button>
+
+    <div class="card">
+      <div class="card-label">SIMULERAD MACROPAD</div>
+      <div class="hint">Samma sex knappar och vred som TogKey Pad Plus — fungerar identiskt med den riktiga när den är inkopplad.</div>
+      <div class="macropad-body">
+        <div class="oled-row">
+          <div id="macropadOled">Redo</div>
+          <div class="knob">
+            <button class="mp-knob-btn" onclick="sendMacropadCommand('knob',null,1)">▲</button>
+            <button class="mp-knob-btn" onclick="sendMacropadCommand('knob',null,-1)">▼</button>
+          </div>
+        </div>
+        <div class="keys-grid">
+          <button class="mp-key" onclick="sendMacropadCommand('show_view','home')">🏠<br>Hem</button>
+          <button class="mp-key" onclick="sendMacropadCommand('show_view','tavla')">🖼️<br>Tavla</button>
+          <button class="mp-key" onclick="sendMacropadCommand('show_view','blodsocker')">🩸<br>Blodsocker</button>
+          <button class="mp-key" onclick="sendMacropadCommand('show_view','lokaltrafik')">🚌<br>Lokaltrafik</button>
+          <button class="mp-key" onclick="sendMacropadCommand('show_view','kalender')">📅<br>Kalender</button>
+          <button class="mp-key" onclick="sendMacropadCommand('spotify_play_pause')">⏯️<br>Play</button>
         </div>
       </div>
-      <div class="keys-grid">
-        <button class="mp-key" onclick="sendMacropadCommand('show_view','home')">🏠<br>Hem</button>
-        <button class="mp-key" onclick="sendMacropadCommand('show_view','tavla')">🖼️<br>Tavla</button>
-        <button class="mp-key" onclick="sendMacropadCommand('show_view','blodsocker')">🩸<br>Blodsocker</button>
-        <button class="mp-key" onclick="sendMacropadCommand('show_view','lokaltrafik')">🚌<br>Lokaltrafik</button>
-        <button class="mp-key" onclick="sendMacropadCommand('show_view','kalender')">📅<br>Kalender</button>
-        <button class="mp-key" onclick="sendMacropadCommand('spotify_play_pause')">⏯️<br>Play</button>
-      </div>
     </div>
   </div>
 
-  <a class="settings-link" href="/#tavla-installningar">⚙️ Inställningar (bilder, bussrutter, m.m.)</a>
+  <!-- ═══════════════════════ FLIK: INSTÄLLNINGAR ═══════════════════════ -->
+  <div class="tab-panel" id="tab-settings">
+
+    <div class="card">
+      <div class="card-label">Visa på hemskärmen</div>
+      <div class="setting-row">
+        <div class="setting-label">Blodsocker</div>
+        <input type="checkbox" id="tavlaShowGlucose" onchange="saveTavlaSettings()" style="width:22px;height:22px;">
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Väder</div>
+        <input type="checkbox" id="tavlaShowWeather" onchange="saveTavlaSettings()" style="width:22px;height:22px;">
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Buss</div>
+        <input type="checkbox" id="tavlaShowBus" onchange="saveTavlaSettings()" style="width:22px;height:22px;">
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Spotify</div>
+        <input type="checkbox" id="tavlaShowSpotify" onchange="saveTavlaSettings()" style="width:22px;height:22px;">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Lokaltrafik</div>
+      <div class="hint">Rutter som visas när Lokaltrafik-knappen på macropaden trycks. Lägg till så många du vill — markera en som "Visa på hemskärmen".</div>
+      <div id="tavlaBusList"></div>
+      <button class="btn btn-ghost btn-sm btn-inline" onclick="addTavlaBusRoute()" style="margin-top:8px;">+ Lägg till rutt</button>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Uppdateringsintervall</div>
+      <div class="setting-row">
+        <div class="setting-label">Minuter mellan uppdateringar</div>
+        <input type="number" class="input-field" id="tavlaRefreshMinutes" min="5" max="60" step="5" style="width:80px;text-align:center;padding:8px;" onchange="saveTavlaSettings()">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Musik spelas på</div>
+      <input type="text" class="input-field" id="tavlaSpotifyDevice" placeholder="t.ex. Vardagsrum" onchange="saveTavlaSettings()">
+    </div>
+
+    <div class="card yellow">
+      <div class="card-label">Bilder</div>
+      <div class="hint">Visas istället för dashboarden när du väljer en bild nedan.</div>
+      <input type="file" id="tavlaImageInput" accept="image/*" style="display:none;" onchange="uploadTavlaImage(event)">
+      <button class="btn btn-primary btn-sm" onclick="document.getElementById('tavlaImageInput').click()">Ladda upp bild</button>
+
+      <div id="imgCropModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:var(--white);border-radius:16px;padding:20px;max-width:380px;width:100%;">
+          <div class="card-label" style="margin-bottom:4px;">Placera bilden</div>
+          <div class="hint">Dra för att flytta, skjut reglaget för att zooma. Ramen visar exakt hur det blir på tavlan.</div>
+          <div id="cropFrame" style="position:relative;width:100%;aspect-ratio:800/480;overflow:hidden;border-radius:10px;border:2px solid var(--ink);background:#000;touch-action:none;cursor:grab;">
+            <img id="cropImg" style="position:absolute;left:0;top:0;transform-origin:0 0;user-select:none;pointer-events:none;" alt="">
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:14px;">
+            <span style="font-size:15px;">🔍</span>
+            <input type="range" id="cropZoom" min="1" max="3" step="0.01" value="1" style="flex:1;">
+          </div>
+          <div style="display:flex;gap:10px;margin-top:16px;">
+            <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="closeCropModal()">Avbryt</button>
+            <button class="btn btn-primary btn-sm" style="flex:1;" onclick="saveCroppedImage()">Spara</button>
+          </div>
+        </div>
+      </div>
+      <div id="tavlaGallery" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;"></div>
+    </div>
+
+  </div>
+
 </main>
 
 <script>
-const MACROPAD_LABELS = {
-  show_view: { home:'Hem', tavla:'Tavla', blodsocker:'Blodsocker', lokaltrafik:'Lokaltrafik', kalender:'Kalender' },
-  spotify_play_pause: 'Play/Paus',
-  knob: { 1:'Vred: upp', '-1':'Vred: ner' },
-};
-
-let macropadOledTimer = null;
-async function sendMacropadCommand(action, viewOrParam, direction){
-  const oled = document.getElementById('macropadOled');
-  let label = MACROPAD_LABELS[action];
-  if(typeof label === 'object') label = label[viewOrParam ?? direction] || action;
-  oled.textContent = label || action;
-  oled.style.color = '#2DD881';
-
-  try {
-    await fetch('/api/board/command', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ action, view: action === 'show_view' ? viewOrParam : null, direction: direction || null })
-    });
-  } catch(e) {
-    oled.textContent = 'Fel: ej ansluten';
-    oled.style.color = '#E63946';
+// ═══════════════════════════════════════════════════
+// FLIKAR
+// ═══════════════════════════════════════════════════
+let settingsLoaded = false;
+function showTab(name){
+  document.getElementById('tab-view').classList.toggle('active', name==='view');
+  document.getElementById('tab-settings').classList.toggle('active', name==='settings');
+  document.getElementById('tabBtnView').classList.toggle('active', name==='view');
+  document.getElementById('tabBtnSettings').classList.toggle('active', name==='settings');
+  if(name==='settings' && !settingsLoaded){
+    settingsLoaded = true;
+    loadTavlaPage();
   }
-
-  clearTimeout(macropadOledTimer);
-  macropadOledTimer = setTimeout(() => { oled.textContent = 'Redo'; oled.style.color = '#2DD881'; }, 2500);
 }
 
-function formatAge(ms){
-  const s = Math.round(ms/1000);
-  if (s < 60) return `${s}s sedan`;
-  const m = Math.round(s/60);
-  if (m < 60) return `${m} min sedan`;
-  const h = Math.round(m/60);
-  return `${h} tim sedan`;
-}
-
-const VIEW_NAMES = {
-  home:'Hem', tavla_photos:'Tavla (foton)', tavla_birds:'Tavla (fåglar)',
-  blodsocker:'Blodsocker', lokaltrafik:'Lokaltrafik', kalender:'Kalender',
-};
-
+// ═══════════════════════════════════════════════════
+// STATUS (delas av båda flikarna, ligger i headern)
+// ═══════════════════════════════════════════════════
 async function refreshStatus(){
   const dot = document.getElementById('statusDot');
   const text = document.getElementById('statusText');
@@ -171,6 +250,21 @@ async function refreshStatus(){
   }
 }
 
+// ═══════════════════════════════════════════════════
+// AKTUELL VY
+// ═══════════════════════════════════════════════════
+const VIEW_NAMES = {
+  home:'Hem', tavla_photos:'Tavla (foton)', tavla_birds:'Tavla (fåglar)',
+  blodsocker:'Blodsocker', lokaltrafik:'Lokaltrafik', kalender:'Kalender',
+};
+function formatAge(ms){
+  const s = Math.round(ms/1000);
+  if (s < 60) return `${s}s sedan`;
+  const m = Math.round(s/60);
+  if (m < 60) return `${m} min sedan`;
+  const h = Math.round(m/60);
+  return `${h} tim sedan`;
+}
 async function refreshCurrentView(){
   try {
     const res = await fetch('/api/board/current-view');
@@ -194,6 +288,338 @@ async function refreshCurrentView(){
   }
 }
 
+// ═══════════════════════════════════════════════════
+// MACROPAD-SIMULATOR
+// ═══════════════════════════════════════════════════
+const MACROPAD_LABELS = {
+  show_view: { home: 'Hem', tavla: 'Tavla', blodsocker: 'Blodsocker', lokaltrafik: 'Lokaltrafik', kalender: 'Kalender' },
+  spotify_play_pause: 'Play/Paus',
+  knob: { 1: 'Volym +', '-1': 'Volym −' },
+};
+let macropadOledTimer = null;
+async function sendMacropadCommand(action, viewOrParam, direction){
+  const oled = document.getElementById('macropadOled');
+  let label = MACROPAD_LABELS[action];
+  if(typeof label === 'object') label = label[viewOrParam ?? direction] || action;
+  oled.textContent = label || action;
+  oled.style.color = '#2DD881';
+  try {
+    await fetch('/api/board/command', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action, view: action === 'show_view' ? viewOrParam : null, direction: direction || null })
+    });
+  } catch(e) {
+    oled.textContent = 'Fel: ej ansluten';
+    oled.style.color = '#E63946';
+  }
+  clearTimeout(macropadOledTimer);
+  macropadOledTimer = setTimeout(() => { oled.textContent = 'Redo'; oled.style.color = '#2DD881'; }, 2500);
+}
+
+// ═══════════════════════════════════════════════════
+// INSTÄLLNINGAR (flyttat hit från SoumayApp — Tavlan är nu helt
+// fristående och behöver aldrig öppna huvudappen längre)
+// ═══════════════════════════════════════════════════
+let tavlaState = null;
+
+async function loadTavlaPage(){
+  try {
+    const res = await fetch('/api/board');
+    tavlaState = await res.json();
+  } catch(e) {
+    return;
+  }
+  document.getElementById('tavlaShowGlucose').checked = tavlaState.showGlucose;
+  document.getElementById('tavlaShowWeather').checked = tavlaState.showWeather;
+  document.getElementById('tavlaShowBus').checked = tavlaState.showBus;
+  document.getElementById('tavlaShowSpotify').checked = tavlaState.showSpotify;
+  document.getElementById('tavlaRefreshMinutes').value = tavlaState.refreshMinutes;
+  document.getElementById('tavlaSpotifyDevice').value = tavlaState.spotifyDevice || '';
+  renderTavlaBusList();
+  renderTavlaGallery();
+}
+
+function renderTavlaBusList(){
+  const wrap = document.getElementById('tavlaBusList');
+  wrap.innerHTML = '';
+  const homeIdx = tavlaState.homeStopIndex ?? 0;
+  (tavlaState.busDestinations || []).forEach((dest, i) => {
+    const box = document.createElement('div');
+    box.style.cssText = 'border-bottom:1.5px solid var(--paper-soft);padding:12px 0;';
+    box.innerHTML = `
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+        <input type="text" class="input-field" placeholder="Etikett, t.ex. Stockholm C" value="${(dest.label||'').replace(/"/g,'&quot;')}" onchange="updateTavlaBusLabel(${i},this.value)">
+        <button class="btn btn-ghost btn-sm" style="width:auto;padding:8px 12px;flex-shrink:0;" onclick="removeTavlaBusRoute(${i})">✕</button>
+      </div>
+      <div style="position:relative;">
+        <input type="text" class="input-field" placeholder="Sök hållplats..." oninput="searchBusStop(${i},this.value)" value="${dest.stopId ? (dest.stopSearchName||dest.label) : ''}">
+        <div id="busSearchResults-${i}" style="position:absolute;top:100%;left:0;right:0;background:var(--white);border:2px solid var(--ink);border-radius:8px;z-index:10;max-height:160px;overflow-y:auto;display:none;box-shadow:3px 3px 0 var(--ink);"></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
+        <div style="font-size:11px;color:${dest.stopId ? 'var(--in-range-dark)' : 'var(--pulse-red)'};font-weight:700;">
+          ${dest.stopId ? '✓ Hållplats vald' : '✕ Ingen hållplats vald ännu'}
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;cursor:pointer;color:${i===homeIdx ? 'var(--hero-blue)' : 'var(--ink-muted)'};">
+          <input type="radio" name="tavlaHomeStop" ${i===homeIdx ? 'checked' : ''} onchange="setTavlaHomeStop(${i})" style="width:16px;height:16px;">
+          Visa på hemskärmen
+        </label>
+      </div>
+    `;
+    wrap.appendChild(box);
+  });
+  if(!(tavlaState.busDestinations || []).length){
+    wrap.innerHTML = '<div style="font-size:12px;color:var(--ink-muted);padding:8px 0;">Inga rutter tillagda ännu.</div>';
+  }
+}
+
+function setTavlaHomeStop(i){
+  tavlaState.homeStopIndex = i;
+  renderTavlaBusList();
+  saveTavlaSettings();
+}
+
+function addTavlaBusRoute(){
+  if(!tavlaState.busDestinations) tavlaState.busDestinations = [];
+  tavlaState.busDestinations.push({ label: '', stopId: '', directionFilter: '' });
+  renderTavlaBusList();
+  saveTavlaSettings();
+}
+
+function removeTavlaBusRoute(i){
+  tavlaState.busDestinations.splice(i,1);
+  const homeIdx = tavlaState.homeStopIndex ?? 0;
+  if (i < homeIdx) tavlaState.homeStopIndex = homeIdx - 1;
+  else if (i === homeIdx) tavlaState.homeStopIndex = 0;
+  if (tavlaState.homeStopIndex >= tavlaState.busDestinations.length) {
+    tavlaState.homeStopIndex = Math.max(0, tavlaState.busDestinations.length - 1);
+  }
+  renderTavlaBusList();
+  saveTavlaSettings();
+}
+
+let busSearchTimer = null;
+function searchBusStop(i, query){
+  clearTimeout(busSearchTimer);
+  const resultsBox = document.getElementById('busSearchResults-'+i);
+  if(query.length < 2){ resultsBox.style.display = 'none'; return; }
+  busSearchTimer = setTimeout(async () => {
+    try {
+      const res = await fetch('/api/board/bus-stops/search?q='+encodeURIComponent(query));
+      const data = await res.json();
+      if (data.error) {
+        resultsBox.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--pulse-red);">${data.error}</div>`;
+      } else if(!data.stops || !data.stops.length){
+        resultsBox.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--ink-muted);">Inga träffar</div>';
+      } else {
+        resultsBox.innerHTML = data.stops.slice(0,8).map(s =>
+          `<div style="padding:10px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--paper-soft);" onclick="selectBusStop(${i},'${s.id}','${s.name.replace(/'/g,"\\'")}')">${s.name}</div>`
+        ).join('');
+      }
+      resultsBox.style.display = 'block';
+    } catch(e) {
+      resultsBox.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--pulse-red);">Sökningen misslyckades</div>';
+      resultsBox.style.display = 'block';
+    }
+  }, 400);
+}
+
+function selectBusStop(i, stopId, stopName){
+  tavlaState.busDestinations[i].stopId = stopId;
+  tavlaState.busDestinations[i].stopSearchName = stopName;
+  if(!tavlaState.busDestinations[i].label) tavlaState.busDestinations[i].label = stopName;
+  document.getElementById('busSearchResults-'+i).style.display = 'none';
+  renderTavlaBusList();
+  saveTavlaSettings();
+}
+
+function updateTavlaBusLabel(i, val){
+  tavlaState.busDestinations[i].label = val;
+  saveTavlaSettings();
+}
+
+async function saveTavlaSettings(){
+  tavlaState.showGlucose = document.getElementById('tavlaShowGlucose').checked;
+  tavlaState.showWeather = document.getElementById('tavlaShowWeather').checked;
+  tavlaState.showBus = document.getElementById('tavlaShowBus').checked;
+  tavlaState.showSpotify = document.getElementById('tavlaShowSpotify').checked;
+  tavlaState.refreshMinutes = parseInt(document.getElementById('tavlaRefreshMinutes').value) || 15;
+  tavlaState.spotifyDevice = document.getElementById('tavlaSpotifyDevice').value;
+
+  await fetch('/api/board', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      showGlucose: tavlaState.showGlucose,
+      showWeather: tavlaState.showWeather,
+      showBus: tavlaState.showBus,
+      showSpotify: tavlaState.showSpotify,
+      busDestinations: tavlaState.busDestinations,
+      homeStopIndex: tavlaState.homeStopIndex,
+      refreshMinutes: tavlaState.refreshMinutes,
+      spotifyDevice: tavlaState.spotifyDevice,
+    })
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// BILDUPPLADDNING + BESKÄRNING
+// ═══════════════════════════════════════════════════
+let cropState = null;
+
+function uploadTavlaImage(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => openCropModal(reader.result, file.name);
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+function openCropModal(dataUrl, fileName){
+  const img = new Image();
+  img.onload = () => {
+    document.getElementById('imgCropModal').style.display = 'flex';
+    const frame = document.getElementById('cropFrame');
+    const frameRect = frame.getBoundingClientRect();
+    const coverScale = Math.max(frameRect.width / img.width, frameRect.height / img.height);
+    cropState = {
+      fileName, naturalW: img.width, naturalH: img.height, coverScale, zoom: 1,
+      offsetX: (frameRect.width - img.width * coverScale) / 2,
+      offsetY: (frameRect.height - img.height * coverScale) / 2,
+      dragging: false, startX: 0, startY: 0, startOffX: 0, startOffY: 0,
+    };
+    document.getElementById('cropImg').src = dataUrl;
+    document.getElementById('cropZoom').value = 1;
+    applyCropTransform();
+  };
+  img.src = dataUrl;
+}
+
+function applyCropTransform(){
+  const s = cropState;
+  const scale = s.coverScale * s.zoom;
+  const cropImg = document.getElementById('cropImg');
+  cropImg.style.width = s.naturalW + 'px';
+  cropImg.style.height = s.naturalH + 'px';
+  cropImg.style.transform = `translate(${s.offsetX}px, ${s.offsetY}px) scale(${scale})`;
+}
+
+function clampCropOffsets(){
+  const s = cropState;
+  const frameRect = document.getElementById('cropFrame').getBoundingClientRect();
+  const scale = s.coverScale * s.zoom;
+  const scaledW = s.naturalW * scale, scaledH = s.naturalH * scale;
+  const minX = frameRect.width - scaledW, minY = frameRect.height - scaledH;
+  s.offsetX = Math.min(0, Math.max(minX, s.offsetX));
+  s.offsetY = Math.min(0, Math.max(minY, s.offsetY));
+}
+
+function initCropDrag(){
+  const frame = document.getElementById('cropFrame');
+  frame.addEventListener('pointerdown', e => {
+    if(!cropState) return;
+    cropState.dragging = true;
+    cropState.startX = e.clientX; cropState.startY = e.clientY;
+    cropState.startOffX = cropState.offsetX; cropState.startOffY = cropState.offsetY;
+    frame.setPointerCapture(e.pointerId);
+    frame.style.cursor = 'grabbing';
+  });
+  frame.addEventListener('pointermove', e => {
+    if(!cropState || !cropState.dragging) return;
+    cropState.offsetX = cropState.startOffX + (e.clientX - cropState.startX);
+    cropState.offsetY = cropState.startOffY + (e.clientY - cropState.startY);
+    clampCropOffsets();
+    applyCropTransform();
+  });
+  ['pointerup', 'pointercancel'].forEach(ev => frame.addEventListener(ev, () => {
+    if(cropState) cropState.dragging = false;
+    frame.style.cursor = 'grab';
+  }));
+  document.getElementById('cropZoom').addEventListener('input', e => {
+    if(!cropState) return;
+    cropState.zoom = parseFloat(e.target.value);
+    clampCropOffsets();
+    applyCropTransform();
+  });
+}
+initCropDrag();
+
+function closeCropModal(){
+  document.getElementById('imgCropModal').style.display = 'none';
+  cropState = null;
+}
+
+async function saveCroppedImage(){
+  const s = cropState;
+  const frameRect = document.getElementById('cropFrame').getBoundingClientRect();
+  const cropImg = document.getElementById('cropImg');
+  const EXPORT_W = 800, EXPORT_H = 480;
+  const ratio = EXPORT_W / frameRect.width;
+  const canvas = document.createElement('canvas');
+  canvas.width = EXPORT_W; canvas.height = EXPORT_H;
+  const ctx = canvas.getContext('2d');
+  const scale = s.coverScale * s.zoom * ratio;
+  ctx.drawImage(cropImg, s.offsetX * ratio, s.offsetY * ratio, s.naturalW * scale, s.naturalH * scale);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+
+  const res = await fetch('/api/board/image', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ name: s.fileName, imageData: dataUrl })
+  });
+  const data = await res.json();
+  if(data.ok){
+    tavlaState.images.unshift(data.image);
+    renderTavlaGallery();
+  }
+  closeCropModal();
+}
+
+function renderTavlaGallery(){
+  const wrap = document.getElementById('tavlaGallery');
+  wrap.innerHTML = '';
+  if(!tavlaState.images.length){
+    wrap.innerHTML = '<div style="grid-column:1/-1;font-size:12px;color:var(--ink-muted);text-align:center;padding:12px 0;">Inga bilder ännu</div>';
+    return;
+  }
+  tavlaState.images.forEach(img => {
+    const active = tavlaState.activeImageId === img.id;
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--white);border:2px solid var(--ink);border-radius:10px;overflow:hidden;';
+    card.innerHTML = `
+      <div style="aspect-ratio:800/480;background:var(--paper-soft);display:flex;align-items:center;justify-content:center;font-size:24px;">🖼️</div>
+      <div style="padding:8px;">
+        <div style="font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px;">${img.name}</div>
+        <button class="btn ${active ? 'btn-green' : 'btn-ghost'} btn-sm btn-inline" style="width:100%;margin-bottom:4px;" onclick="selectTavlaImage('${active ? 'null' : img.id}')">${active ? 'Visas nu' : 'Visa'}</button>
+        <button class="btn btn-ghost btn-sm btn-inline" style="width:100%;color:var(--pulse-red);" onclick="deleteTavlaImage('${img.id}')">Ta bort</button>
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+}
+
+async function selectTavlaImage(imageId){
+  const id = imageId === 'null' ? null : imageId;
+  await fetch('/api/board/select', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ imageId: id })
+  });
+  tavlaState.activeImageId = id;
+  renderTavlaGallery();
+}
+
+async function deleteTavlaImage(imageId){
+  await fetch('/api/board/image/'+imageId, { method: 'DELETE' });
+  tavlaState.images = tavlaState.images.filter(i => i.id !== imageId);
+  if(tavlaState.activeImageId === imageId) tavlaState.activeImageId = null;
+  renderTavlaGallery();
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
 refreshStatus();
 refreshCurrentView();
 setInterval(refreshStatus, 5000);
