@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#169ee7">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<title>Tavlan — Soumaya</title>
+<style>
+:root {
+  --paper:#F5EFE2; --paper-soft:#EAE2D0; --paper-dark:#D9CEB8;
+  --ink:#0A0A0A; --ink-muted:#666;
+  --hero-blue:#169ee7; --hero-blue-dark:#003E7A;
+  --pulse-red:#E63946;
+  --in-range:#2DD881;
+  --white:#FFFFFF;
+  --font-burst:'Bungee',Impact,sans-serif;
+  --font-ui:'Space Grotesk',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,monospace;
+  --border-thick:3px solid var(--ink);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--paper);color:var(--ink);font-family:var(--font-ui);overscroll-behavior:none}
+.header{background:var(--hero-blue);border-bottom:var(--border-thick);box-shadow:0 3px 0 var(--hero-blue-dark);
+  padding:14px 16px;display:flex;align-items:center;justify-content:space-between;}
+.title{font-family:var(--font-burst);font-size:20px;letter-spacing:1px;color:#FFE600;text-shadow:2px 2px 0 var(--ink);}
+.status{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:white;}
+.status-dot{width:10px;height:10px;border-radius:50%;background:var(--ink-muted);flex-shrink:0;}
+main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
+.card{background:var(--white);border:var(--border-thick);border-radius:14px;padding:16px;
+  box-shadow:4px 4px 0 var(--ink);margin-bottom:20px;}
+.card-label{font-family:var(--font-burst);font-size:13px;letter-spacing:1px;margin-bottom:10px;}
+.view-frame{border:2px solid var(--ink);border-radius:8px;overflow:hidden;background:#111;
+  aspect-ratio:800/480;display:flex;align-items:center;justify-content:center;}
+.view-frame img{width:100%;height:100%;object-fit:contain;display:block;}
+.view-empty{color:#888;font-size:13px;text-align:center;padding:20px;font-family:var(--font-mono);}
+.view-meta{display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--ink-muted);font-weight:600;}
+.mp-key{border:2px solid var(--ink);border-radius:10px;background:var(--white);
+  padding:20px 6px;font-size:15px;font-weight:700;font-family:var(--font-ui);
+  cursor:pointer;box-shadow:3px 3px 0 var(--ink);transition:transform .1s;line-height:1.6;}
+.mp-key:active{transform:translate(3px,3px);box-shadow:none;}
+.mp-knob-btn{border:none;background:none;font-size:14px;line-height:1;cursor:pointer;padding:4px;color:var(--ink-muted);}
+.mp-knob-btn:active{color:var(--ink);}
+.macropad-body{background:#EAE2D0;border:var(--border-thick);border-radius:16px;padding:18px;
+  box-shadow:5px 5px 0 var(--ink);}
+.oled-row{display:flex;gap:10px;margin-bottom:14px;}
+#macropadOled{flex:1;background:#0a0a0a;border-radius:8px;padding:12px 14px;
+  font-family:var(--font-mono);font-size:13px;color:#2DD881;min-height:24px;display:flex;align-items:center;}
+.knob{width:64px;height:64px;border-radius:50%;background:#D9CEB8;border:2px solid var(--ink);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
+.keys-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.settings-link{display:block;text-align:center;padding:14px;font-weight:700;color:var(--hero-blue-dark);
+  text-decoration:none;font-size:14px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title">🖼️ TAVLAN</div>
+  <div class="status">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusText">Laddar…</span>
+  </div>
+</div>
+
+<main>
+  <div class="card">
+    <div class="card-label">AKTUELL VY</div>
+    <div class="view-frame" id="viewFrame">
+      <div class="view-empty" id="viewEmpty">Ingen vy rapporterad än.<br>Tavlan visar detta första gången<br>den gör en riktig uppdatering.</div>
+      <img id="viewImg" style="display:none;">
+    </div>
+    <div class="view-meta">
+      <span id="viewMode">—</span>
+      <span id="viewAge">—</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">SIMULERAD MACROPAD</div>
+    <div style="font-size:12px;color:var(--ink-muted);margin-bottom:14px;">
+      Samma sex knappar och vred som TogKey Pad Plus — fungerar identiskt med den riktiga när den är inkopplad.
+    </div>
+    <div class="macropad-body">
+      <div class="oled-row">
+        <div id="macropadOled">Redo</div>
+        <div class="knob">
+          <button class="mp-knob-btn" onclick="sendMacropadCommand('knob',null,1)">▲</button>
+          <button class="mp-knob-btn" onclick="sendMacropadCommand('knob',null,-1)">▼</button>
+        </div>
+      </div>
+      <div class="keys-grid">
+        <button class="mp-key" onclick="sendMacropadCommand('show_view','home')">🏠<br>Hem</button>
+        <button class="mp-key" onclick="sendMacropadCommand('show_view','tavla')">🖼️<br>Tavla</button>
+        <button class="mp-key" onclick="sendMacropadCommand('show_view','blodsocker')">🩸<br>Blodsocker</button>
+        <button class="mp-key" onclick="sendMacropadCommand('show_view','lokaltrafik')">🚌<br>Lokaltrafik</button>
+        <button class="mp-key" onclick="sendMacropadCommand('show_view','kalender')">📅<br>Kalender</button>
+        <button class="mp-key" onclick="sendMacropadCommand('spotify_play_pause')">⏯️<br>Play</button>
+      </div>
+    </div>
+  </div>
+
+  <a class="settings-link" href="/#tavla-installningar">⚙️ Inställningar (bilder, bussrutter, m.m.)</a>
+</main>
+
+<script>
+const MACROPAD_LABELS = {
+  show_view: { home:'Hem', tavla:'Tavla', blodsocker:'Blodsocker', lokaltrafik:'Lokaltrafik', kalender:'Kalender' },
+  spotify_play_pause: 'Play/Paus',
+  knob: { 1:'Vred: upp', '-1':'Vred: ner' },
+};
+
+let macropadOledTimer = null;
+async function sendMacropadCommand(action, viewOrParam, direction){
+  const oled = document.getElementById('macropadOled');
+  let label = MACROPAD_LABELS[action];
+  if(typeof label === 'object') label = label[viewOrParam ?? direction] || action;
+  oled.textContent = label || action;
+  oled.style.color = '#2DD881';
+
+  try {
+    await fetch('/api/board/command', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action, view: action === 'show_view' ? viewOrParam : null, direction: direction || null })
+    });
+  } catch(e) {
+    oled.textContent = 'Fel: ej ansluten';
+    oled.style.color = '#E63946';
+  }
+
+  clearTimeout(macropadOledTimer);
+  macropadOledTimer = setTimeout(() => { oled.textContent = 'Redo'; oled.style.color = '#2DD881'; }, 2500);
+}
+
+function formatAge(ms){
+  const s = Math.round(ms/1000);
+  if (s < 60) return `${s}s sedan`;
+  const m = Math.round(s/60);
+  if (m < 60) return `${m} min sedan`;
+  const h = Math.round(m/60);
+  return `${h} tim sedan`;
+}
+
+const VIEW_NAMES = {
+  home:'Hem', tavla_photos:'Tavla (foton)', tavla_birds:'Tavla (fåglar)',
+  blodsocker:'Blodsocker', lokaltrafik:'Lokaltrafik', kalender:'Kalender',
+};
+
+async function refreshStatus(){
+  const dot = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  try {
+    const res = await fetch('/api/board');
+    const board = await res.json();
+    const seenRecently = board.lastPiSeenAt && (Date.now() - board.lastPiSeenAt) < 15000;
+    if (seenRecently) {
+      dot.style.background = 'var(--in-range)';
+      text.textContent = 'Ansluten';
+    } else if (board.lastPiSeenAt) {
+      dot.style.background = 'var(--pulse-red)';
+      text.textContent = 'Inte ansluten';
+    } else {
+      dot.style.background = '#666';
+      text.textContent = 'Har aldrig anslutit';
+    }
+  } catch(e) {
+    dot.style.background = 'var(--pulse-red)';
+    text.textContent = 'Ingen kontakt med servern';
+  }
+}
+
+async function refreshCurrentView(){
+  try {
+    const res = await fetch('/api/board/current-view');
+    const data = await res.json();
+    const img = document.getElementById('viewImg');
+    const empty = document.getElementById('viewEmpty');
+    if (data.image) {
+      img.src = 'data:image/png;base64,' + data.image;
+      img.style.display = 'block';
+      empty.style.display = 'none';
+      document.getElementById('viewMode').textContent = VIEW_NAMES[data.mode] || data.mode || '—';
+      document.getElementById('viewAge').textContent = data.updatedAt ? formatAge(Date.now() - data.updatedAt) : '—';
+    } else {
+      img.style.display = 'none';
+      empty.style.display = 'block';
+      document.getElementById('viewMode').textContent = '—';
+      document.getElementById('viewAge').textContent = '—';
+    }
+  } catch(e) {
+    // tyst — nästa poll försöker igen
+  }
+}
+
+refreshStatus();
+refreshCurrentView();
+setInterval(refreshStatus, 5000);
+setInterval(refreshCurrentView, 5000);
+</script>
+</body>
+</html>

@@ -122,6 +122,11 @@ const DEFAULT_BOARD = {
 // Används för att visa en RIKTIG anslutningsstatus i appen istället för att
 // bara anta "Ansluten" varje gång sidan öppnas och GET /api/board lyckas.
 let lastPiSeenAt = null;
+// Senaste bilden som faktiskt visades på den fysiska/simulerade tavlan
+// (skickas av display.py::push_to_display efter varje riktig uppdatering).
+// Ren in-memory — byts ut hela tiden, ingen anledning att spara till disk
+// eller committa till boardState/BOARD_FILE.
+let currentViewData = { mode: null, image: null, updatedAt: null };
 let boardState = readJSON(BOARD_FILE, DEFAULT_BOARD);
 let pendingCommand = null; // fjärrkommando från appens simulerade macropad, konsumeras av Pi:n
 
@@ -1156,6 +1161,23 @@ app.post('/api/board/command/poll', (req, res) => {
   res.json({ command: cmd });
 });
 
+// Pi:n rapporterar hit efter varje RIKTIG skärmuppdatering (se
+// display.py::push_to_display) — så /tavla-sidan kan visa en live-
+// förhandsvisning utan att man behöver stå framför den fysiska skärmen.
+// Räknas INTE som ett Pi-livstecken separat — command/poll (var 3:e sek
+// när igång) är redan ett mycket tätare heartbeat än detta (bara vid
+// faktiska skärmuppdateringar, kan vara minuter mellan).
+app.post('/api/board/current-view', (req, res) => {
+  const { mode, image } = req.body;
+  if (!image) return res.status(400).json({ error: 'Ingen bild skickades' });
+  currentViewData = { mode: mode || null, image, updatedAt: Date.now() };
+  res.json({ ok: true });
+});
+
+app.get('/api/board/current-view', (req, res) => {
+  res.json(currentViewData);
+});
+
 // ── KALENDER (Google Calendar) ──────────────────────────────────
 app.get('/api/calendar/today', async (req, res) => {
   if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REFRESH_TOKEN) {
@@ -1380,6 +1402,11 @@ app.get('/api/admin/dashboard', adminAuth, (req, res) => {
 
 // ── ADMIN HTML ───────────────────────────────────────────────
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
+// Separat, fristående sida (inte del av huvudappens klientrouting) —
+// live-förhandsvisning av tavlan + en stor simulerad macropad. Inställningar
+// ligger kvar i huvudappen (index.html, Tavlan-kortet); länken dit går via
+// /#tavla-installningar.
+app.get('/tavla', (req, res) => res.sendFile(path.join(__dirname, 'tavla.html')));
 app.get('/admin.html', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
 
 

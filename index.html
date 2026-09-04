@@ -5592,6 +5592,13 @@ updateClock(); setInterval(updateClock, 10000);
     await fetchTasks();
     renderTasksWidget();
   }, 60 * 1000);
+
+  // Deep-link från /tavla (den separata live-vy/macropad-sidan) till
+  // inställningarna här i huvudappen — inget riktigt routing-system,
+  // bara en enkel hash-koll vid start.
+  if (location.hash === '#tavla-installningar') {
+    goTo('tavla', null);
+  }
 })();
 
 </script>
