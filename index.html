@@ -674,19 +674,41 @@ body{
 <script>
 /* ═══ SOUMAYA SPLASH ═══ */
 (function(){
-  var o=document.getElementById('sp-overlay');
-  var t=document.getElementById('sp-txt');
-  var msgs=['SYNKAR BLODSOCKER…','LADDAR INSULINDATA…','HÄMTAR HBA1C-TREND…','KALIBRERAR CGM-SENSOR…','RÄKNAR KOLHYDRATER…','AKTIVERAR HJÄLTELÄGE…'];
-  var i=0; t.textContent=msgs[0];
-  var tick=setInterval(function(){t.textContent=msgs[++i%msgs.length];},750);
-  setTimeout(function(){
-    clearInterval(tick);
-    o.style.transition='opacity 0.8s ease-in';
-    o.style.opacity='0';
+  // BUGFIX: det här scriptet körs INNAN #sp-overlay/#sp-txt finns i DOM:et
+  // (de definieras längre ner i HTML:en). getElementById gav null -> t.textContent
+  // kraschade -> setInterval/setTimeout för att stänga splashen sattes ALDRIG upp
+  // -> de oändliga CSS-animationerna (sp-shake/sp-beat/sb1-5) loopade för evigt
+  // utan att någon någonsin tog bort overlayn. Fix: vänta in DOMContentLoaded
+  // (eller kör direkt om DOM redan är klart), plus en hård failsafe-timeout
+  // som garanterat gömmer overlayn även om något annat oväntat går sönder.
+  function runSplash(){
+    var o=document.getElementById('sp-overlay');
+    var t=document.getElementById('sp-txt');
+    if(!o||!t) return; // failsafe nedan städar upp om markupen saknas helt
+    var msgs=['SYNKAR BLODSOCKER…','LADDAR INSULINDATA…','HÄMTAR HBA1C-TREND…','KALIBRERAR CGM-SENSOR…','RÄKNAR KOLHYDRATER…','AKTIVERAR HJÄLTELÄGE…'];
+    var i=0; t.textContent=msgs[0];
+    var tick=setInterval(function(){t.textContent=msgs[++i%msgs.length];},750);
     setTimeout(function(){
-      o.parentNode.removeChild(o);
-    },820);
-  },4500);
+      clearInterval(tick);
+      o.style.transition='opacity 0.8s ease-in';
+      o.style.opacity='0';
+      setTimeout(function(){
+        if(o.parentNode) o.parentNode.removeChild(o);
+      },820);
+    },4500);
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',runSplash);
+  }else{
+    runSplash();
+  }
+  // Failsafe: om något ändå går fel (t.ex. markupen saknas eller ett annat
+  // script kraschar innan removeChild hinner köras) tvingas overlayn bort
+  // efter 6s ändå, så appen ALDRIG kan fastna bakom splashen.
+  setTimeout(function(){
+    var o=document.getElementById('sp-overlay');
+    if(o&&o.parentNode) o.parentNode.removeChild(o);
+  },6000);
 })();
 /* ═══════════════════════ */
 </script>
