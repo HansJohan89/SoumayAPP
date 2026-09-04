@@ -18,6 +18,24 @@ webpush.setVapidDetails('mailto:admin@soumaya.local', VAPID_PUBLIC, VAPID_PRIVAT
 
 // ── KONFIGURATION ─────────────────────────────────────────────
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'invincible2024';
+// Gratis nyckel: https://www.trafiklab.se/api/our-apis/resrobot-v21/
+// Sätts som miljövariabel på Railway — annars funkar allt utom
+// hållplatssökningen i Tavlan-sidan.
+const RESROBOT_API_KEY = process.env.RESROBOT_API_KEY || '';
+
+// Google Calendar — enanvändar-upplägg (ingen inloggningsflöde i appen).
+// Skapa OAuth-klient (typ "Desktop app") i Google Cloud Console, hämta
+// EN refresh token en gång manuellt (se README), spara som miljövariabler.
+const { google } = require('googleapis');
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
+const GOOGLE_REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN || '';
+
+function getCalendarClient() {
+  const oauth2Client = new google.auth.OAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
+  oauth2Client.setCredentials({ refresh_token: GOOGLE_REFRESH_TOKEN });
+  return google.calendar({ version: 'v3', auth: oauth2Client });
+}
 const PORT           = process.env.PORT || 3000;
 const DATA_DIR       = process.env.DATA_DIR || path.join(__dirname, 'data');
 const UPLOADS_DIR    = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads/meals');
@@ -40,6 +58,7 @@ const SCHEDULED_FILE = path.join(DATA_DIR, 'scheduled_push.json');
 const PLAYER_FILE    = path.join(DATA_DIR, 'player.json');
 const MERGE_FILE     = path.join(DATA_DIR, 'merge.json');
 const JOURNAL_FILE   = path.join(DATA_DIR, 'journal.json');
+const BOARD_FILE     = path.join(DATA_DIR, 'board.json');
 
 function readJSON(file, def) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch(e) { return def; }
@@ -79,6 +98,26 @@ const DEFAULT_PLAYER = {
 };
 let player  = readJSON(PLAYER_FILE, DEFAULT_PLAYER);
 let journal = readJSON(JOURNAL_FILE, []);
+
+// ── TAVLAN (e-ink dashboard) ────────────────────────────────────
+const DEFAULT_BOARD = {
+  showGlucose: true,
+  showWeather: true,
+  showBus: true,
+  showSpotify: false,
+  // Fri lista, valfritt antal rutter. Lokaltrafik-knappen på macropaden
+  // visar ALLA här. Hemskärmen visar bara den första som en snabb koll.
+  busDestinations: [
+    { label: 'Stockholm C', stopId: '', directionFilter: '' },
+  ],
+  refreshMinutes: 15,
+  spotifyDevice: 'Vardagsrum',
+  activeImageId: null,   // null = visa dashboarden, annars visas denna bild istället
+  images: [],            // [{ id, name, data (base64), addedAt }]
+};
+let boardState = readJSON(BOARD_FILE, DEFAULT_BOARD);
+let pendingCommand = null; // fjärrkommando från appens simulerade macropad, konsumeras av Pi:n
+
 
 const BOARD_COLS = 7;
 const BOARD_ROWS = 9;
@@ -448,7 +487,10 @@ function xdripAuth(req, res, next) {
 // Stöd både med och utan .json (xDrip använder .json, GlucoDataHandler utan)
 app.get(['/api/v1/entries', '/api/v1/entries.json'], xdripAuth, (req, res) => {
   const count = parseInt(req.query.count) || 10;
-  const recent = glucoseLog.filter(g => g.source === 'xdrip').slice(-count);
+  // glucoseLog är sorterad äldst→nyast (se sort() vid POST), men riktiga
+  // Nightscout-API:er (och vår egen Pi-kod) förväntar sig nyast FÖRST —
+  // reverse() här, annars visar dashboarden ett gammalt värde som "senaste".
+  const recent = glucoseLog.filter(g => g.source === 'xdrip').slice(-count).reverse();
   // Returnera i Nightscout-format
   res.json(recent.map(g => ({
     sgv: Math.round(g.val * 18),
@@ -1002,6 +1044,140 @@ app.post('/api/journal', (req, res) => {
 });
 
 // Journal i export
+// ── TAVLAN (e-ink dashboard) ───────────────────────────────────
+// Publikt (samma app Soumaya redan är inloggad i, ingen adminAuth)
+
+// Hämta inställningar + bildlista (UTAN base64-data, bara metadata —
+// annars blir svaret enormt varje gång appen öppnar sidan)
+app.get('/api/board', (req, res) => {
+  const { images, ...settings } = boardState;
+  res.json({
+    ...settings,
+    images: images.map(({ id, name, addedAt }) => ({ id, name, addedAt })),
+  });
+});
+
+// Spara inställningar (toggles, bussdestinationer, intervall, Spotify-enhet)
+app.post('/api/board', (req, res) => {
+  const allowed = ['showGlucose', 'showWeather', 'showBus', 'showSpotify', 'busDestinations', 'refreshMinutes', 'spotifyDevice'];
+  allowed.forEach(key => {
+    if (req.body[key] !== undefined) boardState[key] = req.body[key];
+  });
+  writeJSON(BOARD_FILE, boardState);
+  res.json({ ok: true });
+});
+
+// Sök hållplats via ResRobot — så Soumaya kan välja rätt hållplats
+// direkt i appen istället för att Mikael manuellt letar upp stop-id.
+app.get('/api/board/bus-stops/search', async (req, res) => {
+  const query = req.query.q;
+  if (!query) return res.status(400).json({ error: 'Saknar sökterm (?q=...)' });
+  if (!RESROBOT_API_KEY) return res.status(400).json({ error: 'RESROBOT_API_KEY är inte konfigurerad på servern' });
+
+  try {
+    const url = `https://api.resrobot.se/v2.1/location.name?input=${encodeURIComponent(query)}&format=json&accessId=${RESROBOT_API_KEY}`;
+    const resrobotRes = await fetch(url);
+    if (!resrobotRes.ok) return res.status(502).json({ error: 'ResRobot svarade med fel' });
+    const data = await resrobotRes.json();
+    const stops = (data.stopLocationOrCoordLocation || [])
+      .filter(s => s.StopLocation)
+      .map(s => ({ name: s.StopLocation.name, id: s.StopLocation.extId }));
+    res.json({ stops });
+  } catch (e) {
+    res.status(502).json({ error: 'Kunde inte nå ResRobot: ' + e.message });
+  }
+});
+
+// Ladda upp en ny bild (base64 data URL, samma mönster som måltidsfoton)
+app.post('/api/board/image', (req, res) => {
+  const { name, imageData } = req.body;
+  if (!imageData) return res.status(400).json({ error: 'Ingen bilddata' });
+  const image = {
+    id: crypto.randomUUID(),
+    name: name || 'Namnlös bild',
+    data: imageData,
+    addedAt: Date.now(),
+  };
+  boardState.images.unshift(image);
+  writeJSON(BOARD_FILE, boardState);
+  res.json({ ok: true, image: { id: image.id, name: image.name, addedAt: image.addedAt } });
+});
+
+// Hämta EN bild i fullstorlek (Pi:n hämtar bara den aktiva, inte alla)
+app.get('/api/board/image/:id', (req, res) => {
+  const image = boardState.images.find(i => i.id === req.params.id);
+  if (!image) return res.status(404).json({ error: 'Bilden finns inte' });
+  res.json(image);
+});
+
+// Ta bort en bild
+app.delete('/api/board/image/:id', (req, res) => {
+  boardState.images = boardState.images.filter(i => i.id !== req.params.id);
+  if (boardState.activeImageId === req.params.id) boardState.activeImageId = null;
+  writeJSON(BOARD_FILE, boardState);
+  res.json({ ok: true });
+});
+
+// Välj vilken bild som ska visas på tavlan (eller null = tillbaka till dashboarden)
+app.post('/api/board/select', (req, res) => {
+  const { imageId } = req.body;
+  if (imageId !== null && !boardState.images.some(i => i.id === imageId))
+    return res.status(400).json({ error: 'Okänd bild' });
+  boardState.activeImageId = imageId;
+  writeJSON(BOARD_FILE, boardState);
+  res.json({ ok: true, activeImageId: boardState.activeImageId });
+});
+
+// Simulerad macropad i appen — lägger en knapptryckning i kö
+app.post('/api/board/command', (req, res) => {
+  const { action, view, destination, direction } = req.body;
+  if (!action) return res.status(400).json({ error: 'Saknar action' });
+  pendingCommand = { action, view: view || null, destination: destination || null, direction: direction || null, ts: Date.now() };
+  res.json({ ok: true });
+});
+
+// Pi:n pollar den här och plockar (och tömmer) kön — POST för att signalera
+// att det är en side-effect (konsumerar kommandot), inte en ren hämtning
+app.post('/api/board/command/poll', (req, res) => {
+  const cmd = pendingCommand;
+  pendingCommand = null;
+  res.json({ command: cmd });
+});
+
+// ── KALENDER (Google Calendar) ──────────────────────────────────
+app.get('/api/calendar/today', async (req, res) => {
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REFRESH_TOKEN) {
+    return res.status(400).json({ error: 'Google Calendar är inte konfigurerat (saknar GOOGLE_CLIENT_ID/SECRET/REFRESH_TOKEN)' });
+  }
+
+  try {
+    const calendar = getCalendarClient();
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+    const result = await calendar.events.list({
+      calendarId: 'primary',
+      timeMin: startOfDay.toISOString(),
+      timeMax: endOfDay.toISOString(),
+      singleEvents: true,
+      orderBy: 'startTime',
+    });
+
+    const events = (result.data.items || []).map(e => ({
+      title: e.summary || '(Ingen titel)',
+      start: e.start.dateTime || e.start.date,
+      end: e.end.dateTime || e.end.date,
+      allDay: !e.start.dateTime,
+      location: e.location || '',
+    }));
+
+    res.json({ events });
+  } catch (e) {
+    res.status(502).json({ error: 'Kunde inte hämta kalendern: ' + e.message });
+  }
+});
+
 // ── EXPORT / IMPORT ──────────────────────────────────────────
 app.get('/api/admin/export', adminAuth, (req, res) => {
   // Rensa bilder INNAN export — de ska aldrig lagras i backup
@@ -1023,6 +1199,11 @@ app.get('/api/admin/export', adminAuth, (req, res) => {
     return c;
   });
 
+  const cleanBoard = {
+    ...boardState,
+    images: boardState.images.map(({ id, name, addedAt }) => ({ id, name, addedAt, data: null })),
+  };
+
   const exportData = {
     version: 5,
     exportedAt: new Date().toISOString(),
@@ -1038,6 +1219,7 @@ app.get('/api/admin/export', adminAuth, (req, res) => {
     scheduledPush,
     player,
     mergeState,
+    board: cleanBoard,
   };
   res.setHeader('Content-Disposition', 'attachment; filename="soumaya-backup-' + new Date().toISOString().split('T')[0] + '.json"');
   res.setHeader('Content-Type', 'application/json');
@@ -1059,6 +1241,7 @@ app.post('/api/admin/import', adminAuth, (req, res) => {
     if (d.player)           { player = { ...DEFAULT_PLAYER, ...d.player }; writeJSON(PLAYER_FILE, player); }
     if (d.mergeState)       { mergeState = { ...DEFAULT_MERGE, ...d.mergeState }; writeJSON(MERGE_FILE, mergeState); }
     if (d.journal)          { journal = d.journal; writeJSON(JOURNAL_FILE, journal); }
+    if (d.board)            { boardState = { ...DEFAULT_BOARD, ...d.board, images: boardState.images }; writeJSON(BOARD_FILE, boardState); }
     res.json({ ok: true, message: 'Import klar', counts: {
       meals: meals.length, walks: walks.length, tasks: tasks.length,
       glucose: glucoseLog.length, approvals: pendingApprovals.length,
