@@ -356,9 +356,14 @@ function renderTavlaBusList(){
         <input type="text" class="input-field" placeholder="Sök hållplats..." oninput="searchBusStop(${i},this.value)" value="${dest.stopId ? (dest.stopSearchName||dest.label) : ''}">
         <div id="busSearchResults-${i}" style="position:absolute;top:100%;left:0;right:0;background:var(--white);border:2px solid var(--ink);border-radius:8px;z-index:10;max-height:160px;overflow-y:auto;display:none;box-shadow:3px 3px 0 var(--ink);"></div>
       </div>
+      <div style="position:relative;margin-top:6px;">
+        <input type="text" class="input-field" placeholder="Sök destination (för reseplan med byten)..." oninput="searchBusDestStop(${i},this.value)" value="${dest.destStopId ? (dest.destStopSearchName||'') : ''}">
+        <div id="busDestSearchResults-${i}" style="position:absolute;top:100%;left:0;right:0;background:var(--white);border:2px solid var(--ink);border-radius:8px;z-index:10;max-height:160px;overflow-y:auto;display:none;box-shadow:3px 3px 0 var(--ink);"></div>
+      </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
         <div style="font-size:11px;color:${dest.stopId ? 'var(--in-range-dark)' : 'var(--pulse-red)'};font-weight:700;">
           ${dest.stopId ? '✓ Hållplats vald' : '✕ Ingen hållplats vald ännu'}
+          ${dest.destStopId ? ' · ✓ Destination vald (reseplan med byten)' : ' · Ingen destination (visar bara avgångar)'}
         </div>
         <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;cursor:pointer;color:${i===homeIdx ? 'var(--hero-blue)' : 'var(--ink-muted)'};">
           <input type="radio" name="tavlaHomeStop" ${i===homeIdx ? 'checked' : ''} onchange="setTavlaHomeStop(${i})" style="width:16px;height:16px;">
@@ -429,6 +434,43 @@ function selectBusStop(i, stopId, stopName){
   tavlaState.busDestinations[i].stopSearchName = stopName;
   if(!tavlaState.busDestinations[i].label) tavlaState.busDestinations[i].label = stopName;
   document.getElementById('busSearchResults-'+i).style.display = 'none';
+  renderTavlaBusList();
+  saveTavlaSettings();
+}
+
+let busDestSearchTimer = null;
+function searchBusDestStop(i, query){
+  clearTimeout(busDestSearchTimer);
+  const resultsBox = document.getElementById('busDestSearchResults-'+i);
+  if(query.length < 2){ resultsBox.style.display = 'none'; return; }
+  busDestSearchTimer = setTimeout(async () => {
+    try {
+      const res = await fetch('/api/board/bus-stops/search?q='+encodeURIComponent(query));
+      const data = await res.json();
+      if (data.error) {
+        resultsBox.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--pulse-red);">${data.error}</div>`;
+      } else if(!data.stops || !data.stops.length){
+        resultsBox.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--ink-muted);">Inga träffar</div>';
+      } else {
+        resultsBox.innerHTML = data.stops.slice(0,8).map(s =>
+          `<div style="padding:10px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--paper-soft);" onclick="selectBusDestStop(${i},'${s.id}','${s.name.replace(/'/g,"\\'")}')">${s.name}</div>`
+        ).join('');
+      }
+      resultsBox.style.display = 'block';
+    } catch(e) {
+      resultsBox.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--pulse-red);">Sökningen misslyckades</div>';
+      resultsBox.style.display = 'block';
+    }
+  }, 400);
+}
+
+function selectBusDestStop(i, stopId, stopName){
+  // destStopId = valfri slutdestination. Om satt växlar Pi:n automatiskt
+  // till en fullständig reseplan (med byten) istället för en enkel
+  // avgångstavla — se fetchers/bus.py::fetch_trip på Pi-sidan.
+  tavlaState.busDestinations[i].destStopId = stopId;
+  tavlaState.busDestinations[i].destStopSearchName = stopName;
+  document.getElementById('busDestSearchResults-'+i).style.display = 'none';
   renderTavlaBusList();
   saveTavlaSettings();
 }
