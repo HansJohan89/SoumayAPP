@@ -180,9 +180,9 @@ main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
 
     <div class="card">
       <div class="card-label">Google Photos-album (Tavla-bilder)</div>
-      <input type="text" class="input-field" id="tavlaGooglePhotosUrl" placeholder="https://photos.app.goo.gl/..." onchange="saveTavlaSettings()">
+      <textarea class="input-field" id="tavlaGooglePhotosUrls" rows="3" placeholder="https://photos.app.goo.gl/...&#10;https://photos.app.goo.gl/... (en länk per rad, valfritt antal album)" onchange="saveTavlaSettings()" style="resize:vertical;font-family:inherit;"></textarea>
       <div style="font-size:11px;color:var(--ink-muted);margin-top:6px;">
-        Google Photos-appen → öppna albumet → Dela-ikonen → "Skapa länk" (inte "Bjud in personer"). Lämna tomt för att använda de uppladdade bilderna nedan istället.
+        Google Photos-appen → öppna albumet → Dela-ikonen → "Skapa länk" (inte "Bjud in personer"). En länk per rad — flera album blandas ihop till samma bildrotation. Lämna tomt för att använda de uppladdade bilderna nedan istället.
       </div>
     </div>
 
@@ -344,7 +344,7 @@ async function loadTavlaPage(){
   document.getElementById('tavlaShowSpotify').checked = tavlaState.showSpotify;
   document.getElementById('tavlaRefreshMinutes').value = tavlaState.refreshMinutes;
   document.getElementById('tavlaSpotifyDevice').value = tavlaState.spotifyDevice || '';
-  document.getElementById('tavlaGooglePhotosUrl').value = tavlaState.googlePhotosAlbumUrl || '';
+  document.getElementById('tavlaGooglePhotosUrls').value = (tavlaState.googlePhotosAlbumUrls || (tavlaState.googlePhotosAlbumUrl ? [tavlaState.googlePhotosAlbumUrl] : [])).join('\n');
   renderTavlaBusList();
   renderTavlaGallery();
 }
@@ -496,7 +496,8 @@ async function saveTavlaSettings(){
   tavlaState.showSpotify = document.getElementById('tavlaShowSpotify').checked;
   tavlaState.refreshMinutes = parseInt(document.getElementById('tavlaRefreshMinutes').value) || 15;
   tavlaState.spotifyDevice = document.getElementById('tavlaSpotifyDevice').value;
-  tavlaState.googlePhotosAlbumUrl = document.getElementById('tavlaGooglePhotosUrl').value.trim();
+  tavlaState.googlePhotosAlbumUrls = document.getElementById('tavlaGooglePhotosUrls').value
+    .split('\n').map(s => s.trim()).filter(Boolean);
 
   await fetch('/api/board', {
     method: 'POST',
@@ -510,7 +511,7 @@ async function saveTavlaSettings(){
       homeStopIndex: tavlaState.homeStopIndex,
       refreshMinutes: tavlaState.refreshMinutes,
       spotifyDevice: tavlaState.spotifyDevice,
-      googlePhotosAlbumUrl: tavlaState.googlePhotosAlbumUrl,
+      googlePhotosAlbumUrls: tavlaState.googlePhotosAlbumUrls,
     })
   });
 }

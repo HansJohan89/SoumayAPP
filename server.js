@@ -114,7 +114,8 @@ const DEFAULT_BOARD = {
   homeStopIndex: 0,
   refreshMinutes: 15,
   spotifyDevice: 'Vardagsrum',
-  googlePhotosAlbumUrl: '',
+  googlePhotosAlbumUrl: '',    // gammalt enkel-fält, kvar för bakåtkompatibilitet
+  googlePhotosAlbumUrls: [],   // nytt: flera album samtidigt
   activeImageId: null,   // null = visa dashboarden, annars visas denna bild istället
   images: [],            // [{ id, name, data (base64), addedAt }]
 };
@@ -1073,7 +1074,7 @@ app.get('/api/board', (req, res) => {
 
 // Spara inställningar (toggles, bussdestinationer, intervall, Spotify-enhet)
 app.post('/api/board', (req, res) => {
-  const allowed = ['showGlucose', 'showWeather', 'showBus', 'showSpotify', 'busDestinations', 'homeStopIndex', 'refreshMinutes', 'spotifyDevice', 'googlePhotosAlbumUrl'];
+  const allowed = ['showGlucose', 'showWeather', 'showBus', 'showSpotify', 'busDestinations', 'homeStopIndex', 'refreshMinutes', 'spotifyDevice', 'googlePhotosAlbumUrl', 'googlePhotosAlbumUrls'];
   allowed.forEach(key => {
     if (req.body[key] !== undefined) boardState[key] = req.body[key];
   });
