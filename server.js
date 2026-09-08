@@ -114,6 +114,7 @@ const DEFAULT_BOARD = {
   homeStopIndex: 0,
   refreshMinutes: 15,
   spotifyDevice: 'Vardagsrum',
+  googlePhotosAlbumUrl: '',
   activeImageId: null,   // null = visa dashboarden, annars visas denna bild istället
   images: [],            // [{ id, name, data (base64), addedAt }]
 };
@@ -1072,7 +1073,7 @@ app.get('/api/board', (req, res) => {
 
 // Spara inställningar (toggles, bussdestinationer, intervall, Spotify-enhet)
 app.post('/api/board', (req, res) => {
-  const allowed = ['showGlucose', 'showWeather', 'showBus', 'showSpotify', 'busDestinations', 'homeStopIndex', 'refreshMinutes', 'spotifyDevice'];
+  const allowed = ['showGlucose', 'showWeather', 'showBus', 'showSpotify', 'busDestinations', 'homeStopIndex', 'refreshMinutes', 'spotifyDevice', 'googlePhotosAlbumUrl'];
   allowed.forEach(key => {
     if (req.body[key] !== undefined) boardState[key] = req.body[key];
   });
@@ -1121,6 +1122,21 @@ app.get('/api/board/image/:id', (req, res) => {
   const image = boardState.images.find(i => i.id === req.params.id);
   if (!image) return res.status(404).json({ error: 'Bilden finns inte' });
   res.json(image);
+});
+
+// Samma bild, men som RÅ bilddata (rätt Content-Type) istället för
+// JSON — för <img src="..."> i appens galleri. Separat endpoint så vi
+// INTE ändrar formatet på endpointen ovan, som Pi:n redan förlitar sig
+// på (fetchers/board.py::fetch_board_image förväntar sig JSON).
+app.get('/api/board/image/:id/raw', (req, res) => {
+  const image = boardState.images.find(i => i.id === req.params.id);
+  if (!image) return res.status(404).send('Bilden finns inte');
+  const match = /^data:(image\/\w+);base64,(.+)$/.exec(image.data || '');
+  if (!match) return res.status(500).send('Kunde inte tolka bilddata');
+  const [, mimeType, base64] = match;
+  res.set('Content-Type', mimeType);
+  res.set('Cache-Control', 'public, max-age=31536000, immutable');
+  res.send(Buffer.from(base64, 'base64'));
 });
 
 // Ta bort en bild
