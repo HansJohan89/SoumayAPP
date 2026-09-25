@@ -115,6 +115,10 @@ main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
     <div class="card">
       <div class="card-label">SIMULERAD MACROPAD</div>
       <div class="hint">Samma sex knappar och vred som TogKey Pad Plus — fungerar identiskt med den riktiga när den är inkopplad.</div>
+      <div style="display:flex;align-items:center;gap:10px;margin:8px 0;">
+        <button onclick="connectBleMacropad()" style="padding:6px 12px;font-size:13px;">📡 Anslut via Bluetooth</button>
+        <span id="bleMacropadStatus" style="font-size:13px;color:#666;">⚪ Ej anslutet (använder internet)</span>
+      </div>
       <div class="macropad-body">
         <div class="oled-row">
           <div id="macropadOled">Redo</div>
@@ -126,7 +130,7 @@ main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
         <div class="keys-grid">
           <button class="mp-key" onclick="sendMacropadCommand('show_view','home')">🏠<br>Hem</button>
           <button class="mp-key" onclick="sendMacropadCommand('show_view','tavla')">🖼️<br>Tavla</button>
-          <button class="mp-key" onclick="sendMacropadCommand('show_view','blodsocker')">🩸<br>Blodsocker</button>
+          <button class="mp-key" onclick="sendMacropadCommand('show_view','fotboll')">⚽<br>Fotboll</button>
           <button class="mp-key" onclick="sendMacropadCommand('show_view','lokaltrafik')">🚌<br>Lokaltrafik</button>
           <button class="mp-key" onclick="sendMacropadCommand('show_view','kalender')">📅<br>Kalender</button>
           <button class="mp-key" onclick="sendMacropadCommand('spotify_play_pause')">⏯️<br>Play</button>
@@ -137,6 +141,25 @@ main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
 
   <!-- ═══════════════════════ FLIK: INSTÄLLNINGAR ═══════════════════════ -->
   <div class="tab-panel" id="tab-settings">
+
+    <div class="card">
+      <div class="card-label">WIFI VIA BLUETOOTH (för flytt/byte av nätverk)</div>
+      <p style="font-size:14px;color:#666;margin:4px 0 12px;">
+        Kräver Chrome på Android eller dator — fungerar inte i Safari på iPhone.
+        Kör <code>python3 ble_wifi_provision.py</code> på Pi:n FÖRST, sen tryck
+        knappen nedan medan du är nära Pi:n (Bluetooth har kort räckvidd).
+      </p>
+      <div class="setting-row">
+        <input type="text" id="bleWifiSsid" placeholder="WiFi-namn (SSID)" style="flex:1;padding:8px;">
+      </div>
+      <div class="setting-row">
+        <input type="password" id="bleWifiPassword" placeholder="WiFi-lösenord" style="flex:1;padding:8px;">
+      </div>
+      <button onclick="sendWifiOverBluetooth()" style="width:100%;padding:10px;margin-top:8px;">
+        📡 Anslut till Pi:n och skicka WiFi-uppgifter
+      </button>
+      <div id="bleWifiStatus" style="margin-top:10px;font-size:14px;color:#444;"></div>
+    </div>
 
     <div class="card">
       <div class="card-label">Visa på hemskärmen</div>
@@ -218,6 +241,65 @@ main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
 
 <script>
 // ═══════════════════════════════════════════════════
+// WIFI VIA BLUETOOTH — måste matcha ble_wifi_provision.py:s UUID:n EXAKT
+// ═══════════════════════════════════════════════════
+const BLE_WIFI_SERVICE_UUID = '7a0f0001-b5a3-f393-e0a9-e50e24dcca9e';
+const BLE_WIFI_SSID_CHAR_UUID = '7a0f0002-b5a3-f393-e0a9-e50e24dcca9e';
+const BLE_WIFI_PASSWORD_CHAR_UUID = '7a0f0003-b5a3-f393-e0a9-e50e24dcca9e';
+const BLE_WIFI_STATUS_CHAR_UUID = '7a0f0004-b5a3-f393-e0a9-e50e24dcca9e';
+
+function setBleWifiStatus(text) {
+  document.getElementById('bleWifiStatus').textContent = text;
+}
+
+async function sendWifiOverBluetooth() {
+  if (!navigator.bluetooth) {
+    setBleWifiStatus('Web Bluetooth stöds inte i den här webbläsaren (behöver Chrome).');
+    return;
+  }
+  const ssid = document.getElementById('bleWifiSsid').value.trim();
+  const password = document.getElementById('bleWifiPassword').value;
+  if (!ssid || !password) {
+    setBleWifiStatus('Fyll i både SSID och lösenord först.');
+    return;
+  }
+
+  try {
+    setBleWifiStatus('Söker efter Pi:n via Bluetooth …');
+    const device = await navigator.bluetooth.requestDevice({
+      filters: [{ name: 'Tavlan-WiFi' }],
+      optionalServices: [BLE_WIFI_SERVICE_UUID],
+    });
+
+    setBleWifiStatus('Ansluter …');
+    const server = await device.gatt.connect();
+    const service = await server.getPrimaryService(BLE_WIFI_SERVICE_UUID);
+
+    const ssidChar = await service.getCharacteristic(BLE_WIFI_SSID_CHAR_UUID);
+    const passwordChar = await service.getCharacteristic(BLE_WIFI_PASSWORD_CHAR_UUID);
+    const statusChar = await service.getCharacteristic(BLE_WIFI_STATUS_CHAR_UUID);
+
+    // Prenumerera på statusuppdateringar FÖRST, innan vi skickar något —
+    // annars kan vi missa tidiga statusmeddelanden (t.ex. "ANSLUTER...").
+    await statusChar.startNotifications();
+    statusChar.addEventListener('characteristicvaluechanged', (event) => {
+      const text = new TextDecoder().decode(event.target.value);
+      setBleWifiStatus('Pi:n säger: ' + text);
+    });
+
+    setBleWifiStatus('Skickar WiFi-uppgifter …');
+    const enc = new TextEncoder();
+    await ssidChar.writeValue(enc.encode(ssid));
+    await passwordChar.writeValue(enc.encode(password));
+    await statusChar.writeValue(enc.encode('CONNECT'));
+
+    setBleWifiStatus('Skickat — väntar på svar från Pi:n …');
+  } catch (err) {
+    setBleWifiStatus('Fel: ' + err.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════
 // FLIKAR
 // ═══════════════════════════════════════════════════
 let settingsLoaded = false;
@@ -263,7 +345,7 @@ async function refreshStatus(){
 // ═══════════════════════════════════════════════════
 const VIEW_NAMES = {
   home:'Hem', tavla:'Tavla',
-  blodsocker:'Blodsocker', lokaltrafik:'Lokaltrafik', kalender:'Kalender',
+  fotboll:'Fotboll', lokaltrafik:'Lokaltrafik', kalender:'Kalender',
 };
 function formatAge(ms){
   const s = Math.round(ms/1000);
@@ -297,10 +379,84 @@ async function refreshCurrentView(){
 }
 
 // ═══════════════════════════════════════════════════
+// MACROPAD ÖVER BLUETOOTH — snabbare lokalt komplement till
+// internet-vägen nedan, används AUTOMATISKT när ansluten, annars
+// faller allt tillbaka på fetch()-vägen precis som förut.
+// ═══════════════════════════════════════════════════
+const BLE_MACROPAD_SERVICE_UUID = '7a0f1001-b5a3-f393-e0a9-e50e24dcca9e';
+const BLE_MACROPAD_COMMAND_CHAR_UUID = '7a0f1002-b5a3-f393-e0a9-e50e24dcca9e';
+let bleMacropadDevice = null;
+let bleMacropadChar = null;
+
+function updateBleMacropadStatusUI() {
+  const el = document.getElementById('bleMacropadStatus');
+  if (!el) return;
+  el.textContent = bleMacropadChar ? '🟢 Bluetooth anslutet (snabbare)' : '⚪ Ej anslutet (använder internet)';
+}
+
+async function connectBleMacropad() {
+  if (!navigator.bluetooth) {
+    alert('Web Bluetooth stöds inte i den här webbläsaren (behöver Chrome).');
+    return;
+  }
+  try {
+    const device = await navigator.bluetooth.requestDevice({
+      filters: [{ name: 'Tavlan-Macropad' }],
+      optionalServices: [BLE_MACROPAD_SERVICE_UUID],
+    });
+    await setupBleMacropadDevice(device);
+  } catch (e) {
+    console.log('BLE macropad-anslutning avbruten/misslyckades:', e.message);
+  }
+}
+
+async function setupBleMacropadDevice(device) {
+  bleMacropadDevice = device;
+  device.addEventListener('gattserverdisconnected', onBleMacropadDisconnected);
+  const server = await device.gatt.connect();
+  const service = await server.getPrimaryService(BLE_MACROPAD_SERVICE_UUID);
+  bleMacropadChar = await service.getCharacteristic(BLE_MACROPAD_COMMAND_CHAR_UUID);
+  updateBleMacropadStatusUI();
+}
+
+function onBleMacropadDisconnected() {
+  bleMacropadChar = null;
+  updateBleMacropadStatusUI();
+  // Väletablerat mönster (Googles egna Web Bluetooth-exempel): försök
+  // återansluta automatiskt SÅ LÄNGE sidan är öppen — täcker t.ex. att
+  // gå utanför räckvidd och komma tillbaka, utan att behöva klicka om.
+  if (bleMacropadDevice) {
+    setTimeout(() => {
+      bleMacropadDevice.gatt.connect()
+        .then(async (server) => {
+          const service = await server.getPrimaryService(BLE_MACROPAD_SERVICE_UUID);
+          bleMacropadChar = await service.getCharacteristic(BLE_MACROPAD_COMMAND_CHAR_UUID);
+          updateBleMacropadStatusUI();
+        })
+        .catch(() => {}); // Pi:n/enheten inte inom räckhåll — vanligt, inget fel att larma om
+    }, 2000);
+  }
+}
+
+// getDevices() är bakom en experimentflagga i Chrome (inte garanterat
+// tillgänglig) — provas som en BONUS för tyst återanslutning vid
+// sidladdning, men allt fungerar även UTAN den (då krävs bara ett
+// klick på "Anslut"-knappen varje sidladdning istället).
+(async () => {
+  if (navigator.bluetooth && navigator.bluetooth.getDevices) {
+    try {
+      const devices = await navigator.bluetooth.getDevices();
+      const known = devices.find(d => d.name === 'Tavlan-Macropad');
+      if (known) await setupBleMacropadDevice(known);
+    } catch (e) { /* inget tidigare tillstånd — helt normalt, ingen åtgärd */ }
+  }
+})();
+
+// ═══════════════════════════════════════════════════
 // MACROPAD-SIMULATOR
 // ═══════════════════════════════════════════════════
 const MACROPAD_LABELS = {
-  show_view: { home: 'Hem', tavla: 'Tavla', blodsocker: 'Blodsocker', lokaltrafik: 'Lokaltrafik', kalender: 'Kalender' },
+  show_view: { home: 'Hem', tavla: 'Tavla', fotboll: 'Fotboll', lokaltrafik: 'Lokaltrafik', kalender: 'Kalender' },
   spotify_play_pause: 'Play/Paus',
   knob: { 1: 'Volym +', '-1': 'Volym −' },
 };
@@ -311,6 +467,24 @@ async function sendMacropadCommand(action, viewOrParam, direction){
   if(typeof label === 'object') label = label[viewOrParam ?? direction] || action;
   oled.textContent = label || action;
   oled.style.color = '#2DD881';
+
+  // Bluetooth FÖRST om anslutet (snabbare, fungerar utan internet) —
+  // annars precis samma fetch()-väg som förut, ingen ändring där.
+  if (bleMacropadChar) {
+    try {
+      let commandText = action;
+      if (action === 'show_view') commandText = `show_view:${viewOrParam}`;
+      else if (action === 'knob') commandText = `knob:${direction}`;
+      await bleMacropadChar.writeValue(new TextEncoder().encode(commandText));
+      clearTimeout(macropadOledTimer);
+      macropadOledTimer = setTimeout(() => { oled.textContent = 'Redo'; oled.style.color = '#2DD881'; }, 2500);
+      return;
+    } catch (e) {
+      console.log('BLE-skrivning misslyckades, faller tillbaka på internet:', e.message);
+      // Fortsätter ner till fetch()-vägen nedan istället för att ge upp.
+    }
+  }
+
   try {
     await fetch('/api/board/command', {
       method: 'POST',
