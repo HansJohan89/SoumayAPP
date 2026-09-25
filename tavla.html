@@ -267,7 +267,7 @@ async function sendWifiOverBluetooth() {
   try {
     setBleWifiStatus('Söker efter Pi:n via Bluetooth …');
     const device = await navigator.bluetooth.requestDevice({
-      filters: [{ services: [BLE_WIFI_SERVICE_UUID] }],
+      filters: [{ name: 'TavlanWF' }],
       optionalServices: [BLE_WIFI_SERVICE_UUID],
     });
 
@@ -401,7 +401,7 @@ async function connectBleMacropad() {
   }
   try {
     const device = await navigator.bluetooth.requestDevice({
-      filters: [{ services: [BLE_MACROPAD_SERVICE_UUID] }],
+      filters: [{ name: 'TavlanMP' }],
       optionalServices: [BLE_MACROPAD_SERVICE_UUID],
     });
     await setupBleMacropadDevice(device);
