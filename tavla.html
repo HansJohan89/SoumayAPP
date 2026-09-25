@@ -267,7 +267,7 @@ async function sendWifiOverBluetooth() {
   try {
     setBleWifiStatus('Söker efter Pi:n via Bluetooth …');
     const device = await navigator.bluetooth.requestDevice({
-      filters: [{ namePrefix: 'Tavla' }, { namePrefix: 'tavla' }, { services: [BLE_WIFI_SERVICE_UUID] }],
+      filters: [{ name: 'TavlanWF' }, { services: [BLE_WIFI_SERVICE_UUID] }],
       optionalServices: [BLE_WIFI_SERVICE_UUID],
     });
 
@@ -402,11 +402,12 @@ async function connectBleMacropad() {
   const el = document.getElementById('bleMacropadStatus');
   try {
     el.textContent = '🔎 Söker…';
-    // Efter parkoppling kan Android visa Pi:n under dess eget namn
-    // ("tavla") istället för annonsnamnet "TavlanMP" — sök på båda,
-    // och på tjänsten (filtren gäller med ELLER).
+    // BARA annonsnamnet "TavlanMP" (eller tjänsten). Pi:ns vanliga
+    // Bluetooth-namn "tavla" får INTE matcha: det är den klassiska
+    // Bluetooth-sidan, som kräver parkoppling — valdes den i listan
+    // misslyckades anslutningen med "fel PIN-kod eller nyckel".
     const device = await navigator.bluetooth.requestDevice({
-      filters: [{ namePrefix: 'Tavla' }, { namePrefix: 'tavla' }, { services: [BLE_MACROPAD_SERVICE_UUID] }],
+      filters: [{ name: 'TavlanMP' }, { services: [BLE_MACROPAD_SERVICE_UUID] }],
       optionalServices: [BLE_MACROPAD_SERVICE_UUID],
     });
     el.textContent = '🔄 Ansluter till ' + (device.name || 'Pi:n') + '…';
@@ -453,7 +454,7 @@ function onBleMacropadDisconnected() {
   if (navigator.bluetooth && navigator.bluetooth.getDevices) {
     try {
       const devices = await navigator.bluetooth.getDevices();
-      const known = devices.find(d => /^tavla/i.test(d.name || ''));
+      const known = devices.find(d => d.name === 'TavlanMP');
       if (known) await setupBleMacropadDevice(known);
     } catch (e) { /* inget tidigare tillstånd — helt normalt, ingen åtgärd */ }
   }
