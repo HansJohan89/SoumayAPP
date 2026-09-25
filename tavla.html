@@ -267,7 +267,7 @@ async function sendWifiOverBluetooth() {
   try {
     setBleWifiStatus('Söker efter Pi:n via Bluetooth …');
     const device = await navigator.bluetooth.requestDevice({
-      filters: [{ name: 'Tavlan-WiFi' }],
+      filters: [{ services: [BLE_WIFI_SERVICE_UUID] }],
       optionalServices: [BLE_WIFI_SERVICE_UUID],
     });
 
@@ -401,7 +401,7 @@ async function connectBleMacropad() {
   }
   try {
     const device = await navigator.bluetooth.requestDevice({
-      filters: [{ name: 'Tavlan-Macropad' }],
+      filters: [{ services: [BLE_MACROPAD_SERVICE_UUID] }],
       optionalServices: [BLE_MACROPAD_SERVICE_UUID],
     });
     await setupBleMacropadDevice(device);
@@ -446,7 +446,7 @@ function onBleMacropadDisconnected() {
   if (navigator.bluetooth && navigator.bluetooth.getDevices) {
     try {
       const devices = await navigator.bluetooth.getDevices();
-      const known = devices.find(d => d.name === 'Tavlan-Macropad');
+      const known = devices.find(d => d.name === 'TavlanMP');
       if (known) await setupBleMacropadDevice(known);
     } catch (e) { /* inget tidigare tillstånd — helt normalt, ingen åtgärd */ }
   }
