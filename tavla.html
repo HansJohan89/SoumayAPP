@@ -267,7 +267,7 @@ async function sendWifiOverBluetooth() {
   try {
     setBleWifiStatus('Söker efter Pi:n via Bluetooth …');
     const device = await navigator.bluetooth.requestDevice({
-      filters: [{ name: 'TavlanWF' }],
+      filters: [{ namePrefix: 'Tavla' }, { namePrefix: 'tavla' }, { services: [BLE_WIFI_SERVICE_UUID] }],
       optionalServices: [BLE_WIFI_SERVICE_UUID],
     });
 
@@ -399,14 +399,21 @@ async function connectBleMacropad() {
     alert('Web Bluetooth stöds inte i den här webbläsaren (behöver Chrome).');
     return;
   }
+  const el = document.getElementById('bleMacropadStatus');
   try {
+    el.textContent = '🔎 Söker…';
+    // Efter parkoppling kan Android visa Pi:n under dess eget namn
+    // ("tavla") istället för annonsnamnet "TavlanMP" — sök på båda,
+    // och på tjänsten (filtren gäller med ELLER).
     const device = await navigator.bluetooth.requestDevice({
-      filters: [{ name: 'TavlanMP' }],
+      filters: [{ namePrefix: 'Tavla' }, { namePrefix: 'tavla' }, { services: [BLE_MACROPAD_SERVICE_UUID] }],
       optionalServices: [BLE_MACROPAD_SERVICE_UUID],
     });
+    el.textContent = '🔄 Ansluter till ' + (device.name || 'Pi:n') + '…';
     await setupBleMacropadDevice(device);
   } catch (e) {
-    console.log('BLE macropad-anslutning avbruten/misslyckades:', e.message);
+    // Visas på skärmen (inte bara i den dolda konsolen) så felet går att se och rapportera.
+    el.textContent = '⚠️ Fel: ' + e.message;
   }
 }
 
@@ -446,7 +453,7 @@ function onBleMacropadDisconnected() {
   if (navigator.bluetooth && navigator.bluetooth.getDevices) {
     try {
       const devices = await navigator.bluetooth.getDevices();
-      const known = devices.find(d => d.name === 'TavlanMP');
+      const known = devices.find(d => /^tavla/i.test(d.name || ''));
       if (known) await setupBleMacropadDevice(known);
     } catch (e) { /* inget tidigare tillstånd — helt normalt, ingen åtgärd */ }
   }
