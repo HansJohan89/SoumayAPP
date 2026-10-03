@@ -1578,6 +1578,93 @@ setInterval(() => {
 }, 60 * 1000);
 
 // ── STARTA ───────────────────────────────────────────────────
+// ── STEG (Health Connect -> appen HC Webhook -> hit -> Tavlan) ─────────
+// Telefonen (Samsung Hälsa / Pixel) skriver steg till Health Connect.
+// Appen "HC Webhook" skickar dem hit med jämna mellanrum. Sedan v1.9.19
+// skickar den bara stegen SEDAN FÖRRA SYNKEN (dagens post är en bit av
+// dagen), så bitarna läggs ihop per dag här — utan dubbelräkning:
+//  - samma tidsintervall igen  -> ersätts (inte adderas)
+//  - ett intervall som täcker tidigare bitar (t.ex. en hel dag) -> ersätter dem
+//  - en bit inuti ett redan mottaget större intervall -> ignoreras
+// Skyddas med STEPS_TOKEN (Railway-variabel) i headern X-Steps-Token.
+const STEPS_FILE  = path.join(DATA_DIR, 'steps.json');
+const STEPS_TOKEN = process.env.STEPS_TOKEN || '';
+let stepsState = readJSON(STEPS_FILE, { days: {}, lastPayload: null, lastAt: null });
+
+function stockholmDate(d) {
+  // sv-SE ger ÅÅÅÅ-MM-DD
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Stockholm',
+    year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+}
+
+function stepRecords(body) {
+  // Tolerant mot fältnamn: count/steps/value, start_time/startTime/date
+  const list = (body && (body.steps || (body.data && body.data.steps))) || [];
+  const out = [];
+  for (const r of Array.isArray(list) ? list : []) {
+    const count = Number(r.count ?? r.steps ?? r.value);
+    let start = r.start_time ?? r.startTime ?? r.start;
+    let end   = r.end_time ?? r.endTime ?? r.end;
+    if (!start && r.date) {                       // dagspost utan klockslag
+      start = r.date + 'T00:00:00';
+      end   = r.date + 'T23:59:59';
+    }
+    const s = Date.parse(start), e = Date.parse(end || start);
+    if (!Number.isFinite(count) || !Number.isFinite(s)) continue;
+    out.push({ s, e: Number.isFinite(e) ? e : s, c: Math.round(count) });
+  }
+  return out;
+}
+
+function mergeStepRecord(rec) {
+  const day = stockholmDate(new Date(rec.s));
+  const parts = stepsState.days[day] || (stepsState.days[day] = []);
+  const same = parts.find(p => p.s === rec.s && p.e === rec.e);
+  if (same) { same.c = rec.c; return; }
+  if (parts.some(p => p.s <= rec.s && p.e >= rec.e)) return;           // redan täckt
+  stepsState.days[day] = parts.filter(p => !(p.s >= rec.s && p.e <= rec.e)).concat([rec]);
+}
+
+app.post('/api/steps', (req, res) => {
+  if (!STEPS_TOKEN) return res.status(503).json({ ok: false, error: 'STEPS_TOKEN är inte satt i Railway' });
+  const token = req.headers['x-steps-token'] || (req.headers['authorization'] || '').replace(/^Bearer\s+/i, '');
+  if (token !== STEPS_TOKEN) return res.status(401).json({ ok: false, error: 'Fel stegnyckel' });
+
+  // Appens "Test Webhook" skickar påhittad exempeldata med "test": true —
+  // spara den för kontroll, men räkna den aldrig som riktiga steg.
+  if (req.body && req.body.test === true) {
+    stepsState.lastPayload = JSON.stringify(req.body).slice(0, 4000);
+    stepsState.lastAt = new Date().toISOString();
+    writeJSON(STEPS_FILE, stepsState);
+    return res.json({ ok: true, test: true, message: 'Testanrop mottaget — inga steg sparade' });
+  }
+
+  const records = stepRecords(req.body);
+  records.forEach(mergeStepRecord);
+  const keep = Object.keys(stepsState.days).sort().slice(-7);          // en vecka räcker
+  stepsState.days = Object.fromEntries(keep.map(k => [k, stepsState.days[k]]));
+  stepsState.lastPayload = JSON.stringify(req.body).slice(0, 4000);    // för att kontrollera formatet
+  stepsState.lastAt = new Date().toISOString();
+  writeJSON(STEPS_FILE, stepsState);
+
+  const today = stockholmDate(new Date());
+  const total = (stepsState.days[today] || []).reduce((a, p) => a + p.c, 0);
+  console.log(`[steg] tog emot ${records.length} poster, idag: ${total}`);
+  res.json({ ok: true, records: records.length, today: total });
+});
+
+app.get('/api/steps', (req, res) => {
+  const today = stockholmDate(new Date());
+  const parts = stepsState.days[today] || [];
+  res.json({ ok: true, date: today, steps: parts.reduce((a, p) => a + p.c, 0),
+             has_data: parts.length > 0, updated: stepsState.lastAt });
+});
+
+app.get('/api/steps/debug', (req, res) => {
+  if (!STEPS_TOKEN || req.query.token !== STEPS_TOKEN) return res.status(401).json({ ok: false });
+  res.json({ lastAt: stepsState.lastAt, lastPayload: stepsState.lastPayload, days: stepsState.days });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n✅ Soumaya kör på port ${PORT}`);
   console.log(`🔐 Admin: /admin\n`);

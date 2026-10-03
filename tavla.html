@@ -124,6 +124,7 @@ main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
           <div id="macropadOled">Redo</div>
           <div class="knob">
             <button class="mp-knob-btn" onclick="sendMacropadCommand('knob',null,1)">▲</button>
+            <button class="mp-knob-btn" onclick="sendMacropadCommand('spotify_next')" title="Nästa låt">⏭</button>
             <button class="mp-knob-btn" onclick="sendMacropadCommand('knob',null,-1)">▼</button>
           </div>
         </div>
@@ -467,6 +468,7 @@ const MACROPAD_LABELS = {
   show_view: { home: 'Hem', tavla: 'Tavla', fotboll: 'Fotboll', lokaltrafik: 'Lokaltrafik', kalender: 'Kalender' },
   spotify_play_pause: 'Play/Paus',
   knob: { 1: 'Volym +', '-1': 'Volym −' },
+  spotify_next: 'Nästa låt',
 };
 let macropadOledTimer = null;
 async function sendMacropadCommand(action, viewOrParam, direction){
