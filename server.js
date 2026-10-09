@@ -1064,7 +1064,7 @@ app.post('/api/journal', (req, res) => {
 // Hämta inställningar + bildlista (UTAN base64-data, bara metadata —
 // annars blir svaret enormt varje gång appen öppnar sidan)
 app.get('/api/board', (req, res) => {
-  const { images, pin, alarmTest, ...settings } = boardState;
+  const { images, pin, alarmTest, music: _music, ...settings } = boardState;
   res.json({
     ...settings,
     hasPin: !!pin,
@@ -1368,6 +1368,195 @@ app.delete('/api/board/settings', requirePin, (req, res) => {
   res.json({ ok: true, settings: {} });
 });
 
+// ── Musikbibliotek (offentliga Spotify-spellistor) ──
+// Soumaya lägger till offentliga spellistor (länk, en gång). Servern läser
+// Spotifys öppna inbäddningssida (namn, omslag, låtlista) och oEmbed
+// (låtomslag, artistbilder) — ingen inloggning eller utvecklarapp behövs
+// (Spotifys Web API med tavlans klient-id gav 429, och egna appar kräver
+// Premium + kan bara läsa spellistor man äger, se chatten 2026-10-09).
+// Låtarna indexeras från spellistorna; favoriter (hjärta) för båda.
+// Läses om en gång per dygn så att nya låtar kommer med.
+const MUSIC_MAX_PLAYLISTS = 40;
+const PLAYLIST_TRACK_MAX = 150;
+const SPOTIFY_ID = /^[A-Za-z0-9]{22}$/;
+function musicLib() {
+  if (!boardState.music || typeof boardState.music !== 'object') boardState.music = {};
+  const M = boardState.music;
+  if (!M.playlists) M.playlists = {};
+  if (!M.tracks) M.tracks = {};
+  if (!M.artists) M.artists = {};
+  return M;
+}
+let musicSaveTimer = null;
+function saveMusicSoon() {                 // samlar många små ändringar (bildhämtning) till en skrivning
+  clearTimeout(musicSaveTimer);
+  musicSaveTimer = setTimeout(() => writeJSON(BOARD_FILE, boardState), 1500);
+}
+async function spotifyEmbedEntity(kind, id) {
+  const r = await fetch(`https://open.spotify.com/embed/${kind}/${id}`, {
+    signal: AbortSignal.timeout(10000), headers: { 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'sv,en' } });
+  if (!r.ok) throw new Error(`Spotify svarade ${r.status}`);
+  const m = /<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/.exec(await r.text());
+  if (!m) throw new Error('Spotify-sidan såg inte ut som väntat');
+  const e = (((((JSON.parse(m[1]) || {}).props || {}).pageProps || {}).state || {}).data || {}).entity;
+  if (!e) throw new Error('Hittade inget innehåll — är spellistan offentlig?');
+  return e;
+}
+async function spotifyThumb(kind, id) {
+  try {
+    const r = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(`https://open.spotify.com/${kind}/${id}`)}`,
+      { signal: AbortSignal.timeout(6000) });
+    return r.ok ? String((await r.json()).thumbnail_url || '') : '';
+  } catch (e) { return ''; }
+}
+async function inPool(items, n, fn) {
+  const queue = items.slice();
+  await Promise.all(Array.from({ length: Math.min(n, queue.length) }, async () => {
+    while (queue.length) await fn(queue.shift());
+  }));
+}
+async function indexPlaylist(id) {
+  const e = await spotifyEmbedEntity('playlist', id);
+  const M = musicLib();
+  const old = M.playlists[id] || {};
+  const trackIds = [];
+  for (const t of (Array.isArray(e.trackList) ? e.trackList : []).slice(0, PLAYLIST_TRACK_MAX)) {
+    const tm = /^spotify:track:([A-Za-z0-9]{22})$/.exec(String(t.uri || ''));
+    if (!tm || trackIds.includes(tm[1])) continue;
+    trackIds.push(tm[1]);
+    const prev = M.tracks[tm[1]] || {};
+    M.tracks[tm[1]] = { ...prev, id: tm[1], title: String(t.title || '').slice(0, 120), artist: String(t.subtitle || '').slice(0, 120), fav: !!prev.fav };
+  }
+  if (!trackIds.length) throw new Error('Spellistan är tom eller inte offentlig');
+  M.playlists[id] = {
+    id, fav: !!old.fav, addedAt: old.addedAt || Date.now(), indexedAt: Date.now(),
+    title: String(e.name || e.title || 'Spellista').slice(0, 120),
+    cover: ((((e.coverArt || {}).sources || [])[0]) || {}).url || old.cover || '',
+    artistImages: old.artistImages || [], trackIds,
+  };
+  saveMusicSoon();
+  fillMusicImages(id).catch(err => console.log('[musik] bilder:', err.message));
+  return M.playlists[id];
+}
+// Låtomslag + "samlad bild av artisterna" (fyra olika artister) — i bakgrunden.
+async function fillMusicImages(id) {
+  const M = musicLib();
+  const pl = M.playlists[id];
+  if (!pl) return;
+  await inPool(pl.trackIds.filter(t => !(M.tracks[t] || {}).cover), 4, async tid => {
+    const c = await spotifyThumb('track', tid);
+    if (c && M.tracks[tid]) { M.tracks[tid].cover = c; saveMusicSoon(); }
+  });
+  const artistIds = [];
+  for (const tid of pl.trackIds) {
+    if (artistIds.length >= 4) break;
+    const t = M.tracks[tid];
+    if (!t) continue;
+    if (!t.artistId) {
+      try {
+        const te = await spotifyEmbedEntity('track', tid);
+        const a = ((te.artists || [])[0] || {}).uri || '';
+        t.artistId = (/^spotify:artist:([A-Za-z0-9]{22})$/.exec(a) || [])[1] || '';
+      } catch (e) { t.artistId = ''; }
+    }
+    if (t.artistId && !artistIds.includes(t.artistId)) artistIds.push(t.artistId);
+  }
+  const imgs = [];
+  for (const aid of artistIds) {
+    if (!M.artists[aid]) M.artists[aid] = await spotifyThumb('artist', aid);
+    if (M.artists[aid]) imgs.push(M.artists[aid]);
+  }
+  if (M.playlists[id]) { M.playlists[id].artistImages = imgs; saveMusicSoon(); }
+}
+function musicPayload() {
+  const M = musicLib();
+  const used = new Set();
+  Object.values(M.playlists).forEach(p => p.trackIds.forEach(t => used.add(t)));
+  const tracks = {};
+  for (const [tid, t] of Object.entries(M.tracks)) if (used.has(tid) || t.fav) tracks[tid] = t;
+  return { playlists: Object.values(M.playlists), tracks };
+}
+function dropUnusedTracks() {
+  const M = musicLib();
+  const used = new Set();
+  Object.values(M.playlists).forEach(p => p.trackIds.forEach(t => used.add(t)));
+  for (const tid of Object.keys(M.tracks)) if (!used.has(tid) && !M.tracks[tid].fav) delete M.tracks[tid];
+}
+
+app.get('/api/board/music', (req, res) => res.json(musicPayload()));
+
+app.post('/api/board/music/playlists', requirePin, async (req, res) => {
+  const sp = await resolveSpotify(req.body.url, ['playlist']);
+  if (sp.error) return res.status(400).json({ error: sp.error });
+  if (!sp.url) return res.status(400).json({ error: 'Klistra in en länk till en spellista' });
+  const id = sp.url.split('/').pop();
+  const M = musicLib();
+  if (!M.playlists[id] && Object.keys(M.playlists).length >= MUSIC_MAX_PLAYLISTS) {
+    return res.status(400).json({ error: `Högst ${MUSIC_MAX_PLAYLISTS} spellistor` });
+  }
+  try {
+    const pl = await indexPlaylist(id);
+    res.json({ ok: true, playlist: pl, ...musicPayload() });
+  } catch (e) {
+    res.status(400).json({ error: `Kunde inte läsa spellistan: ${e.message}` });
+  }
+});
+
+app.delete('/api/board/music/playlists/:id', requirePin, (req, res) => {
+  const M = musicLib();
+  delete M.playlists[req.params.id];
+  dropUnusedTracks();
+  writeJSON(BOARD_FILE, boardState);
+  res.json({ ok: true, ...musicPayload() });
+});
+
+app.post('/api/board/music/fav', requirePin, (req, res) => {
+  const { kind, id, fav } = req.body || {};
+  const M = musicLib();
+  const item = kind === 'playlist' ? M.playlists[id] : kind === 'track' ? M.tracks[id] : null;
+  if (!item) return res.status(404).json({ error: 'Finns inte i biblioteket' });
+  item.fav = !!fav;
+  if (!item.fav && kind === 'track') dropUnusedTracks();
+  writeJSON(BOARD_FILE, boardState);
+  res.json({ ok: true });
+});
+
+// Läs om spellistorna en gång per dygn (nya låtar, ändrade namn).
+setInterval(async () => {
+  const M = musicLib();
+  for (const pl of Object.values(M.playlists)) {
+    if (Date.now() - (pl.indexedAt || 0) < 24 * 3600 * 1000) continue;
+    try { await indexPlaylist(pl.id); dropUnusedTracks(); }
+    catch (e) { pl.error = e.message; pl.indexedAt = Date.now(); saveMusicSoon(); console.log(`[musik] ${pl.id}: ${e.message}`); }
+  }
+}, 60 * 60 * 1000);
+
+// Vad ett alarm ska spela, när det valts ur biblioteket:
+//   spellista -> spellistan i shuffle
+//   låt       -> låten, sedan resten av dess spellista i slumpad ordning
+function alarmMusic(music) {
+  if (!music || typeof music !== 'object') return null;
+  const M = musicLib();
+  if (music.kind === 'playlist') {
+    const pl = SPOTIFY_ID.test(String(music.id)) && M.playlists[music.id];
+    if (!pl) return { error: 'Spellistan finns inte i biblioteket längre' };
+    return { music: { kind: 'playlist', id: pl.id }, url: `https://open.spotify.com/playlist/${pl.id}`,
+             urlTitle: pl.title, shuffle: true, tracks: [] };
+  }
+  if (music.kind === 'track') {
+    const t = SPOTIFY_ID.test(String(music.id)) && M.tracks[music.id];
+    if (!t) return { error: 'Låten finns inte i biblioteket längre' };
+    const pl = (music.playlistId && M.playlists[music.playlistId] && M.playlists[music.playlistId].trackIds.includes(t.id))
+      ? M.playlists[music.playlistId]
+      : Object.values(M.playlists).find(p => p.trackIds.includes(t.id));
+    const rest = pl ? pl.trackIds.filter(x => x !== t.id).slice(0, 99) : [];
+    return { music: { kind: 'track', id: t.id, playlistId: pl ? pl.id : null },
+             url: `https://open.spotify.com/track/${t.id}`, urlTitle: `${t.title} – ${t.artist}`.slice(0, 80),
+             shuffle: false, tracks: [`spotify:track:${t.id}`, ...rest.map(x => `spotify:track:${x}`)], shuffleRest: true };
+  }
+  return { error: 'Okänt musikval' };
+}
+
 // ── Alarm ──
 const ALARM_MAX = 20;
 function intIn(v, min, max, def) {
@@ -1381,15 +1570,23 @@ async function cleanAlarm(a) {
   const days = [...new Set((Array.isArray(a.days) ? a.days : []).map(Number).filter(d => Number.isInteger(d) && d >= 0 && d <= 6))].sort();
   const date = days.length ? null : String(a.date || '');
   if (!days.length && !/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: 'Välj dagar, eller ett datum för ett engångsalarm' };
-  const sp = await resolveSpotify(a.url, ['track', 'playlist', 'album']);
-  if (sp.error) return { error: sp.error };
+  let play;
+  if (a.music) {
+    play = alarmMusic(a.music);
+    if (play.error) return { error: play.error };
+  } else {
+    const sp = await resolveSpotify(a.url, ['track', 'playlist', 'album']);
+    if (sp.error) return { error: sp.error };
+    play = { music: null, url: sp.url, urlTitle: sp.url ? (sp.title || '') : '', shuffle: false, tracks: [] };
+  }
   return {
     alarm: {
       id: typeof a.id === 'string' && /^[\w-]{1,60}$/.test(a.id) ? a.id : crypto.randomUUID(),
       enabled: a.enabled !== false,
       time, days, date,
       label: String(a.label || '').slice(0, 40),
-      url: sp.url, urlTitle: sp.url ? (sp.title || '') : '',
+      url: play.url, urlTitle: play.urlTitle,
+      music: play.music, shuffle: !!play.shuffle, tracks: play.tracks, shuffleRest: !!play.shuffleRest,
       volume: intIn(a.volume, 1, 100, 30),
       rampMinutes: intIn(a.rampMinutes, 0, 30, 3),
       autoStopMinutes: intIn(a.autoStopMinutes, 5, 180, 30),

@@ -128,6 +128,40 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
 .pin-error{color:var(--pulse-red);font-weight:700;font-size:13px;min-height:18px;margin:8px 0;}
 .link-btn{background:none;border:none;color:var(--hero-blue-dark);font-weight:700;font-size:13px;text-decoration:underline;cursor:pointer;font-family:var(--font-ui);padding:6px 0;}
 
+/* ── Musikväljaren (alarm) ── */
+.music-pick{display:flex;align-items:center;gap:12px;margin-top:8px;padding:10px;border:2px solid var(--ink);border-radius:12px;
+  background:var(--white);box-shadow:2px 2px 0 var(--ink);cursor:pointer;}
+.music-pick.empty{justify-content:center;font-weight:700;color:var(--hero-blue-dark);border-style:dashed;box-shadow:none;}
+.mp-art{width:54px;height:54px;border-radius:8px;border:2px solid var(--ink);flex-shrink:0;overflow:hidden;background:var(--paper-dark);
+  display:grid;grid-template-columns:1fr 1fr;}
+.mp-art.one{display:block;}
+.mp-art img{width:100%;height:100%;object-fit:cover;display:block;}
+.mp-txt{flex:1;min-width:0;}
+.mp-title{font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mp-sub{font-size:12px;color:var(--ink-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mp-change{font-size:12px;font-weight:800;color:var(--hero-blue-dark);}
+.music-search{margin-bottom:12px;}
+.music-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.music-back{border:2px solid var(--ink);border-radius:10px;background:var(--white);font-size:22px;font-weight:800;line-height:1;
+  width:40px;height:36px;cursor:pointer;box-shadow:2px 2px 0 var(--ink);font-family:var(--font-ui);}
+.menu-row{display:flex;align-items:center;gap:14px;padding:14px;border:2px solid var(--ink);border-radius:12px;background:var(--white);
+  box-shadow:2px 2px 0 var(--ink);cursor:pointer;font-weight:800;font-size:16px;}
+.menu-row.sel{background:#E7F5FD;outline:3px solid var(--hero-blue);}
+.menu-ico{width:40px;height:40px;border-radius:10px;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;
+  font-size:20px;background:var(--paper-soft);flex-shrink:0;}
+.menu-sub{font-size:12px;font-weight:600;color:var(--ink-muted);margin-top:2px;}
+.menu-arrow{margin-left:auto;font-size:20px;color:var(--ink-muted);}
+.music-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.music-row{display:flex;align-items:center;gap:12px;padding:8px 10px;border:2px solid var(--ink);border-radius:12px;background:var(--white);cursor:pointer;}
+.music-row.sel{background:#E7F5FD;outline:3px solid var(--hero-blue);}
+.music-row .mp-art{width:48px;height:48px;}
+.heart{background:none;border:none;font-size:24px;line-height:1;cursor:pointer;padding:4px;color:var(--ink-muted);flex-shrink:0;}
+.heart.on{color:var(--pulse-red);}
+.mrow-del{background:none;border:none;font-size:16px;cursor:pointer;color:var(--ink-muted);padding:4px;}
+.music-empty{text-align:center;color:var(--ink-muted);font-size:14px;padding:12px 0;}
+.music-add{border:2px dashed var(--ink);border-radius:12px;padding:12px;background:var(--white);}
+.music-group{font-family:var(--font-burst);font-size:11px;letter-spacing:1px;color:var(--ink-muted);margin:4px 0 -2px;}
+
 /* ── Inställningar från tavlan ── */
 .set-row{padding:10px 0;border-bottom:1px solid var(--paper-soft);}
 .set-row:last-child{border-bottom:none;}
@@ -182,10 +216,6 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
     <div class="card">
       <div class="card-label">SIMULERAD MACROPAD</div>
       <div class="hint">Samma sex knappar och vred som TogKey Pad Plus — fungerar identiskt med den riktiga när den är inkopplad.</div>
-      <div style="display:flex;align-items:center;gap:10px;margin:8px 0;">
-        <button onclick="connectBleMacropad()" style="padding:6px 12px;font-size:13px;">📡 Anslut via Bluetooth</button>
-        <span id="bleMacropadStatus" style="font-size:13px;color:#666;">⚪ Ej anslutet (använder internet)</span>
-      </div>
       <div class="macropad-body">
         <div class="oled-row">
           <div id="macropadOled">Redo</div>
@@ -330,17 +360,8 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
       <input type="text" class="input-field" id="alarmLabel" maxlength="40" placeholder="t.ex. Jobb">
     </div>
     <div class="field">
-      <div class="field-label">Musik</div>
-      <label style="display:flex;gap:8px;align-items:center;font-size:14px;font-weight:600;margin-bottom:8px;">
-        <input type="radio" name="alarmSource" value="resume" checked onchange="updateAlarmSource()" style="width:18px;height:18px;"> Fortsätt där jag slutade
-      </label>
-      <label style="display:flex;gap:8px;align-items:center;font-size:14px;font-weight:600;">
-        <input type="radio" name="alarmSource" value="url" onchange="updateAlarmSource()" style="width:18px;height:18px;"> En låt, spellista eller skiva
-      </label>
-      <div id="alarmUrlWrap" style="display:none;margin-top:8px;">
-        <input type="url" class="input-field" id="alarmUrl" placeholder="Klistra in Spotify-länk">
-        <div class="set-help">I Spotify: ⋯ → Dela → Kopiera länk.</div>
-      </div>
+      <div class="field-label">Spela</div>
+      <div id="alarmMusicPick"></div>
     </div>
     <div class="field">
       <div class="field-label"><span>Volym</span><span id="alarmVolumeText">30 %</span></div>
@@ -364,6 +385,30 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
     </div>
     <div class="sheet-actions" id="alarmDeleteWrap" style="margin-top:10px;">
       <button class="btn btn-ghost" style="color:var(--pulse-red);" onclick="deleteAlarm()">Ta bort alarmet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Välj musik (spellistor/låtar ur musikbiblioteket) -->
+<div class="sheet-bg" id="musicSheet" onclick="if(event.target===this)closeMusicPicker()">
+  <div class="sheet">
+    <div class="music-head">
+      <button class="music-back" id="musicBack" onclick="musicGoBack()">‹</button>
+      <div class="sheet-title" id="musicSheetTitle" style="margin:0;">SPELA</div>
+    </div>
+    <input type="search" class="input-field music-search" id="musicSearch" placeholder="Sök…" oninput="renderMusicList()">
+    <div class="music-list" id="musicList"></div>
+    <div class="music-add" id="musicAdd">
+      <div class="field-label">Lägg till spellista</div>
+      <div class="set-help" style="margin:0 0 8px;">Vilken offentlig spellista som helst. I Spotify: ⋯ → Dela → Kopiera länk.</div>
+      <div style="display:flex;gap:8px;">
+        <input type="url" class="input-field" id="musicAddUrl" placeholder="Klistra in länk till spellista">
+        <button class="btn btn-primary btn-inline" onclick="addPlaylist()">Lägg till</button>
+      </div>
+      <div class="pin-error" id="musicAddMsg"></div>
+    </div>
+    <div class="sheet-actions" style="margin-top:12px;">
+      <button class="btn btn-ghost" onclick="closeMusicPicker()">Stäng</button>
     </div>
   </div>
 </div>
@@ -533,88 +578,6 @@ async function refreshCurrentView(){
 }
 
 // ═══════════════════════════════════════════════════
-// MACROPAD ÖVER BLUETOOTH — snabbare lokalt komplement till
-// internet-vägen nedan, används AUTOMATISKT när ansluten, annars
-// faller allt tillbaka på fetch()-vägen precis som förut.
-// ═══════════════════════════════════════════════════
-const BLE_MACROPAD_SERVICE_UUID = '7a0f1001-b5a3-f393-e0a9-e50e24dcca9e';
-const BLE_MACROPAD_COMMAND_CHAR_UUID = '7a0f1002-b5a3-f393-e0a9-e50e24dcca9e';
-let bleMacropadDevice = null;
-let bleMacropadChar = null;
-
-function updateBleMacropadStatusUI() {
-  const el = document.getElementById('bleMacropadStatus');
-  if (!el) return;
-  el.textContent = bleMacropadChar ? '🟢 Bluetooth anslutet (snabbare)' : '⚪ Ej anslutet (använder internet)';
-}
-
-async function connectBleMacropad() {
-  if (!navigator.bluetooth) {
-    alert('Web Bluetooth stöds inte i den här webbläsaren (behöver Chrome).');
-    return;
-  }
-  const el = document.getElementById('bleMacropadStatus');
-  try {
-    el.textContent = '🔎 Söker…';
-    // BARA annonsnamnet "TavlanMP" (eller tjänsten). Pi:ns vanliga
-    // Bluetooth-namn "tavla" får INTE matcha: det är den klassiska
-    // Bluetooth-sidan, som kräver parkoppling — valdes den i listan
-    // misslyckades anslutningen med "fel PIN-kod eller nyckel".
-    const device = await navigator.bluetooth.requestDevice({
-      filters: [{ name: 'TavlanMP' }, { services: [BLE_MACROPAD_SERVICE_UUID] }],
-      optionalServices: [BLE_MACROPAD_SERVICE_UUID],
-    });
-    el.textContent = '🔄 Ansluter till ' + (device.name || 'Pi:n') + '…';
-    await setupBleMacropadDevice(device);
-  } catch (e) {
-    // Visas på skärmen (inte bara i den dolda konsolen) så felet går att se och rapportera.
-    el.textContent = '⚠️ Fel: ' + e.message;
-  }
-}
-
-async function setupBleMacropadDevice(device) {
-  bleMacropadDevice = device;
-  device.addEventListener('gattserverdisconnected', onBleMacropadDisconnected);
-  const server = await device.gatt.connect();
-  const service = await server.getPrimaryService(BLE_MACROPAD_SERVICE_UUID);
-  bleMacropadChar = await service.getCharacteristic(BLE_MACROPAD_COMMAND_CHAR_UUID);
-  updateBleMacropadStatusUI();
-}
-
-function onBleMacropadDisconnected() {
-  bleMacropadChar = null;
-  updateBleMacropadStatusUI();
-  // Väletablerat mönster (Googles egna Web Bluetooth-exempel): försök
-  // återansluta automatiskt SÅ LÄNGE sidan är öppen — täcker t.ex. att
-  // gå utanför räckvidd och komma tillbaka, utan att behöva klicka om.
-  if (bleMacropadDevice) {
-    setTimeout(() => {
-      bleMacropadDevice.gatt.connect()
-        .then(async (server) => {
-          const service = await server.getPrimaryService(BLE_MACROPAD_SERVICE_UUID);
-          bleMacropadChar = await service.getCharacteristic(BLE_MACROPAD_COMMAND_CHAR_UUID);
-          updateBleMacropadStatusUI();
-        })
-        .catch(() => {}); // Pi:n/enheten inte inom räckhåll — vanligt, inget fel att larma om
-    }, 2000);
-  }
-}
-
-// getDevices() är bakom en experimentflagga i Chrome (inte garanterat
-// tillgänglig) — provas som en BONUS för tyst återanslutning vid
-// sidladdning, men allt fungerar även UTAN den (då krävs bara ett
-// klick på "Anslut"-knappen varje sidladdning istället).
-(async () => {
-  if (navigator.bluetooth && navigator.bluetooth.getDevices) {
-    try {
-      const devices = await navigator.bluetooth.getDevices();
-      const known = devices.find(d => d.name === 'TavlanMP');
-      if (known) await setupBleMacropadDevice(known);
-    } catch (e) { /* inget tidigare tillstånd — helt normalt, ingen åtgärd */ }
-  }
-})();
-
-// ═══════════════════════════════════════════════════
 // MACROPAD-SIMULATOR
 // ═══════════════════════════════════════════════════
 const MACROPAD_LABELS = {
@@ -633,23 +596,8 @@ async function sendMacropadCommand(action, viewOrParam, direction){
   oled.textContent = label || action;
   oled.style.color = '#2DD881';
 
-  // Bluetooth FÖRST om anslutet (snabbare, fungerar utan internet) —
-  // annars precis samma fetch()-väg som förut, ingen ändring där.
-  if (bleMacropadChar) {
-    try {
-      let commandText = action;
-      if (action === 'show_view') commandText = `show_view:${viewOrParam}`;
-      else if (action === 'knob') commandText = `knob:${direction}`;
-      await bleMacropadChar.writeValue(new TextEncoder().encode(commandText));
-      clearTimeout(macropadOledTimer);
-      macropadOledTimer = setTimeout(() => { oled.textContent = 'Redo'; oled.style.color = '#2DD881'; }, 2500);
-      return;
-    } catch (e) {
-      console.log('BLE-skrivning misslyckades, faller tillbaka på internet:', e.message);
-      // Fortsätter ner till fetch()-vägen nedan istället för att ge upp.
-    }
-  }
-
+  // Via internet (appen -> SoumayApp -> tavlan). Bluetooth-vägen är borttagen
+  // 2026-10-09: bara högtalaren ska använda tavlans Bluetooth.
   try {
     await fetch('/api/board/command', {
       method: 'POST',
@@ -1249,12 +1197,14 @@ function renderAlarmList(board){
   wrap.innerHTML = alarms.map(a => {
     const past = !(a.days || []).length && a.date && a.date < isoDate(new Date());
     const on = a.enabled && !past;
-    const music = a.url ? (a.urlTitle || 'Spotify-länk') : 'Fortsätter där du slutade';
+    const music = a.music && a.music.kind === 'playlist' ? `🔀 ${a.urlTitle || 'Spellista'}`
+      : a.music && a.music.kind === 'track' ? `🎵 ${a.urlTitle || 'Låt'}`
+      : a.url ? `🎵 ${a.urlTitle || 'Spotify-länk'}` : '🎵 Fortsätter där du slutade';
     return `<div class="alarm-card ${on ? '' : 'off'}" onclick="openAlarmEditor('${a.id}')">
       <div class="alarm-info">
         <div class="alarm-time">${esc(a.time)}</div>
         ${a.label ? `<div class="alarm-label">${esc(a.label)}</div>` : ''}
-        <div class="alarm-meta">${esc(daysText(a))} · ${a.volume} % · 🎵 ${esc(music)}</div>
+        <div class="alarm-meta">${esc(daysText(a))} · ${a.volume} % · ${esc(music)}</div>
       </div>
       <label class="switch" onclick="event.stopPropagation()">
         <input type="checkbox" ${on ? 'checked' : ''} onchange="toggleAlarm('${a.id}', this.checked)"><span></span>
@@ -1301,9 +1251,180 @@ function updateOnceHint(){
   const time = document.getElementById('alarmTime').value || '07:00';
   document.getElementById('alarmOnceHint').textContent = editDays.length ? '' : `Ringer en gång: ${dayWord(nextOnceDate(time))} ${time}`;
 }
-function updateAlarmSource(){
-  const url = document.querySelector('input[name=alarmSource]:checked').value === 'url';
-  document.getElementById('alarmUrlWrap').style.display = url ? '' : 'none';
+// ── Musik i alarmet ──
+// "Spela" öppnar en lista: Fortsätt där jag slutade · ♥ Favoriter (→ Spellistor / Låtar)
+// · Spellistor (alla, ♡, sök, lägg till) · Låtar (alla, ♡, sök).
+let musicLib = { playlists: [], tracks: {} };
+let editKind = 'resume';        // 'resume' | 'playlist' | 'track' | 'link' (gammal sparad länk)
+let editMusic = null;           // { kind: 'playlist'|'track', id }
+let musicView = 'root';         // root | fav | fav-playlists | fav-tracks | playlists | tracks
+let musicLoadedAt = 0;
+async function loadMusic(force){
+  if (!force && Date.now() - musicLoadedAt < 15000) return;
+  try { musicLib = await (await fetch('/api/board/music')).json(); musicLoadedAt = Date.now(); } catch(e) {}
+}
+function artHtml(imgs, fallback){
+  let list = (imgs || []).filter(Boolean);
+  if (list.length >= 2) {                 // samlad bild: fyra rutor, fylls ut med omslaget/upprepning
+    const pad = fallback ? [fallback] : list;
+    while (list.length < 4) list = list.concat(pad).slice(0, 4);
+    return `<div class="mp-art">${list.slice(0, 4).map(u => `<img src="${esc(u)}" alt="" loading="lazy">`).join('')}</div>`;
+  }
+  const one = list[0] || fallback;
+  return `<div class="mp-art one">${one ? `<img src="${esc(one)}" alt="" loading="lazy">` : ''}</div>`;
+}
+function playlistArt(p){ return artHtml(p.artistImages, p.cover); }
+function trackArt(t){ return artHtml(t.cover ? [t.cover] : [], ''); }
+function playKind(){ return editKind; }
+function renderMusicPick(){
+  const box = document.getElementById('alarmMusicPick');
+  let inner = '';
+  if (editKind === 'resume') {
+    inner = `<div class="menu-ico">⏯</div><div class="mp-txt"><div class="mp-title">Fortsätt där jag slutade</div>
+      <div class="mp-sub">Det som spelades senast</div></div>`;
+  } else if (editKind === 'link') {
+    inner = `<div class="menu-ico">🔗</div><div class="mp-txt"><div class="mp-title">${esc((editing && editing.urlTitle) || 'Spotify-länk')}</div>
+      <div class="mp-sub">Sparad länk (från en tidigare version)</div></div>`;
+  } else if (editKind === 'playlist') {
+    const p = editMusic && musicLib.playlists.find(x => x.id === editMusic.id);
+    inner = p ? `${playlistArt(p)}<div class="mp-txt"><div class="mp-title">${esc(p.title)}</div>
+      <div class="mp-sub">Spellista · ${p.trackIds.length} låtar · shuffle</div></div>`
+      : `<div class="mp-txt"><div class="mp-title">Spellista</div><div class="mp-sub">Laddar…</div></div>`;
+  } else if (editKind === 'track') {
+    const t = editMusic && musicLib.tracks[editMusic.id];
+    inner = t ? `${trackArt(t)}<div class="mp-txt"><div class="mp-title">${esc(t.title)}</div><div class="mp-sub">${esc(t.artist)}</div></div>`
+      : `<div class="mp-txt"><div class="mp-title">Låt</div><div class="mp-sub">Laddar…</div></div>`;
+  }
+  box.innerHTML = `<div class="music-pick" onclick="openMusicPicker()">${inner}<span class="mp-change">Byt ›</span></div>`;
+}
+const MUSIC_TITLES = { root: 'SPELA', fav: '♥ FAVORITER', 'fav-playlists': '♥ SPELLISTOR', 'fav-tracks': '♥ LÅTAR',
+                       playlists: 'SPELLISTOR', tracks: 'LÅTAR' };
+const MUSIC_PARENT = { fav: 'root', 'fav-playlists': 'fav', 'fav-tracks': 'fav', playlists: 'root', tracks: 'root' };
+async function openMusicPicker(){
+  musicView = 'root';
+  document.getElementById('musicAddMsg').textContent = '';
+  document.getElementById('musicSheet').classList.add('open');
+  renderMusicList();
+  await loadMusic(true);
+  renderMusicList();
+}
+function closeMusicPicker(){
+  document.getElementById('musicSheet').classList.remove('open');
+  renderMusicPick();
+}
+function musicGo(view){
+  musicView = view;
+  document.getElementById('musicSearch').value = '';
+  renderMusicList();
+  document.querySelector('#musicSheet .sheet').scrollTop = 0;
+}
+function musicGoBack(){ musicGo(MUSIC_PARENT[musicView] || 'root'); }
+function norm(t){ return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+function menuRow(onclick, ico, title, sub, sel, arrow = true){
+  return `<div class="menu-row ${sel ? 'sel' : ''}" onclick="${onclick}"><div class="menu-ico">${ico}</div>
+    <div><div>${title}</div>${sub ? `<div class="menu-sub">${sub}</div>` : ''}</div>${arrow ? '<span class="menu-arrow">›</span>' : ''}</div>`;
+}
+function allTrackIds(){
+  const order = [];
+  musicLib.playlists.forEach(p => p.trackIds.forEach(id => { if (!order.includes(id)) order.push(id); }));
+  Object.keys(musicLib.tracks).forEach(id => { if (!order.includes(id)) order.push(id); });
+  return order.filter(id => musicLib.tracks[id]);
+}
+function renderMusicList(){
+  const v = musicView;
+  const isList = !['root', 'fav'].includes(v);
+  document.getElementById('musicSheetTitle').textContent = MUSIC_TITLES[v];
+  document.getElementById('musicBack').style.visibility = v === 'root' ? 'hidden' : 'visible';
+  document.getElementById('musicSearch').style.display = isList ? '' : 'none';
+  document.getElementById('musicAdd').style.display = v === 'playlists' ? '' : 'none';
+  const list = document.getElementById('musicList');
+  const favP = musicLib.playlists.filter(p => p.fav).length;
+  const favT = allTrackIds().filter(id => musicLib.tracks[id].fav).length;
+  if (v === 'root') {
+    list.innerHTML =
+      menuRow("pickResume()", '⏯', 'Fortsätt där jag slutade', 'Det som spelades senast', editKind === 'resume', false) +
+      menuRow("musicGo('fav')", '♥', 'Favoriter', `${favP} spellistor · ${favT} låtar`) +
+      menuRow("musicGo('playlists')", '🔀', 'Spellistor', `${musicLib.playlists.length} st · spelas i shuffle`, editKind === 'playlist') +
+      menuRow("musicGo('tracks')", '🎵', 'Låtar', `${allTrackIds().length} st från spellistorna`, editKind === 'track');
+    return;
+  }
+  if (v === 'fav') {
+    list.innerHTML = menuRow("musicGo('fav-playlists')", '🔀', 'Spellistor', `${favP} favoriter`) +
+                     menuRow("musicGo('fav-tracks')", '🎵', 'Låtar', `${favT} favoriter`);
+    return;
+  }
+  const q = norm(document.getElementById('musicSearch').value.trim());
+  const favOnly = v.startsWith('fav-');
+  const sel = editMusic ? editMusic.id : null;
+  if (v === 'playlists' || v === 'fav-playlists') {
+    const items = musicLib.playlists.filter(p => (!favOnly || p.fav) && (!q || norm(p.title).includes(q)))
+      .sort((a, b) => (b.fav - a.fav) || (a.addedAt - b.addedAt));
+    if (!items.length) {
+      list.innerHTML = `<div class="music-empty">${favOnly ? 'Inga favoritspellistor än — tryck ♡ på en spellista under Spellistor.'
+        : q ? 'Inget matchar sökningen.' : 'Inga spellistor än — lägg till en nedan.'}</div>`;
+      return;
+    }
+    list.innerHTML = items.map(p => `<div class="music-row ${editKind === 'playlist' && p.id === sel ? 'sel' : ''}" onclick="pickMusic('playlist','${p.id}')">
+        ${playlistArt(p)}<div class="mp-txt"><div class="mp-title">${esc(p.title)}</div>
+        <div class="mp-sub">${p.trackIds.length} låtar${p.error ? ' · ⚠️ kunde inte läsas om' : ''}</div></div>
+        <button class="heart ${p.fav ? 'on' : ''}" onclick="event.stopPropagation();toggleFav('playlist','${p.id}')">${p.fav ? '♥' : '♡'}</button>
+        ${favOnly ? '' : `<button class="mrow-del" title="Ta bort" onclick="event.stopPropagation();removePlaylist('${p.id}')">✕</button>`}
+      </div>`).join('');
+    return;
+  }
+  // Låtar (alla, eller bara favoriter)
+  const items = allTrackIds().map(id => musicLib.tracks[id])
+    .filter(t => (!favOnly || t.fav) && (!q || norm(t.title).includes(q) || norm(t.artist).includes(q)))
+    .sort((a, b) => b.fav - a.fav);
+  if (!items.length) {
+    list.innerHTML = `<div class="music-empty">${favOnly ? 'Inga favoritlåtar än — tryck ♡ på en låt under Låtar.'
+      : q ? 'Inget matchar sökningen.' : 'Låtarna hämtas från spellistorna — lägg till en spellista under Spellistor.'}</div>`;
+    return;
+  }
+  const shown = items.slice(0, 200);
+  list.innerHTML = shown.map(t => `<div class="music-row ${editKind === 'track' && t.id === sel ? 'sel' : ''}" onclick="pickMusic('track','${t.id}')">
+      ${trackArt(t)}<div class="mp-txt"><div class="mp-title">${esc(t.title)}</div><div class="mp-sub">${esc(t.artist)}</div></div>
+      <button class="heart ${t.fav ? 'on' : ''}" onclick="event.stopPropagation();toggleFav('track','${t.id}')">${t.fav ? '♥' : '♡'}</button>
+    </div>`).join('') + (items.length > shown.length ? `<div class="music-empty">…och ${items.length - shown.length} till — sök för att hitta dem.</div>` : '');
+}
+function pickResume(){ editKind = 'resume'; editMusic = null; closeMusicPicker(); }
+function pickMusic(kind, id){
+  editKind = kind;
+  editMusic = { kind, id };
+  closeMusicPicker();
+}
+async function toggleFav(kind, id){
+  const item = kind === 'playlist' ? musicLib.playlists.find(p => p.id === id) : musicLib.tracks[id];
+  if (!item) return;
+  item.fav = !item.fav;               // direkt i listan — sparas i bakgrunden
+  renderMusicList();
+  try { await api('POST', '/api/board/music/fav', { kind, id, fav: item.fav }); }
+  catch(e) { item.fav = !item.fav; renderMusicList(); if (e.message !== 'avbrutet') toast(e.message); }
+}
+async function addPlaylist(){
+  const input = document.getElementById('musicAddUrl');
+  const msg = document.getElementById('musicAddMsg');
+  const url = input.value.trim();
+  if (!url) { msg.textContent = 'Klistra in en länk först'; return; }
+  msg.style.color = 'var(--ink-muted)'; msg.textContent = 'Läser in spellistan…';
+  try {
+    const r = await api('POST', '/api/board/music/playlists', { url });
+    musicLib = { playlists: r.playlists, tracks: r.tracks }; musicLoadedAt = Date.now();
+    input.value = '';
+    msg.style.color = 'var(--in-range-dark)'; msg.textContent = `✓ ${r.playlist.title} — ${r.playlist.trackIds.length} låtar`;
+    renderMusicList();
+    setTimeout(async () => { await loadMusic(true); renderMusicList(); renderMusicPick(); }, 6000);   // omslag och artistbilder kommer strax efter
+  } catch(e) { msg.style.color = ''; msg.textContent = e.message === 'avbrutet' ? '' : e.message; }
+}
+async function removePlaylist(id){
+  const p = musicLib.playlists.find(x => x.id === id);
+  if (!p || !confirm(`Ta bort ”${p.title}” ur biblioteket?`)) return;
+  try {
+    const r = await api('DELETE', '/api/board/music/playlists/' + id);
+    musicLib = { playlists: r.playlists, tracks: r.tracks };
+    if (editMusic && editMusic.kind === 'playlist' && editMusic.id === id) { editMusic = null; editKind = 'resume'; }
+    renderMusicList();
+  } catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
 }
 
 function openAlarmEditor(id){
@@ -1313,8 +1434,8 @@ function openAlarmEditor(id){
   document.getElementById('alarmTime').value = a ? a.time : '07:00';
   editDays = a ? (a.days || []).slice() : [0,1,2,3,4];
   document.getElementById('alarmLabel').value = a ? (a.label || '') : '';
-  document.querySelector(`input[name=alarmSource][value=${a && a.url ? 'url' : 'resume'}]`).checked = true;
-  document.getElementById('alarmUrl').value = a ? (a.url || '') : '';
+  editMusic = a && a.music ? { ...a.music } : null;
+  editKind = editMusic ? editMusic.kind : (a && a.url ? 'link' : 'resume');
   const vol = a ? a.volume : 30;
   document.getElementById('alarmVolume').value = vol;
   document.getElementById('alarmVolumeText').textContent = vol + ' %';
@@ -1322,7 +1443,8 @@ function openAlarmEditor(id){
   fillSelect('alarmAutoStop', STOP_CHOICES, a ? a.autoStopMinutes : 30, m => `${m} min`);
   document.getElementById('alarmDeleteWrap').style.display = a ? '' : 'none';
   document.getElementById('alarmError').textContent = '';
-  updateAlarmSource();
+  renderMusicPick();
+  loadMusic(true).then(renderMusicPick);
   renderDayChips();
   alarmEditorOpen = true;
   document.getElementById('alarmSheet').classList.add('open');
@@ -1333,7 +1455,7 @@ function closeAlarmEditor(){
 }
 function alarmFromEditor(){
   const time = document.getElementById('alarmTime').value;
-  const useUrl = document.querySelector('input[name=alarmSource]:checked').value === 'url';
+  const kind = playKind();
   return {
     ...(editing ? { id: editing.id } : {}),
     enabled: true,
@@ -1341,7 +1463,8 @@ function alarmFromEditor(){
     days: editDays,
     date: editDays.length ? null : nextOnceDate(time || '07:00'),
     label: document.getElementById('alarmLabel').value.trim(),
-    url: useUrl ? document.getElementById('alarmUrl').value.trim() : '',
+    url: kind === 'link' && editing ? (editing.url || '') : '',
+    music: (kind === 'playlist' || kind === 'track') && editMusic && editMusic.kind === kind ? editMusic : null,
     volume: Number(document.getElementById('alarmVolume').value),
     rampMinutes: Number(document.getElementById('alarmRamp').value),
     autoStopMinutes: Number(document.getElementById('alarmAutoStop').value),
@@ -1351,7 +1474,8 @@ function alarmEditorError(text){ document.getElementById('alarmError').textConte
 async function saveAlarm(){
   const a = alarmFromEditor();
   if (!a.time) return alarmEditorError('Välj en tid');
-  if (document.querySelector('input[name=alarmSource]:checked').value === 'url' && !a.url) return alarmEditorError('Klistra in en Spotify-länk');
+  const kind = playKind();
+  if ((kind === 'playlist' || kind === 'track') && !a.music) return alarmEditorError(kind === 'track' ? 'Välj en låt' : 'Välj en spellista');
   try {
     await api('POST', '/api/board/alarms', { alarm: a });
     closeAlarmEditor();
