@@ -1064,21 +1064,23 @@ app.post('/api/journal', (req, res) => {
 // Hämta inställningar + bildlista (UTAN base64-data, bara metadata —
 // annars blir svaret enormt varje gång appen öppnar sidan)
 app.get('/api/board', (req, res) => {
-  const { images, ...settings } = boardState;
+  const { images, pin, alarmTest, ...settings } = boardState;
   res.json({
     ...settings,
+    hasPin: !!pin,
     images: images.map(({ id, name, addedAt }) => ({ id, name, addedAt })),
     lastPiSeenAt, // null om Pi:n aldrig hörts av — appen använder detta för statusen
+    piStatus, piStatusAt,
   });
 });
 
 // Spara inställningar (toggles, bussdestinationer, intervall, Spotify-enhet)
-app.post('/api/board', (req, res) => {
+app.post('/api/board', requirePin, (req, res) => {
   const allowed = ['showGlucose', 'showWeather', 'showBus', 'showSpotify', 'busDestinations', 'homeStopIndex', 'refreshMinutes', 'spotifyDevice', 'googlePhotosAlbumUrl', 'googlePhotosAlbumUrls'];
   allowed.forEach(key => {
     if (req.body[key] !== undefined) boardState[key] = req.body[key];
   });
-  writeJSON(BOARD_FILE, boardState);
+  touchBoard();
   res.json({ ok: true });
 });
 
@@ -1104,7 +1106,7 @@ app.get('/api/board/bus-stops/search', async (req, res) => {
 });
 
 // Ladda upp en ny bild (base64 data URL, samma mönster som måltidsfoton)
-app.post('/api/board/image', (req, res) => {
+app.post('/api/board/image', requirePin, (req, res) => {
   const { name, imageData } = req.body;
   if (!imageData) return res.status(400).json({ error: 'Ingen bilddata' });
   const image = {
@@ -1114,7 +1116,7 @@ app.post('/api/board/image', (req, res) => {
     addedAt: Date.now(),
   };
   boardState.images.unshift(image);
-  writeJSON(BOARD_FILE, boardState);
+  touchBoard();
   res.json({ ok: true, image: { id: image.id, name: image.name, addedAt: image.addedAt } });
 });
 
@@ -1141,20 +1143,20 @@ app.get('/api/board/image/:id/raw', (req, res) => {
 });
 
 // Ta bort en bild
-app.delete('/api/board/image/:id', (req, res) => {
+app.delete('/api/board/image/:id', requirePin, (req, res) => {
   boardState.images = boardState.images.filter(i => i.id !== req.params.id);
   if (boardState.activeImageId === req.params.id) boardState.activeImageId = null;
-  writeJSON(BOARD_FILE, boardState);
+  touchBoard();
   res.json({ ok: true });
 });
 
 // Välj vilken bild som ska visas på tavlan (eller null = tillbaka till dashboarden)
-app.post('/api/board/select', (req, res) => {
+app.post('/api/board/select', requirePin, (req, res) => {
   const { imageId } = req.body;
   if (imageId !== null && !boardState.images.some(i => i.id === imageId))
     return res.status(400).json({ error: 'Okänd bild' });
   boardState.activeImageId = imageId;
-  writeJSON(BOARD_FILE, boardState);
+  touchBoard();
   res.json({ ok: true, activeImageId: boardState.activeImageId });
 });
 
@@ -1193,6 +1195,280 @@ app.post('/api/board/current-view', (req, res) => {
 
 app.get('/api/board/current-view', (req, res) => {
   res.json(currentViewData);
+});
+
+// ═══════════════════════════════════════════════════════════════
+// TAVLAN: PIN, INSTÄLLNINGAR, ALARM, SYNK MED TAVLAN
+// ═══════════════════════════════════════════════════════════════
+// Allt som ÄNDRAR tavlan kräver en fyrsiffrig PIN (header X-Tavla-Pin).
+// Läsning, den simulerade macropaden och tavlans egna anrop gör det inte.
+//
+// Inställningarna: tavlan (settings.py) skickar sitt schema hit — vilka
+// inställningar som finns, standardvärden och tillåtna intervall — och
+// appen bygger sin sida av det. Här sparas bara det Soumaya ÄNDRAT
+// (boardState.settings); tavlan lägger det ovanpå sina standardvärden
+// och kontrollerar varje värde igen innan det används.
+//
+// Tavlan frågar /api/board/pi-sync var 5:e sekund med sin version —
+// ändrats något (configVersion) får den allt nytt i svaret.
+
+if (typeof boardState.configVersion !== 'number') boardState.configVersion = 1;
+if (!boardState.settings) boardState.settings = {};
+if (!Array.isArray(boardState.alarms)) boardState.alarms = [];
+let piStatus = null, piStatusAt = null;
+
+function bumpConfig() {
+  boardState.configVersion += 1;
+  writeJSON(BOARD_FILE, boardState);
+}
+function touchBoard() {          // bussar, bilder, visningsval — tavlan ritar om
+  boardState.boardChangedAt = Date.now();
+  bumpConfig();
+}
+
+// ── PIN ──
+const PIN_MAX_TRIES = 5, PIN_LOCK_MS = 10 * 60 * 1000;
+const pinFails = new Map();      // ip -> { count, until }
+function pinHash(pin, salt) { return crypto.createHash('sha256').update(`${salt}:${pin}`).digest('hex'); }
+function clientIp(req) { return String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || '?'; }
+function pinMatches(pin) {
+  if (!boardState.pin || !/^\d{4}$/.test(pin)) return false;
+  const a = Buffer.from(pinHash(pin, boardState.pin.salt)), b = Buffer.from(boardState.pin.hash);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+function requirePin(req, res, next) {
+  if (!boardState.pin) return res.status(428).json({ error: 'Välj en PIN-kod först', needPinSetup: true });
+  const ip = clientIp(req), now = Date.now();
+  const f = pinFails.get(ip);
+  if (f && f.until > now) {
+    return res.status(429).json({ error: `För många fel — försök igen om ${Math.ceil((f.until - now) / 60000)} min`, lockedUntil: f.until });
+  }
+  if (pinMatches(String(req.headers['x-tavla-pin'] || ''))) { pinFails.delete(ip); return next(); }
+  const count = (f && f.until && f.until <= now) ? 1 : ((f ? f.count : 0) + 1);
+  pinFails.set(ip, { count, until: count >= PIN_MAX_TRIES ? now + PIN_LOCK_MS : 0 });
+  const left = Math.max(0, PIN_MAX_TRIES - count);
+  res.status(401).json({ error: left ? `Fel PIN (${left} försök kvar)` : 'Fel PIN — spärrad i 10 minuter', wrongPin: true, triesLeft: left });
+}
+function setPin(pin) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  boardState.pin = { salt, hash: pinHash(pin, salt), setAt: Date.now() };
+  writeJSON(BOARD_FILE, boardState);
+}
+
+app.get('/api/board/pin', (req, res) => res.json({ hasPin: !!boardState.pin }));
+
+app.post('/api/board/pin/setup', (req, res) => {
+  if (boardState.pin) return res.status(409).json({ error: 'Det finns redan en PIN' });
+  const pin = String(req.body.pin || '');
+  if (!/^\d{4}$/.test(pin)) return res.status(400).json({ error: 'PIN ska vara fyra siffror' });
+  setPin(pin);
+  res.json({ ok: true });
+});
+
+app.post('/api/board/pin/check', requirePin, (req, res) => res.json({ ok: true }));
+
+app.post('/api/board/pin/change', requirePin, (req, res) => {
+  const pin = String(req.body.newPin || '');
+  if (!/^\d{4}$/.test(pin)) return res.status(400).json({ error: 'PIN ska vara fyra siffror' });
+  setPin(pin);
+  res.json({ ok: true });
+});
+
+// Glömd PIN: kräver adminlösenordet (appen loggar in via /api/admin/login)
+app.post('/api/board/pin/reset', adminAuth, (req, res) => {
+  delete boardState.pin;
+  pinFails.clear();
+  writeJSON(BOARD_FILE, boardState);
+  res.json({ ok: true });
+});
+
+// ── Spotify-länkar ──
+// Godtar open.spotify.com-länkar, spotify:-URI:er och korta delningslänkar
+// (spotify.link), som följs hit. Sparas alltid som
+// https://open.spotify.com/<typ>/<id> — det formatet tavlan spelar.
+const SPOTIFY_RE = /^https?:\/\/(?:open|play)\.spotify\.com\/(?:intl-[a-z]{2}(?:-[a-z]{2})?\/)?(track|playlist|album)\/([A-Za-z0-9]{10,40})/;
+async function resolveSpotify(input, kinds) {
+  let v = String(input || '').trim();
+  if (!v) return { url: '' };
+  const uri = /^spotify:(track|playlist|album):([A-Za-z0-9]{10,40})$/.exec(v);
+  if (uri) v = `https://open.spotify.com/${uri[1]}/${uri[2]}`;
+  for (let hop = 0; hop < 4 && !SPOTIFY_RE.test(v); hop++) {
+    let host;
+    try { host = new URL(v).hostname; } catch (e) { break; }
+    if (!/(^|\.)spotify\.link$|(^|\.)app\.link$/.test(host)) break;
+    try {
+      const r = await fetch(v, { redirect: 'manual', signal: AbortSignal.timeout(6000), headers: { 'User-Agent': 'Mozilla/5.0' } });
+      const loc = r.headers.get('location');
+      if (loc) { v = new URL(loc, v).toString(); continue; }
+      const m = /https:\/\/open\.spotify\.com\/(track|playlist|album)\/[A-Za-z0-9]{10,40}/.exec(await r.text());
+      if (m) v = m[0]; else break;
+    } catch (e) { break; }
+  }
+  const m = SPOTIFY_RE.exec(v);
+  if (!m) return { error: 'Det ser inte ut som en Spotify-länk. I Spotify: Dela -> Kopiera länk.' };
+  if (!kinds.includes(m[1])) return { error: `Länken måste vara till en ${kinds.map(k => ({ track: 'låt', playlist: 'spellista', album: 'skiva' }[k])).join('/')}` };
+  const url = `https://open.spotify.com/${m[1]}/${m[2]}`;
+  let title = '';
+  try {
+    const r = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(4000) });
+    if (r.ok) title = String((await r.json()).title || '').slice(0, 80);
+  } catch (e) { /* namnet är bara en bonus */ }
+  return { url, kind: m[1], title };
+}
+
+// ── Inställningar ──
+function schemaItems() {
+  const out = {};
+  ((boardState.settingsSchema || {}).groups || []).forEach(g => (g.items || []).forEach(it => { out[it.key] = it; }));
+  return out;
+}
+async function cleanSetting(item, value) {
+  if (!item) return { error: 'Okänd inställning' };
+  switch (item.type) {
+    case 'bool': return typeof value === 'boolean' ? { value } : { error: 'Ska vara på/av' };
+    case 'int': case 'float': {
+      const n = Number(value);
+      if (typeof value === 'boolean' || value === '' || !Number.isFinite(n)) return { error: 'Ska vara ett tal' };
+      let v = Math.min(item.max, Math.max(item.min, n));
+      if (item.type === 'int') v = Math.round(v);
+      return { value: v };
+    }
+    case 'select': return (item.options || []).some(o => o.value === value) ? { value } : { error: 'Ogiltigt val' };
+    case 'spotify': {
+      const r = await resolveSpotify(value, item.kinds || ['track', 'playlist', 'album']);
+      return r.error ? r : { value: r.url, title: r.title };
+    }
+    case 'str': return typeof value === 'string' ? { value: value.slice(0, 300) } : { error: 'Ska vara text' };
+  }
+  return { error: 'Okänd typ' };
+}
+
+// { key: värde } sparar, { key: null } återställer till tavlans standard
+app.put('/api/board/settings', requirePin, async (req, res) => {
+  const items = schemaItems();
+  const changes = req.body || {};
+  const errors = {};
+  const titles = boardState.settingTitles || {};
+  for (const [key, value] of Object.entries(changes)) {
+    if (value === null) { delete boardState.settings[key]; delete titles[key]; continue; }
+    const r = await cleanSetting(items[key], value);
+    if (r.error) { errors[key] = r.error; continue; }
+    boardState.settings[key] = r.value;
+    if (r.title !== undefined) titles[key] = r.title;
+  }
+  boardState.settingTitles = titles;
+  bumpConfig();
+  res.status(Object.keys(errors).length ? 400 : 200).json({ ok: !Object.keys(errors).length, errors, settings: boardState.settings, settingTitles: titles });
+});
+
+app.delete('/api/board/settings', requirePin, (req, res) => {
+  boardState.settings = {};
+  boardState.settingTitles = {};
+  bumpConfig();
+  res.json({ ok: true, settings: {} });
+});
+
+// ── Alarm ──
+const ALARM_MAX = 20;
+function intIn(v, min, max, def) {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : def;
+}
+async function cleanAlarm(a) {
+  if (!a || typeof a !== 'object') return { error: 'Inget alarm' };
+  const time = String(a.time || '');
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return { error: 'Ogiltig tid' };
+  const days = [...new Set((Array.isArray(a.days) ? a.days : []).map(Number).filter(d => Number.isInteger(d) && d >= 0 && d <= 6))].sort();
+  const date = days.length ? null : String(a.date || '');
+  if (!days.length && !/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: 'Välj dagar, eller ett datum för ett engångsalarm' };
+  const sp = await resolveSpotify(a.url, ['track', 'playlist', 'album']);
+  if (sp.error) return { error: sp.error };
+  return {
+    alarm: {
+      id: typeof a.id === 'string' && /^[\w-]{1,60}$/.test(a.id) ? a.id : crypto.randomUUID(),
+      enabled: a.enabled !== false,
+      time, days, date,
+      label: String(a.label || '').slice(0, 40),
+      url: sp.url, urlTitle: sp.url ? (sp.title || '') : '',
+      volume: intIn(a.volume, 1, 100, 30),
+      rampMinutes: intIn(a.rampMinutes, 0, 30, 3),
+      autoStopMinutes: intIn(a.autoStopMinutes, 5, 180, 30),
+    },
+  };
+}
+
+app.post('/api/board/alarms', requirePin, async (req, res) => {
+  const r = await cleanAlarm(req.body.alarm);
+  if (r.error) return res.status(400).json({ error: r.error });
+  const i = boardState.alarms.findIndex(x => x.id === r.alarm.id);
+  if (i >= 0) boardState.alarms[i] = r.alarm;
+  else if (boardState.alarms.length >= ALARM_MAX) return res.status(400).json({ error: `Högst ${ALARM_MAX} alarm` });
+  else boardState.alarms.push(r.alarm);
+  bumpConfig();
+  res.json({ ok: true, alarm: r.alarm, alarms: boardState.alarms });
+});
+
+app.delete('/api/board/alarms/:id', requirePin, (req, res) => {
+  boardState.alarms = boardState.alarms.filter(a => a.id !== req.params.id);
+  bumpConfig();
+  res.json({ ok: true, alarms: boardState.alarms });
+});
+
+// Testa ett alarm nu (kort mjuk start, stoppar efter 2 min — se alarms.py)
+app.post('/api/board/alarms/test', requirePin, async (req, res) => {
+  const r = await cleanAlarm({ ...req.body.alarm, enabled: true });
+  if (r.error) return res.status(400).json({ error: r.error });
+  boardState.alarmTest = { id: crypto.randomUUID(), at: Date.now(), alarm: r.alarm };
+  bumpConfig();
+  res.json({ ok: true });
+});
+
+// ── Tavlans egna anrop (ingen PIN — tavlan kontrollerar allt själv) ──
+app.post('/api/board/pi-sync', (req, res) => {
+  lastPiSeenAt = Date.now();
+  const body = req.body || {};
+  if (body.status && typeof body.status === 'object') {
+    piStatus = body.status;
+    piStatusAt = Date.now();
+  }
+  const out = {
+    version: boardState.configVersion,
+    needSchema: body.schemaHash !== (boardState.settingsSchema || {}).hash,
+  };
+  if (body.version !== boardState.configVersion) {
+    out.settings = boardState.settings;
+    out.alarms = boardState.alarms;
+    out.boardChangedAt = boardState.boardChangedAt || null;
+    out.alarmTest = boardState.alarmTest || null;
+  }
+  res.json(out);
+});
+
+// Om serverns data skulle ha försvunnit (t.ex. ny server utan sparad
+// data) har tavlan kvar sin egen kopia av alarm och inställningar och
+// lämnar tillbaka dem hit — men BARA om servern verkligen är tom.
+app.post('/api/board/pi-restore', (req, res) => {
+  const body = req.body || {};
+  const serverEmpty = !boardState.alarms.length && !Object.keys(boardState.settings).length;
+  if (!serverEmpty || !(Number(body.version) > boardState.configVersion)) return res.status(409).json({ error: 'Servern har redan data' });
+  Promise.all((Array.isArray(body.alarms) ? body.alarms : []).slice(0, ALARM_MAX).map(cleanAlarm)).then(results => {
+    boardState.alarms = results.filter(r => r.alarm).map(r => r.alarm);
+    boardState.settings = (body.settings && typeof body.settings === 'object') ? body.settings : {};
+    boardState.configVersion = Number(body.version) + 1;
+    writeJSON(BOARD_FILE, boardState);
+    console.log(`[tavlan] Återställde ${boardState.alarms.length} alarm och ${Object.keys(boardState.settings).length} inställningar från tavlan`);
+    res.json({ ok: true });
+  });
+});
+
+app.post('/api/board/pi-schema', (req, res) => {
+  const body = req.body || {};
+  if (!Array.isArray(body.groups) || typeof body.hash !== 'string' || JSON.stringify(body).length > 100000) {
+    return res.status(400).json({ error: 'Ogiltigt schema' });
+  }
+  boardState.settingsSchema = { groups: body.groups, hash: body.hash, at: Date.now() };
+  writeJSON(BOARD_FILE, boardState);
+  res.json({ ok: true });
 });
 
 // ── KALENDER (Google Calendar) ──────────────────────────────────

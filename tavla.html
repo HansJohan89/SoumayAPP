@@ -39,6 +39,8 @@ html,body{height:100%;background:var(--paper);color:var(--ink);font-family:var(-
 .tab-btn{flex:1;border:2px solid var(--ink);border-radius:10px;background:var(--white);padding:10px;
   font-weight:700;font-size:13px;font-family:var(--font-ui);cursor:pointer;box-shadow:2px 2px 0 var(--ink);}
 .tab-btn.active{background:var(--hero-blue);color:white;}
+.tab-btn{padding:8px 4px;white-space:nowrap;}
+.tab-ico{display:block;font-size:18px;line-height:1.2;}
 main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
 .tab-panel{display:none;}
 .tab-panel.active{display:block;}
@@ -79,6 +81,70 @@ main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
 .knob{width:64px;height:64px;border-radius:50%;background:#D9CEB8;border:2px solid var(--ink);
   display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
 .keys-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+
+/* ── Alarm ── */
+.alarm-status{border:var(--border-thick);border-radius:14px;padding:14px 16px;margin-bottom:20px;box-shadow:4px 4px 0 var(--ink);background:var(--white);}
+.alarm-status.ringing{background:var(--pulse-red);color:white;}
+.alarm-status.snoozed{background:#FFE600;}
+.alarm-status-title{font-family:var(--font-burst);font-size:15px;letter-spacing:1px;}
+.alarm-status-sub{font-size:13px;font-weight:600;margin-top:4px;}
+.alarm-status-actions{display:flex;gap:10px;margin-top:12px;}
+.alarm-status-actions .btn{flex:1;padding:12px;font-size:15px;}
+.alarm-card{display:flex;align-items:center;gap:12px;background:var(--white);border:var(--border-thick);border-radius:14px;
+  padding:12px 14px;box-shadow:4px 4px 0 var(--ink);margin-bottom:14px;cursor:pointer;}
+.alarm-card.off{background:var(--paper-soft);}
+.alarm-card.off .alarm-time,.alarm-card.off .alarm-meta{opacity:.45;}
+.alarm-time{font-family:var(--font-mono);font-size:34px;font-weight:700;line-height:1;}
+.alarm-info{flex:1;min-width:0;}
+.alarm-meta{font-size:12px;font-weight:600;color:var(--ink-muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.alarm-label{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.switch{position:relative;width:52px;height:30px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;}
+.switch span{position:absolute;inset:0;background:var(--paper-dark);border:2px solid var(--ink);border-radius:30px;transition:.15s;}
+.switch span::before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:var(--white);border:2px solid var(--ink);border-radius:50%;transition:.15s;}
+.switch input:checked + span{background:var(--in-range);}
+.switch input:checked + span::before{transform:translateX(22px);}
+.chips{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{border:2px solid var(--ink);border-radius:20px;background:var(--white);padding:7px 0;width:40px;text-align:center;
+  font-weight:700;font-size:13px;font-family:var(--font-ui);cursor:pointer;}
+.chip.on{background:var(--hero-blue);color:white;}
+.chip-wide{width:auto;padding:6px 12px;font-size:12px;}
+.field{margin-bottom:14px;}
+.field-label{font-size:12px;font-weight:700;margin-bottom:6px;display:flex;justify-content:space-between;}
+.time-input{font-family:var(--font-mono);font-size:40px;font-weight:700;text-align:center;border:var(--border-thick);
+  border-radius:12px;padding:6px;width:100%;background:var(--white);}
+input[type=range]{width:100%;accent-color:var(--hero-blue);}
+
+/* ── Ark (redigera alarm, PIN) ── */
+.sheet-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:flex-end;justify-content:center;}
+.sheet-bg.open{display:flex;}
+.sheet{background:var(--paper);border-top:var(--border-thick);border-radius:18px 18px 0 0;width:100%;max-width:520px;
+  max-height:92vh;overflow-y:auto;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));}
+.sheet-title{font-family:var(--font-burst);font-size:16px;letter-spacing:1px;margin-bottom:14px;}
+.sheet-actions{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;}
+.sheet-actions .btn{flex:1;min-width:30%;}
+.pin-input{font-family:var(--font-mono);font-size:36px;letter-spacing:18px;text-align:center;border:var(--border-thick);
+  border-radius:12px;padding:10px 0 10px 18px;width:100%;background:var(--white);}
+.pin-error{color:var(--pulse-red);font-weight:700;font-size:13px;min-height:18px;margin:8px 0;}
+.link-btn{background:none;border:none;color:var(--hero-blue-dark);font-weight:700;font-size:13px;text-decoration:underline;cursor:pointer;font-family:var(--font-ui);padding:6px 0;}
+
+/* ── Inställningar från tavlan ── */
+.set-row{padding:10px 0;border-bottom:1px solid var(--paper-soft);}
+.set-row:last-child{border-bottom:none;}
+.set-top{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.set-help{font-size:11px;color:var(--ink-muted);margin-top:4px;}
+.set-default{font-size:11px;color:var(--ink-muted);margin-top:3px;}
+.set-default.changed{color:var(--hero-blue-dark);font-weight:700;}
+.set-ctrl{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.set-ctrl input[type=number]{width:84px;text-align:center;padding:8px;}
+.set-ctrl select{padding:8px;border:2px solid var(--ink);border-radius:8px;font-family:var(--font-ui);font-size:14px;background:var(--white);}
+.set-unit{font-size:12px;font-weight:700;color:var(--ink-muted);width:48px;}
+.set-ctrl input.wide{width:110px;}
+.set-reset{border:none;background:none;font-size:16px;cursor:pointer;color:var(--hero-blue-dark);padding:2px 4px;}
+.set-error{color:var(--pulse-red);font-size:12px;font-weight:700;margin-top:4px;}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:white;
+  padding:10px 16px;border-radius:10px;font-weight:700;font-size:13px;z-index:2000;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center;}
+.toast.show{opacity:1;}
 </style>
 </head>
 <body>
@@ -92,8 +158,9 @@ main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
 </div>
 
 <div class="tabbar">
-  <button class="tab-btn active" id="tabBtnView" onclick="showTab('view')">🖼️ Tavlan</button>
-  <button class="tab-btn" id="tabBtnSettings" onclick="showTab('settings')">⚙️ Inställningar</button>
+  <button class="tab-btn active" id="tabBtnView" onclick="showTab('view')"><span class="tab-ico">🖼️</span>Tavlan</button>
+  <button class="tab-btn" id="tabBtnAlarm" onclick="showTab('alarm')"><span class="tab-ico">⏰</span>Alarm</button>
+  <button class="tab-btn" id="tabBtnSettings" onclick="showTab('settings')"><span class="tab-ico">⚙️</span>Inställningar</button>
 </div>
 
 <main>
@@ -128,15 +195,21 @@ main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
             <button class="mp-knob-btn" onclick="sendMacropadCommand('knob',null,-1)">▼</button>
           </div>
         </div>
-        <div class="keys-grid">
-          <button class="mp-key" onclick="sendMacropadCommand('show_view','home')">🏠<br>Hem</button>
-          <button class="mp-key" onclick="sendMacropadCommand('show_view','tavla')">🖼️<br>Tavla</button>
-          <button class="mp-key" onclick="sendMacropadCommand('show_view','fotboll')">⚽<br>Fotboll</button>
-          <button class="mp-key" onclick="sendMacropadCommand('show_view','lokaltrafik')">🚌<br>Lokaltrafik</button>
-          <button class="mp-key" onclick="sendMacropadCommand('show_view','kalender')">📅<br>Kalender</button>
-          <button class="mp-key" onclick="sendMacropadCommand('spotify_play_pause')">⏯️<br>Play</button>
-        </div>
+        <div class="keys-grid" id="keysGrid"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ FLIK: ALARM ═══════════════════════ -->
+  <div class="tab-panel" id="tab-alarm">
+    <div class="alarm-status" id="alarmStatus">
+      <div class="alarm-status-title">Laddar…</div>
+    </div>
+    <div id="alarmList"></div>
+    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="openAlarmEditor(null)">+ Nytt alarm</button>
+    <div class="hint" style="margin-top:14px;">
+      Alarmet ringer från tavlan — det går även om appen är stängd.
+      Högtalaren måste vara på. När det ringer: ⏯️ stänger av, tryck på vredet = snooza.
     </div>
   </div>
 
@@ -176,10 +249,6 @@ main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
         <div class="setting-label">Buss</div>
         <input type="checkbox" id="tavlaShowBus" onchange="saveTavlaSettings()" style="width:22px;height:22px;">
       </div>
-      <div class="setting-row">
-        <div class="setting-label">Spotify</div>
-        <input type="checkbox" id="tavlaShowSpotify" onchange="saveTavlaSettings()" style="width:22px;height:22px;">
-      </div>
     </div>
 
     <div class="card">
@@ -189,18 +258,7 @@ main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
       <button class="btn btn-ghost btn-sm btn-inline" onclick="addTavlaBusRoute()" style="margin-top:8px;">+ Lägg till rutt</button>
     </div>
 
-    <div class="card">
-      <div class="card-label">Uppdateringsintervall</div>
-      <div class="setting-row">
-        <div class="setting-label">Minuter mellan uppdateringar</div>
-        <input type="number" class="input-field" id="tavlaRefreshMinutes" min="5" max="60" step="5" style="width:80px;text-align:center;padding:8px;" onchange="saveTavlaSettings()">
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-label">Musik spelas på</div>
-      <input type="text" class="input-field" id="tavlaSpotifyDevice" placeholder="t.ex. Vardagsrum" onchange="saveTavlaSettings()">
-    </div>
+    <div id="piSettings"></div>
 
     <div class="card">
       <div class="card-label">Google Photos-album (Tavla-bilder)</div>
@@ -236,9 +294,97 @@ main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
       <div id="tavlaGallery" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;"></div>
     </div>
 
+    <div class="card">
+      <div class="card-label">PIN-kod</div>
+      <div class="hint" id="pinCardHint">Behövs för att ändra inställningar, bilder och alarm. Telefonen kommer ihåg den.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="changePin()">Byt PIN</button>
+        <button class="btn btn-ghost btn-sm" onclick="lockApp()">Lås (glöm PIN på den här telefonen)</button>
+      </div>
+      <button class="link-btn" onclick="forgotPin()">Glömt PIN-koden?</button>
+    </div>
+
   </div>
 
 </main>
+
+<!-- Redigera alarm -->
+<div class="sheet-bg" id="alarmSheet" onclick="if(event.target===this)closeAlarmEditor()">
+  <div class="sheet">
+    <div class="sheet-title" id="alarmSheetTitle">NYTT ALARM</div>
+    <div class="field">
+      <input type="time" class="time-input" id="alarmTime" value="07:00" onchange="updateOnceHint()">
+    </div>
+    <div class="field">
+      <div class="field-label"><span>Dagar</span><span id="alarmOnceHint" style="color:var(--hero-blue-dark);"></span></div>
+      <div class="chips" id="alarmDays"></div>
+      <div class="chips" style="margin-top:8px;">
+        <button class="chip chip-wide" onclick="setAlarmDays([0,1,2,3,4])">Vardagar</button>
+        <button class="chip chip-wide" onclick="setAlarmDays([5,6])">Helger</button>
+        <button class="chip chip-wide" onclick="setAlarmDays([0,1,2,3,4,5,6])">Varje dag</button>
+        <button class="chip chip-wide" onclick="setAlarmDays([])">En gång</button>
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-label">Namn (valfritt)</div>
+      <input type="text" class="input-field" id="alarmLabel" maxlength="40" placeholder="t.ex. Jobb">
+    </div>
+    <div class="field">
+      <div class="field-label">Musik</div>
+      <label style="display:flex;gap:8px;align-items:center;font-size:14px;font-weight:600;margin-bottom:8px;">
+        <input type="radio" name="alarmSource" value="resume" checked onchange="updateAlarmSource()" style="width:18px;height:18px;"> Fortsätt där jag slutade
+      </label>
+      <label style="display:flex;gap:8px;align-items:center;font-size:14px;font-weight:600;">
+        <input type="radio" name="alarmSource" value="url" onchange="updateAlarmSource()" style="width:18px;height:18px;"> En låt, spellista eller skiva
+      </label>
+      <div id="alarmUrlWrap" style="display:none;margin-top:8px;">
+        <input type="url" class="input-field" id="alarmUrl" placeholder="Klistra in Spotify-länk">
+        <div class="set-help">I Spotify: ⋯ → Dela → Kopiera länk.</div>
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-label"><span>Volym</span><span id="alarmVolumeText">30 %</span></div>
+      <input type="range" id="alarmVolume" min="1" max="100" value="30" oninput="document.getElementById('alarmVolumeText').textContent=this.value+' %'">
+    </div>
+    <div class="field" style="display:flex;gap:10px;">
+      <div style="flex:1;">
+        <div class="field-label">Mjuk start</div>
+        <select class="input-field" id="alarmRamp"></select>
+      </div>
+      <div style="flex:1;">
+        <div class="field-label">Stäng av efter</div>
+        <select class="input-field" id="alarmAutoStop"></select>
+      </div>
+    </div>
+    <div class="pin-error" id="alarmError"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" onclick="closeAlarmEditor()">Avbryt</button>
+      <button class="btn btn-ghost" onclick="testAlarm()">▶ Testa</button>
+      <button class="btn btn-primary" onclick="saveAlarm()">Spara</button>
+    </div>
+    <div class="sheet-actions" id="alarmDeleteWrap" style="margin-top:10px;">
+      <button class="btn btn-ghost" style="color:var(--pulse-red);" onclick="deleteAlarm()">Ta bort alarmet</button>
+    </div>
+  </div>
+</div>
+
+<!-- PIN -->
+<div class="sheet-bg" id="pinSheet">
+  <div class="sheet">
+    <div class="sheet-title" id="pinTitle">ANGE PIN</div>
+    <div class="hint" id="pinHint"></div>
+    <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" class="pin-input" id="pinInput"
+           oninput="this.value=this.value.replace(/\D/g,'').slice(0,4); if(this.value.length===4) pinSubmit()">
+    <div class="pin-error" id="pinError"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" onclick="pinCancel()">Avbryt</button>
+      <button class="btn btn-primary" onclick="pinSubmit()">OK</button>
+    </div>
+    <button class="link-btn" id="pinForgot" onclick="pinCancel(); forgotPin()">Glömt PIN-koden?</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script>
 // ═══════════════════════════════════════════════════
@@ -304,15 +450,19 @@ async function sendWifiOverBluetooth() {
 // FLIKAR
 // ═══════════════════════════════════════════════════
 let settingsLoaded = false;
+let currentTab = 'view';
 function showTab(name){
-  document.getElementById('tab-view').classList.toggle('active', name==='view');
-  document.getElementById('tab-settings').classList.toggle('active', name==='settings');
-  document.getElementById('tabBtnView').classList.toggle('active', name==='view');
-  document.getElementById('tabBtnSettings').classList.toggle('active', name==='settings');
+  currentTab = name;
+  ['view','alarm','settings'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', name===t);
+    document.getElementById('tabBtn'+t[0].toUpperCase()+t.slice(1)).classList.toggle('active', name===t);
+  });
   if(name==='settings' && !settingsLoaded){
     settingsLoaded = true;
     loadTavlaPage();
   }
+  if(name==='alarm') { refreshStatus(); }
+  try { sessionStorage.setItem('tavlaTab', name); } catch(e) {}
 }
 
 // ═══════════════════════════════════════════════════
@@ -324,6 +474,9 @@ async function refreshStatus(){
   try {
     const res = await fetch('/api/board');
     const board = await res.json();
+    lastBoard = board;
+    renderKeys(board);
+    if (currentTab === 'alarm') { renderAlarmStatus(board); if (!alarmEditorOpen) renderAlarmList(board); }
     const seenRecently = board.lastPiSeenAt && (Date.now() - board.lastPiSeenAt) < 15000;
     if (seenRecently) {
       dot.style.background = 'var(--in-range)';
@@ -469,6 +622,8 @@ const MACROPAD_LABELS = {
   spotify_play_pause: 'Play/Paus',
   knob: { 1: 'Volym +', '-1': 'Volym −' },
   spotify_next: 'Nästa låt',
+  alarm_stop: 'Alarm av',
+  alarm_snooze: 'Snooze',
 };
 let macropadOledTimer = null;
 async function sendMacropadCommand(action, viewOrParam, direction){
@@ -525,12 +680,10 @@ async function loadTavlaPage(){
   document.getElementById('tavlaShowGlucose').checked = tavlaState.showGlucose;
   document.getElementById('tavlaShowWeather').checked = tavlaState.showWeather;
   document.getElementById('tavlaShowBus').checked = tavlaState.showBus;
-  document.getElementById('tavlaShowSpotify').checked = tavlaState.showSpotify;
-  document.getElementById('tavlaRefreshMinutes').value = tavlaState.refreshMinutes;
-  document.getElementById('tavlaSpotifyDevice').value = tavlaState.spotifyDevice || '';
   document.getElementById('tavlaGooglePhotosUrls').value = (tavlaState.googlePhotosAlbumUrls || (tavlaState.googlePhotosAlbumUrl ? [tavlaState.googlePhotosAlbumUrl] : [])).join('\n');
   renderTavlaBusList();
   renderTavlaGallery();
+  renderPiSettings();
 }
 
 function renderTavlaBusList(){
@@ -677,27 +830,23 @@ async function saveTavlaSettings(){
   tavlaState.showGlucose = document.getElementById('tavlaShowGlucose').checked;
   tavlaState.showWeather = document.getElementById('tavlaShowWeather').checked;
   tavlaState.showBus = document.getElementById('tavlaShowBus').checked;
-  tavlaState.showSpotify = document.getElementById('tavlaShowSpotify').checked;
-  tavlaState.refreshMinutes = parseInt(document.getElementById('tavlaRefreshMinutes').value) || 15;
-  tavlaState.spotifyDevice = document.getElementById('tavlaSpotifyDevice').value;
   tavlaState.googlePhotosAlbumUrls = document.getElementById('tavlaGooglePhotosUrls').value
     .split('\n').map(s => s.trim()).filter(Boolean);
 
-  await fetch('/api/board', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({
+  try {
+    await api('POST', '/api/board', {
       showGlucose: tavlaState.showGlucose,
       showWeather: tavlaState.showWeather,
       showBus: tavlaState.showBus,
-      showSpotify: tavlaState.showSpotify,
       busDestinations: tavlaState.busDestinations,
       homeStopIndex: tavlaState.homeStopIndex,
-      refreshMinutes: tavlaState.refreshMinutes,
-      spotifyDevice: tavlaState.spotifyDevice,
       googlePhotosAlbumUrls: tavlaState.googlePhotosAlbumUrls,
-    })
-  });
+    });
+    toast('Sparat ✓');
+  } catch(e) {
+    if (e.message !== 'avbrutet') toast(e.message);
+    loadTavlaPage();   // visa det som faktiskt är sparat
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -801,12 +950,9 @@ async function saveCroppedImage(){
   ctx.drawImage(cropImg, s.offsetX * ratio, s.offsetY * ratio, s.naturalW * scale, s.naturalH * scale);
   const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
 
-  const res = await fetch('/api/board/image', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ name: s.fileName, imageData: dataUrl })
-  });
-  const data = await res.json();
+  let data = {};
+  try { data = await api('POST', '/api/board/image', { name: s.fileName, imageData: dataUrl }); }
+  catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
   if(data.ok){
     tavlaState.images.unshift(data.image);
     renderTavlaGallery();
@@ -846,25 +992,485 @@ function renderTavlaGallery(){
 
 async function selectTavlaImage(imageId){
   const id = imageId === 'null' ? null : imageId;
-  await fetch('/api/board/select', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ imageId: id })
-  });
+  try { await api('POST', '/api/board/select', { imageId: id }); }
+  catch(e) { if (e.message !== 'avbrutet') toast(e.message); return; }
   tavlaState.activeImageId = id;
   renderTavlaGallery();
 }
 
 async function deleteTavlaImage(imageId){
-  await fetch('/api/board/image/'+imageId, { method: 'DELETE' });
+  try { await api('DELETE', '/api/board/image/'+imageId); }
+  catch(e) { if (e.message !== 'avbrutet') toast(e.message); return; }
   tavlaState.images = tavlaState.images.filter(i => i.id !== imageId);
   if(tavlaState.activeImageId === imageId) tavlaState.activeImageId = null;
   renderTavlaGallery();
 }
 
 // ═══════════════════════════════════════════════════
+// PIN — allt som ändrar tavlan kräver en fyrsiffrig PIN.
+// Telefonen kommer ihåg den (localStorage), så den anges bara en gång.
+// ═══════════════════════════════════════════════════
+let lastBoard = null;
+let memPin = '';
+function getPin(){ try { return localStorage.getItem('tavlaPin') || memPin; } catch(e) { return memPin; } }
+function storePin(p){ memPin = p; try { localStorage.setItem('tavlaPin', p); } catch(e) {} }
+function forgetPinLocal(){ memPin = ''; try { localStorage.removeItem('tavlaPin'); } catch(e) {} }
+
+let toastTimer = null;
+function toast(text){
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+let pinResolve = null, pinMode = 'enter', pinFirst = '';
+function openPinSheet(mode, error){
+  pinMode = mode; pinFirst = '';
+  document.getElementById('pinTitle').textContent = mode === 'setup' ? 'VÄLJ EN PIN-KOD' : mode === 'new' ? 'NY PIN-KOD' : 'ANGE PIN';
+  document.getElementById('pinHint').textContent = mode === 'enter'
+    ? 'Fyra siffror. Telefonen kommer ihåg den.'
+    : 'Fyra siffror som behövs för att ändra tavlan. Skriv den två gånger.';
+  document.getElementById('pinForgot').style.display = mode === 'enter' ? '' : 'none';
+  document.getElementById('pinError').textContent = error || '';
+  const input = document.getElementById('pinInput');
+  input.value = '';
+  document.getElementById('pinSheet').classList.add('open');
+  setTimeout(() => input.focus(), 50);
+  return new Promise(resolve => { pinResolve = resolve; });
+}
+function pinFinish(value){
+  document.getElementById('pinSheet').classList.remove('open');
+  const r = pinResolve; pinResolve = null;
+  if (r) r(value);
+}
+function pinCancel(){ pinFinish(null); }
+function pinSubmit(){
+  const input = document.getElementById('pinInput');
+  const v = input.value;
+  if (!/^\d{4}$/.test(v)) { document.getElementById('pinError').textContent = 'Fyra siffror'; return; }
+  if (pinMode === 'enter') return pinFinish(v);
+  if (!pinFirst) {
+    pinFirst = v; input.value = '';
+    document.getElementById('pinHint').textContent = 'Skriv samma PIN en gång till.';
+    document.getElementById('pinError').textContent = '';
+    return;
+  }
+  if (v !== pinFirst) {
+    pinFirst = ''; input.value = '';
+    document.getElementById('pinHint').textContent = 'Fyra siffror. Skriv den två gånger.';
+    document.getElementById('pinError').textContent = 'Det var inte samma — börja om';
+    return;
+  }
+  pinFinish(v);
+}
+
+async function setupPin(){
+  const pin = await openPinSheet('setup');
+  if (!pin) return false;
+  const res = await fetch('/api/board/pin/setup', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ pin }) });
+  if (!res.ok) { toast((await res.json()).error || 'Kunde inte spara PIN'); return false; }
+  storePin(pin);
+  toast('PIN sparad ✓');
+  return true;
+}
+
+// Alla ändringar går hit: lägger på PIN, frågar efter den när den behövs.
+async function api(method, url, body){
+  let error = '';
+  for (let attempt = 0; attempt < 6; attempt++) {
+    let pin = getPin();
+    if (!pin) {
+      pin = await openPinSheet('enter', error);
+      if (!pin) throw new Error('avbrutet');
+    }
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type':'application/json', 'X-Tavla-Pin': pin },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    let data = {};
+    try { data = await res.json(); } catch(e) {}
+    if (res.status === 428) { if (!(await setupPin())) throw new Error('avbrutet'); continue; }
+    if (res.status === 401) { forgetPinLocal(); error = data.error || 'Fel PIN'; continue; }
+    if (res.status === 429) { forgetPinLocal(); throw new Error(data.error || 'Spärrad en stund'); }
+    if (!getPin() || getPin() !== pin) storePin(pin);
+    if (!res.ok) { const e = new Error(data.error || 'Något gick fel'); e.data = data; throw e; }
+    return data;
+  }
+  throw new Error('avbrutet');
+}
+
+async function changePin(){
+  try { await api('POST', '/api/board/pin/check'); } catch(e) { if (e.message !== 'avbrutet') toast(e.message); return; }
+  const pin = await openPinSheet('new');
+  if (!pin) return;
+  try { await api('POST', '/api/board/pin/change', { newPin: pin }); storePin(pin); toast('Ny PIN sparad ✓'); }
+  catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+}
+function lockApp(){ forgetPinLocal(); toast('Låst — PIN behövs nästa gång'); }
+async function forgotPin(){
+  const pw = prompt('Glömt PIN-koden? Ange adminlösenordet (Mikael har det) så kan du välja en ny.');
+  if (!pw) return;
+  const login = await fetch('/api/admin/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ password: pw }) });
+  if (!login.ok) { toast('Fel adminlösenord'); return; }
+  const { token } = await login.json();
+  const res = await fetch('/api/board/pin/reset', { method:'POST', headers:{ 'X-Admin-Token': token } });
+  if (!res.ok) { toast('Kunde inte nollställa'); return; }
+  forgetPinLocal();
+  await setupPin();
+}
+
+// ═══════════════════════════════════════════════════
+// MACROPAD-KNAPPAR — samma vyer som den riktiga (ändras under Inställningar)
+// ═══════════════════════════════════════════════════
+const VIEW_ICONS = { home:'🏠', tavla:'🖼️', fotboll:'⚽', lokaltrafik:'🚌', kalender:'📅' };
+const DEFAULT_KEYS = ['home','tavla','fotboll','lokaltrafik','kalender'];
+let keysSig = '';
+function boardValue(board, key, fallback){
+  const v = ((board || {}).settings || {})[key];
+  if (v !== undefined && v !== null) return v;
+  const item = schemaItem(board, key);
+  return item ? item.default : fallback;
+}
+function schemaItem(board, key){
+  for (const g of (((board || {}).settingsSchema || {}).groups || [])) for (const it of g.items) if (it.key === key) return it;
+  return null;
+}
+function renderKeys(board){
+  const views = DEFAULT_KEYS.map((v, i) => boardValue(board, `button${i+1}View`, v));
+  const sig = views.join(',');
+  if (sig === keysSig) return;
+  keysSig = sig;
+  const grid = document.getElementById('keysGrid');
+  grid.innerHTML = views.map(v =>
+    `<button class="mp-key" onclick="sendMacropadCommand('show_view','${v}')">${VIEW_ICONS[v] || '▫️'}<br>${VIEW_NAMES[v] || v}</button>`
+  ).join('') + `<button class="mp-key" onclick="sendMacropadCommand('spotify_play_pause')">⏯️<br>Play</button>`;
+}
+
+// ═══════════════════════════════════════════════════
+// ALARM
+// ═══════════════════════════════════════════════════
+const DAY_SHORT = ['Mån','Tis','Ons','Tor','Fre','Lör','Sön'];
+const DAY_CHIP = ['M','Ti','O','To','F','L','S'];
+const RAMP_CHOICES = [0,1,2,3,5,10,15,20,30];
+const STOP_CHOICES = [5,10,15,20,30,45,60,90,120,180];
+let alarmEditorOpen = false, editing = null, editDays = [];
+let alarmListSig = '';
+
+function esc(t){ return String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function pad2(n){ return String(n).padStart(2,'0'); }
+function isoDate(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+function mondayIndex(d){ return (d.getDay() + 6) % 7; }
+
+// Engångsalarm: nästa gång klockan blir så (idag om tiden inte passerat, annars imorgon)
+function nextOnceDate(time){
+  const [h, m] = time.split(':').map(Number);
+  const now = new Date(), t = new Date();
+  t.setHours(h, m, 0, 0);
+  if (t <= now) t.setDate(t.getDate() + 1);
+  return isoDate(t);
+}
+function dayWord(dateStr){
+  const today = isoDate(new Date());
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+  if (dateStr === today) return 'idag';
+  if (dateStr === isoDate(tomorrow)) return 'imorgon';
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('sv-SE', { weekday:'short', day:'numeric', month:'short' });
+}
+function daysText(a){
+  const d = a.days || [];
+  if (!d.length) {
+    const past = a.date && a.date < isoDate(new Date());
+    return past ? 'En gång (har ringt)' : `En gång · ${dayWord(a.date)}`;
+  }
+  const key = d.join(',');
+  if (key === '0,1,2,3,4,5,6') return 'Varje dag';
+  if (key === '0,1,2,3,4') return 'Vardagar';
+  if (key === '5,6') return 'Helger';
+  return d.map(i => DAY_SHORT[i]).join(', ');
+}
+function untilText(ms){
+  const min = Math.max(0, Math.round((ms - Date.now()) / 60000));
+  if (min < 60) return `om ${min} min`;
+  const h = Math.floor(min / 60), m = min % 60;
+  return `om ${h} tim${m ? ` ${m} min` : ''}`;
+}
+
+function renderAlarmStatus(board){
+  const box = document.getElementById('alarmStatus');
+  const st = (board.piStatus || {}).alarm || {};
+  const fresh = board.piStatusAt && (Date.now() - board.piStatusAt) < 30000;
+  const snooze = boardValue(board, 'snoozeMinutes', 9);
+  box.className = 'alarm-status' + (fresh && st.mode === 'ringing' ? ' ringing' : fresh && st.mode === 'snoozed' ? ' snoozed' : '');
+  if (!fresh) {
+    box.innerHTML = `<div class="alarm-status-title">TAVLAN SVARAR INTE</div>
+      <div class="alarm-status-sub">Alarmen finns sparade på tavlan och ringer ändå när den är igång. Har du nyss uppdaterat: starta om tavlan.</div>`;
+    return;
+  }
+  if (st.mode === 'ringing') {
+    box.innerHTML = `<div class="alarm-status-title">⏰ ALARMET RINGER</div>
+      <div class="alarm-status-sub">${esc(st.label || '')}</div>
+      <div class="alarm-status-actions">
+        <button class="btn btn-ghost" onclick="alarmCommand('alarm_snooze')">💤 Snooza ${snooze} min</button>
+        <button class="btn btn-ghost" onclick="alarmCommand('alarm_stop')">Stäng av</button>
+      </div>`;
+    return;
+  }
+  if (st.mode === 'snoozed') {
+    const t = new Date(st.snoozeUntil);
+    box.innerHTML = `<div class="alarm-status-title">💤 SNOOZAT</div>
+      <div class="alarm-status-sub">Ringer igen kl ${pad2(t.getHours())}:${pad2(t.getMinutes())}</div>
+      <div class="alarm-status-actions"><button class="btn btn-ghost" onclick="alarmCommand('alarm_stop')">Stäng av</button></div>`;
+    return;
+  }
+  const err = st.error ? `<div class="alarm-status-sub" style="color:var(--pulse-red);">⚠️ ${esc(st.error)}</div>` : '';
+  if (st.next) {
+    const t = new Date(st.next.at);
+    box.innerHTML = `<div class="alarm-status-title">NÄSTA ALARM</div>
+      <div class="alarm-status-sub">${dayWord(isoDate(t))} kl ${pad2(t.getHours())}:${pad2(t.getMinutes())} · ${untilText(st.next.at)}${st.next.label ? ' · ' + esc(st.next.label) : ''}</div>${err}`;
+  } else {
+    box.innerHTML = `<div class="alarm-status-title">INGA ALARM PÅ</div>${err}`;
+  }
+}
+
+function renderAlarmList(board){
+  const alarms = (board.alarms || []).slice().sort((a, b) => a.time.localeCompare(b.time));
+  const sig = JSON.stringify(alarms);
+  if (sig === alarmListSig) return;
+  alarmListSig = sig;
+  const wrap = document.getElementById('alarmList');
+  if (!alarms.length) {
+    wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--ink-muted);font-size:14px;">Inga alarm än.</div>';
+    return;
+  }
+  wrap.innerHTML = alarms.map(a => {
+    const past = !(a.days || []).length && a.date && a.date < isoDate(new Date());
+    const on = a.enabled && !past;
+    const music = a.url ? (a.urlTitle || 'Spotify-länk') : 'Fortsätter där du slutade';
+    return `<div class="alarm-card ${on ? '' : 'off'}" onclick="openAlarmEditor('${a.id}')">
+      <div class="alarm-info">
+        <div class="alarm-time">${esc(a.time)}</div>
+        ${a.label ? `<div class="alarm-label">${esc(a.label)}</div>` : ''}
+        <div class="alarm-meta">${esc(daysText(a))} · ${a.volume} % · 🎵 ${esc(music)}</div>
+      </div>
+      <label class="switch" onclick="event.stopPropagation()">
+        <input type="checkbox" ${on ? 'checked' : ''} onchange="toggleAlarm('${a.id}', this.checked)"><span></span>
+      </label>
+    </div>`;
+  }).join('');
+}
+
+async function reloadBoard(){
+  const res = await fetch('/api/board');
+  lastBoard = await res.json();
+  alarmListSig = '';
+  renderAlarmList(lastBoard);
+  renderAlarmStatus(lastBoard);
+  return lastBoard;
+}
+
+async function toggleAlarm(id, on){
+  const a = (lastBoard.alarms || []).find(x => x.id === id);
+  if (!a) return;
+  const copy = { ...a, enabled: on };
+  // Ett engångsalarm som redan ringt och slås på igen: nästa gång klockan blir så
+  if (on && !(copy.days || []).length) copy.date = nextOnceDate(copy.time);
+  try { await api('POST', '/api/board/alarms', { alarm: copy }); toast(on ? 'Alarmet är på ✓' : 'Alarmet är av'); }
+  catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+  reloadBoard();
+}
+
+function fillSelect(id, choices, value, fmt){
+  const el = document.getElementById(id);
+  el.innerHTML = choices.map(c => `<option value="${c}" ${c === value ? 'selected' : ''}>${fmt(c)}</option>`).join('');
+}
+function renderDayChips(){
+  document.getElementById('alarmDays').innerHTML = DAY_CHIP.map((d, i) =>
+    `<button class="chip ${editDays.includes(i) ? 'on' : ''}" onclick="toggleDay(${i})">${d}</button>`).join('');
+  updateOnceHint();
+}
+function toggleDay(i){
+  editDays = editDays.includes(i) ? editDays.filter(x => x !== i) : [...editDays, i].sort();
+  renderDayChips();
+}
+function setAlarmDays(days){ editDays = days.slice(); renderDayChips(); }
+function updateOnceHint(){
+  const time = document.getElementById('alarmTime').value || '07:00';
+  document.getElementById('alarmOnceHint').textContent = editDays.length ? '' : `Ringer en gång: ${dayWord(nextOnceDate(time))} ${time}`;
+}
+function updateAlarmSource(){
+  const url = document.querySelector('input[name=alarmSource]:checked').value === 'url';
+  document.getElementById('alarmUrlWrap').style.display = url ? '' : 'none';
+}
+
+function openAlarmEditor(id){
+  const a = id ? (lastBoard.alarms || []).find(x => x.id === id) : null;
+  editing = a ? { ...a } : null;
+  document.getElementById('alarmSheetTitle').textContent = a ? 'ÄNDRA ALARM' : 'NYTT ALARM';
+  document.getElementById('alarmTime').value = a ? a.time : '07:00';
+  editDays = a ? (a.days || []).slice() : [0,1,2,3,4];
+  document.getElementById('alarmLabel').value = a ? (a.label || '') : '';
+  document.querySelector(`input[name=alarmSource][value=${a && a.url ? 'url' : 'resume'}]`).checked = true;
+  document.getElementById('alarmUrl').value = a ? (a.url || '') : '';
+  const vol = a ? a.volume : 30;
+  document.getElementById('alarmVolume').value = vol;
+  document.getElementById('alarmVolumeText').textContent = vol + ' %';
+  fillSelect('alarmRamp', RAMP_CHOICES, a ? a.rampMinutes : 3, m => m ? `${m} min` : 'Av (direkt)');
+  fillSelect('alarmAutoStop', STOP_CHOICES, a ? a.autoStopMinutes : 30, m => `${m} min`);
+  document.getElementById('alarmDeleteWrap').style.display = a ? '' : 'none';
+  document.getElementById('alarmError').textContent = '';
+  updateAlarmSource();
+  renderDayChips();
+  alarmEditorOpen = true;
+  document.getElementById('alarmSheet').classList.add('open');
+}
+function closeAlarmEditor(){
+  alarmEditorOpen = false;
+  document.getElementById('alarmSheet').classList.remove('open');
+}
+function alarmFromEditor(){
+  const time = document.getElementById('alarmTime').value;
+  const useUrl = document.querySelector('input[name=alarmSource]:checked').value === 'url';
+  return {
+    ...(editing ? { id: editing.id } : {}),
+    enabled: true,
+    time,
+    days: editDays,
+    date: editDays.length ? null : nextOnceDate(time || '07:00'),
+    label: document.getElementById('alarmLabel').value.trim(),
+    url: useUrl ? document.getElementById('alarmUrl').value.trim() : '',
+    volume: Number(document.getElementById('alarmVolume').value),
+    rampMinutes: Number(document.getElementById('alarmRamp').value),
+    autoStopMinutes: Number(document.getElementById('alarmAutoStop').value),
+  };
+}
+function alarmEditorError(text){ document.getElementById('alarmError').textContent = text; }
+async function saveAlarm(){
+  const a = alarmFromEditor();
+  if (!a.time) return alarmEditorError('Välj en tid');
+  if (document.querySelector('input[name=alarmSource]:checked').value === 'url' && !a.url) return alarmEditorError('Klistra in en Spotify-länk');
+  try {
+    await api('POST', '/api/board/alarms', { alarm: a });
+    closeAlarmEditor();
+    toast('Alarmet är sparat ✓');
+    reloadBoard();
+  } catch(e) { if (e.message !== 'avbrutet') alarmEditorError(e.message); }
+}
+async function testAlarm(){
+  const a = alarmFromEditor();
+  try {
+    await api('POST', '/api/board/alarms/test', { alarm: a });
+    toast('Tavlan ringer om några sekunder (stoppar efter 2 min)');
+  } catch(e) { if (e.message !== 'avbrutet') alarmEditorError(e.message); }
+}
+async function deleteAlarm(){
+  if (!editing || !confirm('Ta bort alarmet?')) return;
+  try {
+    await api('DELETE', '/api/board/alarms/' + editing.id);
+    closeAlarmEditor();
+    toast('Borttaget');
+    reloadBoard();
+  } catch(e) { if (e.message !== 'avbrutet') alarmEditorError(e.message); }
+}
+async function alarmCommand(action){
+  await sendMacropadCommand(action);
+  toast(action === 'alarm_stop' ? 'Stänger av…' : 'Snoozar…');
+  setTimeout(refreshStatus, 2500);
+}
+
+// ═══════════════════════════════════════════════════
+// INSTÄLLNINGAR SOM TAVLAN RAPPORTERAR (settings.py på tavlan)
+// ═══════════════════════════════════════════════════
+function fmtNum(v){ return typeof v === 'number' ? String(v).replace('.', ',') : String(v); }
+function fmtValue(item, v){
+  if (item.type === 'bool') return v ? 'på' : 'av';
+  if (item.type === 'select') return ((item.options || []).find(o => o.value === v) || {}).label || v;
+  if (item.type === 'spotify') return v ? 'vald' : 'ingen';
+  return `${fmtNum(v)}${item.unit ? ' ' + item.unit : ''}`;
+}
+function renderPiSettings(errors){
+  const wrap = document.getElementById('piSettings');
+  const schema = (tavlaState || {}).settingsSchema;
+  if (!schema || !schema.groups) {
+    wrap.innerHTML = `<div class="card yellow"><div class="card-label">FLER INSTÄLLNINGAR</div>
+      <div class="hint">Tavlan har inte skickat sina inställningar än. Starta om tavlan efter uppdateringen, så dyker de upp här.</div></div>`;
+    return;
+  }
+  const saved = tavlaState.settings || {}, titles = tavlaState.settingTitles || {};
+  errors = errors || {};
+  wrap.innerHTML = schema.groups.map(g => `
+    <div class="card">
+      <div class="card-label">${esc(g.group)}</div>
+      ${g.items.map(it => {
+        const changed = saved[it.key] !== undefined;
+        const v = changed ? saved[it.key] : it.default;
+        let ctrl = '';
+        if (it.type === 'bool') {
+          ctrl = `<label class="switch"><input type="checkbox" ${v ? 'checked' : ''} onchange="saveSetting('${it.key}', this.checked)"><span></span></label>`;
+        } else if (it.type === 'select') {
+          ctrl = `<select onchange="saveSetting('${it.key}', this.value)">${(it.options || []).map(o =>
+            `<option value="${esc(o.value)}" ${o.value === v ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select>`;
+        } else if (it.type === 'int' || it.type === 'float') {
+          ctrl = `<input type="number" class="input-field${it.step < 0.01 ? ' wide' : ''}" inputmode="decimal" value="${v}" min="${it.min}" max="${it.max}" step="${it.step}"
+                    onchange="saveNumber('${it.key}', this)"><span class="set-unit">${esc(it.unit || '')}</span>`;
+        }
+        const wide = it.type === 'spotify' || it.type === 'str';
+        const wideCtrl = wide ? `<input type="url" class="input-field" style="margin-top:8px;" value="${esc(v || '')}"
+              placeholder="Klistra in Spotify-länk" onchange="saveSetting('${it.key}', this.value.trim())">
+              ${v && titles[it.key] ? `<div class="set-help">🎵 ${esc(titles[it.key])}</div>` : ''}` : '';
+        const range = (it.type === 'int' || it.type === 'float') ? ` · ${fmtNum(it.min)}–${fmtNum(it.max)}` : '';
+        return `<div class="set-row">
+          <div class="set-top">
+            <div class="setting-label">${esc(it.label)}</div>
+            <div class="set-ctrl">${ctrl}${changed ? `<button class="set-reset" title="Återställ" onclick="saveSetting('${it.key}', null)">↺</button>` : ''}</div>
+          </div>
+          ${wideCtrl}
+          ${it.help ? `<div class="set-help">${esc(it.help)}</div>` : ''}
+          <div class="set-default ${changed ? 'changed' : ''}">${changed ? 'Ändrad · standard ' + esc(fmtValue(it, it.default)) : 'Standard'}${range}</div>
+          ${errors[it.key] ? `<div class="set-error">${esc(errors[it.key])}</div>` : ''}
+        </div>`;
+      }).join('')}
+    </div>`).join('') + `
+    <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:20px;" onclick="resetAllSettings()">↺ Återställ alla inställningar ovan till standard</button>`;
+}
+function saveNumber(key, input){
+  const item = schemaItem(tavlaState, key);
+  const n = Number(String(input.value).replace(',', '.'));
+  if (input.value === '' || !Number.isFinite(n)) { renderPiSettings({ [key]: 'Skriv ett tal' }); return; }
+  if (n < item.min || n > item.max) { renderPiSettings({ [key]: `Mellan ${fmtNum(item.min)} och ${fmtNum(item.max)}` }); return; }
+  saveSetting(key, n);
+}
+async function saveSetting(key, value){
+  try {
+    const data = await api('PUT', '/api/board/settings', { [key]: value });
+    tavlaState.settings = data.settings; tavlaState.settingTitles = data.settingTitles;
+    renderPiSettings();
+    if (lastBoard) { lastBoard.settings = data.settings; renderKeys(lastBoard); }
+    toast(value === null ? 'Återställt ✓' : 'Sparat — tavlan använder det om några sekunder ✓');
+  } catch(e) {
+    if (e.data && e.data.settings) { tavlaState.settings = e.data.settings; tavlaState.settingTitles = e.data.settingTitles; }
+    renderPiSettings(e.data && e.data.errors);
+    if (e.message !== 'avbrutet' && !(e.data && e.data.errors)) toast(e.message);
+  }
+}
+async function resetAllSettings(){
+  if (!confirm('Återställa alla inställningar till tavlans standard? (Bussar, bilder och alarm påverkas inte.)')) return;
+  try {
+    await api('DELETE', '/api/board/settings');
+    tavlaState.settings = {}; tavlaState.settingTitles = {};
+    renderPiSettings();
+    toast('Allt återställt ✓');
+  } catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+}
+
+// ═══════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════
+renderKeys(null);
+try { const t = sessionStorage.getItem('tavlaTab'); if (t && t !== 'view') showTab(t); } catch(e) {}
 refreshStatus();
 refreshCurrentView();
 setInterval(refreshStatus, 5000);
