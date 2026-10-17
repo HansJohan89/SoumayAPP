@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Tavlan">
-<meta name="theme-color" content="#169ee7">
+<meta name="theme-color" content="#2F6B5A">
 <link rel="manifest" href="tavla-manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,7 +17,7 @@
 :root {
   --paper:#F5EFE2; --paper-soft:#EAE2D0; --paper-dark:#D9CEB8;
   --ink:#0A0A0A; --ink-muted:#666;
-  --hero-blue:#169ee7; --hero-blue-dark:#003E7A;
+  --hero-blue:#2F6B5A; --hero-blue-dark:#163C32; --hero-tint:#E2EFE9;   /* skogsgrön/teal (2026-10-17) — namnen kvar från när det var blått */
   --pulse-red:#E63946;
   --in-range:#2DD881; --in-range-dark:#1a8a4a;
   --white:#FFFFFF;
@@ -81,7 +81,7 @@ main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
 .knob{width:64px;height:64px;border-radius:50%;background:#D9CEB8;border:2px solid var(--ink);
   display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
 .keys-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-.mp-key.mp-sleep-on{background:#1F2A44;color:#fff;}
+.mp-key.mp-sleep-on{background:var(--hero-blue-dark);color:#fff;}
 
 /* ── Alarm ── */
 .alarm-status{border:var(--border-thick);border-radius:14px;padding:14px 16px;margin-bottom:20px;box-shadow:4px 4px 0 var(--ink);background:var(--white);}
@@ -147,14 +147,14 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
   width:40px;height:36px;cursor:pointer;box-shadow:2px 2px 0 var(--ink);font-family:var(--font-ui);}
 .menu-row{display:flex;align-items:center;gap:14px;padding:14px;border:2px solid var(--ink);border-radius:12px;background:var(--white);
   box-shadow:2px 2px 0 var(--ink);cursor:pointer;font-weight:800;font-size:16px;}
-.menu-row.sel{background:#E7F5FD;outline:3px solid var(--hero-blue);}
+.menu-row.sel{background:var(--hero-tint);outline:3px solid var(--hero-blue);}
 .menu-ico{width:40px;height:40px;border-radius:10px;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;
   font-size:20px;background:var(--paper-soft);flex-shrink:0;}
 .menu-sub{font-size:12px;font-weight:600;color:var(--ink-muted);margin-top:2px;}
 .menu-arrow{margin-left:auto;font-size:20px;color:var(--ink-muted);}
 .music-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
 .music-row{display:flex;align-items:center;gap:12px;padding:8px 10px;border:2px solid var(--ink);border-radius:12px;background:var(--white);cursor:pointer;}
-.music-row.sel{background:#E7F5FD;outline:3px solid var(--hero-blue);}
+.music-row.sel{background:var(--hero-tint);outline:3px solid var(--hero-blue);}
 .music-row .mp-art{width:48px;height:48px;}
 .heart{background:none;border:none;font-size:24px;line-height:1;cursor:pointer;padding:4px;color:var(--ink-muted);flex-shrink:0;}
 .heart.on{color:var(--pulse-red);}
@@ -180,19 +180,13 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
 /* ── Musik-fliken, timer, inställningsmenyn (2026-10-17) ── */
 .np{display:flex;gap:14px;align-items:center;}
 .np-art{width:72px;height:72px;border:3px solid var(--ink);border-radius:12px;flex:none;overflow:hidden;
-  background:linear-gradient(135deg,#ff7a59,#ffd34d 55%,#169ee7);display:flex;align-items:center;justify-content:center;font-size:30px;}
+  background:linear-gradient(135deg,#ff7a59,#ffd34d 55%,var(--hero-blue));display:flex;align-items:center;justify-content:center;font-size:30px;}
 .np-art img{width:100%;height:100%;object-fit:cover;display:block;background:#fff;}
 .np-title{font-weight:800;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .np-sub{font-size:13px;color:var(--ink-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ctl{display:flex;gap:8px;margin-top:14px;}
-.ctl button{flex:1;border:2px solid var(--ink);border-radius:12px;padding:10px 0;font-size:20px;background:var(--white);box-shadow:2px 2px 0 var(--ink);cursor:pointer;font-family:var(--font-ui);}
-.ctl button.big{background:var(--hero-blue);color:#fff;}
-.ctl button:disabled{opacity:.35;}
-.vol{display:flex;align-items:center;gap:10px;margin-top:14px;}
-.vol-val{border:2px solid var(--ink);border-radius:8px;padding:3px 8px;font-family:var(--font-mono);font-weight:700;font-size:13px;min-width:56px;text-align:center;}
 .chips2{display:flex;gap:8px;flex-wrap:wrap;}
 .chips2 button{border:2px solid var(--ink);border-radius:20px;padding:7px 13px;font-weight:700;font-size:13px;background:var(--white);cursor:pointer;font-family:var(--font-ui);}
-.chips2 button.on{background:#1d2b4f;color:#fff;}
+.chips2 button.on{background:var(--hero-blue-dark);color:#fff;}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .tile{border:2px solid var(--ink);border-radius:12px;padding:12px;background:var(--white);font-weight:800;font-size:14px;box-shadow:2px 2px 0 var(--ink);cursor:pointer;text-align:left;font-family:var(--font-ui);min-width:0;}
 .tile small{display:block;font-weight:500;color:var(--ink-muted);font-size:11px;margin-top:4px;}
@@ -238,12 +232,93 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 .status-line{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--paper-soft);font-size:14px;}
 .status-line:last-child{border-bottom:none;}
 .status-line b{font-weight:700;}
+/* ── Musik-fliken: vänsterlista + spelare (2026-10-17) ── */
+#tab-music.active{display:flex;flex-direction:column;margin:-16px -16px -60px;height:calc(100dvh - var(--topH, 140px));}
+.mlay{flex:1;display:flex;min-height:0;}
+.mrail{width:76px;flex:none;border-right:3px solid var(--ink);background:var(--paper-dark);padding:12px 0 16px;display:flex;flex-direction:column;align-items:center;gap:12px;overflow-y:auto;}
+.ri{width:54px;height:54px;border:2px solid var(--ink);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:2px 2px 0 var(--ink);position:relative;flex:none;cursor:pointer;background:var(--white);overflow:visible;padding:0;}
+.ri img{width:100%;height:100%;object-fit:cover;border-radius:10px;display:block;}
+.ri.sel{outline:3px solid var(--hero-blue);outline-offset:2px;}
+.ri .badge{position:absolute;top:-7px;right:-7px;background:var(--pulse-red);color:#fff;border:2px solid var(--ink);border-radius:10px;font-size:10px;font-weight:800;padding:0 5px;line-height:16px;font-family:var(--font-ui);}
+.rsep{width:44px;border-top:2px dashed #9a8f7a;margin:2px 0;flex:none;}
+.mmain{flex:1;overflow-y:auto;padding:14px 14px 20px;min-width:0;}
+.vhead{display:flex;gap:12px;align-items:center;margin-bottom:12px;}
+.vcov{width:82px;height:82px;border:3px solid var(--ink);border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font-size:36px;overflow:hidden;background:var(--paper-soft);}
+.vcov img{width:100%;height:100%;object-fit:cover;}
+.vtitle{font-weight:800;font-size:19px;line-height:1.15;word-break:break-word;}
+.vsub{font-size:12px;color:var(--ink-muted);margin-top:3px;}
+.vbtns{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.pill{border:2px solid var(--ink);border-radius:20px;padding:8px 14px;font-weight:800;font-size:13px;background:var(--white);box-shadow:2px 2px 0 var(--ink);cursor:pointer;font-family:var(--font-ui);white-space:nowrap;}
+.pill.p{background:var(--hero-blue);color:#fff;}
+.trow{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--paper-soft);cursor:pointer;}
+.tcov{width:40px;height:40px;border:2px solid var(--ink);border-radius:7px;flex:none;overflow:hidden;background:var(--paper-soft);}
+.tcov img{width:100%;height:100%;object-fit:cover;display:block;}
+.ttxt{min-width:0;flex:1;}
+.tname{font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tart{font-size:11.5px;color:var(--ink-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.trow.now .tname{color:var(--hero-blue);}
+.ep{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--paper-soft);cursor:pointer;}
+.ep.done{opacity:.55;}
+.ecov{width:46px;height:46px;border:2px solid var(--ink);border-radius:8px;flex:none;overflow:hidden;background:var(--paper-soft);}
+.ecov img{width:100%;height:100%;object-fit:cover;}
+.et{font-weight:800;font-size:13px;line-height:1.25;}
+.em{font-size:11px;color:var(--ink-muted);margin-top:2px;}
+.prog{height:5px;border:1.5px solid var(--ink);border-radius:4px;background:#fff;margin-top:5px;overflow:hidden;}
+.prog i{display:block;height:100%;background:var(--hero-blue);}
+.newtag{font-size:9px;font-weight:800;background:#FFE600;border:2px solid var(--ink);border-radius:5px;padding:0 4px;margin-right:5px;vertical-align:1px;}
+.showgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px;}
+.showgrid button{aspect-ratio:1;border:2px solid var(--ink);border-radius:10px;position:relative;padding:0;background:var(--paper-soft);cursor:pointer;box-shadow:2px 2px 0 var(--ink);}
+.showgrid img{width:100%;height:100%;object-fit:cover;border-radius:8px;display:block;}
+.showgrid b{position:absolute;top:-7px;right:-7px;background:var(--pulse-red);color:#fff;border:2px solid var(--ink);border-radius:9px;font-size:10px;padding:0 5px;}
+.vsec{font-family:var(--font-burst);font-size:11px;letter-spacing:1px;color:#555;margin:6px 0 4px;}
+.player{border-top:3px solid var(--ink);background:var(--white);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));flex:none;}
+.prow{display:flex;align-items:center;gap:12px;}
+.pcov{width:54px;height:54px;border:2px solid var(--ink);border-radius:9px;flex:none;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--paper-soft);}
+.pcov img{width:100%;height:100%;object-fit:cover;}
+.ptxt{min-width:0;flex:1;}
+.ptitle{font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.psub{font-size:12.5px;color:var(--ink-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.picon{width:44px;height:44px;flex:none;border:none;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);padding:0;}
+.picon.liked{color:var(--hero-blue);}
+.picon:disabled{opacity:.25;}
+.moonbtn{width:42px;height:42px;border-radius:50%;}
+.moonbtn.on{background:#FFE600;border:2.5px solid var(--ink);}
+.scrub{margin:10px 0 0;}
+.sbar{height:5px;border-radius:3px;background:#d8d0bf;position:relative;cursor:pointer;}
+.sbar::before{content:'';position:absolute;left:0;right:0;top:-10px;bottom:-10px;}
+.sbar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--ink);}
+.sbar b{position:absolute;top:50%;width:13px;height:13px;border-radius:50%;background:var(--ink);transform:translate(-50%,-50%);}
+.stime{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-muted);font-family:var(--font-mono);margin-top:5px;}
+.ctl{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:8px;}
+.ctl .ib{width:46px;height:46px;border:none;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);padding:0;}
+.ctl .ib:disabled{opacity:.22;cursor:default;}
+.ctl .ib.hide{display:none;}
+.playbtn{width:62px;height:62px;border-radius:50%;background:var(--ink);color:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
+.playbtn:active{transform:scale(.96);}
+.vol{display:flex;align-items:center;gap:10px;margin-top:8px;color:var(--ink);}
+.vol input[type=range]{flex:1;accent-color:var(--ink);height:4px;}
+.sopt{display:flex;align-items:center;padding:14px 4px;border-bottom:1px solid var(--paper-soft);font-weight:700;font-size:16px;cursor:pointer;}
+.sopt.on{color:var(--hero-blue);}
+.sopt .ck{margin-left:auto;font-weight:800;}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:white;
   padding:10px 16px;border-radius:10px;font-weight:700;font-size:13px;z-index:2000;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center;}
 .toast.show{opacity:1;}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+ <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.2v13.6a.9.9 0 0 0 1.37.77l10.4-6.8a.9.9 0 0 0 0-1.54L9.37 4.43A.9.9 0 0 0 8 5.2z" fill="currentColor"/></symbol>
+ <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.2" height="15" rx="1.2" fill="currentColor"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.2" fill="currentColor"/></symbol>
+ <symbol id="i-next" viewBox="0 0 24 24"><path d="M5 5.6v12.8a.8.8 0 0 0 1.24.66l9.3-6.4a.8.8 0 0 0 0-1.32l-9.3-6.4A.8.8 0 0 0 5 5.6z" fill="currentColor"/><rect x="16.6" y="5" width="2.6" height="14" rx="1.1" fill="currentColor"/></symbol>
+ <symbol id="i-prev" viewBox="0 0 24 24"><g transform="translate(24 0) scale(-1 1)"><path d="M5 5.6v12.8a.8.8 0 0 0 1.24.66l9.3-6.4a.8.8 0 0 0 0-1.32l-9.3-6.4A.8.8 0 0 0 5 5.6z" fill="currentColor"/><rect x="16.6" y="5" width="2.6" height="14" rx="1.1" fill="currentColor"/></g></symbol>
+ <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.2 14.6A8.4 8.4 0 0 1 9.4 3.8a8.6 8.6 0 1 0 10.8 10.8z" fill="currentColor" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+ <symbol id="i-back15" viewBox="0 0 24 24"><path d="M4.6 9.2A8.2 8.2 0 1 1 3.9 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4.2 4.6v4.9h4.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="12.4" y="15.6" text-anchor="middle" font-size="7.6" font-weight="800" font-family="Space Grotesk,sans-serif" fill="currentColor">15</text></symbol>
+ <symbol id="i-fwd15" viewBox="0 0 24 24"><path d="M19.4 9.2A8.2 8.2 0 1 0 20.1 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19.8 4.6v4.9h-4.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="11.6" y="15.6" text-anchor="middle" font-size="7.6" font-weight="800" font-family="Space Grotesk,sans-serif" fill="currentColor">15</text></symbol>
+ <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.4-7.5-10.1A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.7C19.5 15.6 12 20 12 20z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+ <symbol id="i-heartf" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.4-7.5-10.1A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.7C19.5 15.6 12 20 12 20z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+ <symbol id="i-vol" viewBox="0 0 24 24"><path d="M4 9.5h3.2L12 5.4v13.2l-4.8-4.1H4z" fill="currentColor"/><path d="M15.4 9a4.2 4.2 0 0 1 0 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+ <symbol id="i-volhi" viewBox="0 0 24 24"><path d="M4 9.5h3.2L12 5.4v13.2l-4.8-4.1H4z" fill="currentColor"/><path d="M15.4 9a4.2 4.2 0 0 1 0 6M18 6.6a7.6 7.6 0 0 1 0 10.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+</defs></svg>
 
 <div class="header">
   <div class="title">🖼️ TAVLAN</div>
@@ -295,30 +370,29 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 
   <!-- ═══════════════════════ FLIK: MUSIK ═══════════════════════ -->
   <div class="tab-panel" id="tab-music">
-    <div class="card">
-      <div class="card-label">SPELAS NU</div>
-      <div class="np">
-        <div class="np-art" id="npArt">🎵</div>
-        <div style="min-width:0;flex:1;"><div class="np-title" id="npTitle">Inget spelas</div><div class="np-sub" id="npSub">Välj något nedan</div></div>
+    <div class="mlay">
+      <div class="mrail" id="mRail"></div>
+      <div class="mmain" id="mMain"></div>
+    </div>
+    <div class="player" id="player">
+      <div class="prow">
+        <div class="pcov" id="npArt">🎵</div>
+        <div class="ptxt"><div class="ptitle" id="npTitle">Inget spelas</div><div class="psub" id="npSub">Välj något till vänster</div></div>
+        <button class="picon" id="npLike" onclick="likeNow()" aria-label="Gilla"><svg width="30" height="30"><use href="#i-heart"/></svg></button>
+        <button class="picon moonbtn" id="npMoon" onclick="openSleepSheet()" aria-label="Sov-timer"><svg width="26" height="26"><use href="#i-moon"/></svg></button>
+      </div>
+      <div class="scrub" id="npScrub" style="display:none;">
+        <div class="sbar" id="npBar" onclick="scrubTo(event)"><i id="npBarFill"></i><b id="npBarDot"></b></div>
+        <div class="stime"><span id="npPos">0:00</span><span id="npLeft">−0:00</span></div>
       </div>
       <div class="ctl">
-        <button class="big" id="npPlay" onclick="musicPlayPause()">⏯</button>
-        <button id="npNext" onclick="sendMacropadCommand('spotify_next')">⏭</button>
+        <button class="ib" id="npBack" onclick="seekBy(-15)" aria-label="Bakåt 15 s"><svg width="30" height="30"><use href="#i-back15"/></svg></button>
+        <button class="ib" id="npPrev" onclick="prevTrack()" aria-label="Föregående"><svg width="30" height="30"><use href="#i-prev"/></svg></button>
+        <button class="playbtn" id="npPlay" onclick="musicPlayPause()" aria-label="Spela/paus"><svg width="30" height="30"><use href="#i-play" id="npPlayIcon"/></svg></button>
+        <button class="ib" id="npNext" onclick="sendMacropadCommand('spotify_next')" aria-label="Nästa"><svg width="30" height="30"><use href="#i-next"/></svg></button>
+        <button class="ib" id="npFwd" onclick="seekBy(15)" aria-label="Framåt 15 s"><svg width="30" height="30"><use href="#i-fwd15"/></svg></button>
       </div>
-      <div class="vol"><span>🔈</span><input type="range" id="npVol" min="0" max="100" value="0" oninput="volInput(this.value)" onchange="volChange(this.value)"><span class="vol-val" id="npVolVal">– %</span></div>
-    </div>
-    <div class="card">
-      <div class="card-label">SOV-TIMER 🌙</div>
-      <div class="chips2" id="sleepChips"></div>
-      <div class="hint" id="sleepInfo" style="margin:10px 0 0;"></div>
-    </div>
-    <div class="card">
-      <div class="card-label">SPELA NU</div>
-      <div class="tiles" id="playNowTiles"></div>
-    </div>
-    <div class="card">
-      <div class="card-label">RADIO</div>
-      <div id="radioBox"></div>
+      <div class="vol"><svg width="20" height="20"><use href="#i-vol"/></svg><input type="range" id="npVol" min="0" max="100" value="0" oninput="volInput(this.value)" onchange="volChange(this.value)"><svg width="20" height="20"><use href="#i-volhi"/></svg></div>
     </div>
   </div>
 
@@ -599,6 +673,15 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
   </div>
 </div>
 
+<!-- Sov-timer (månen i spelaren) -->
+<div class="sheet-bg" id="sleepSheet" onclick="if(event.target===this)closeSleepSheet()">
+  <div class="sheet">
+    <div class="sheet-title" style="display:flex;align-items:center;gap:8px;"><svg width="20" height="20"><use href="#i-moon"/></svg>SOV-TIMER</div>
+    <div id="sleepOpts"></div>
+    <button class="btn btn-ghost" id="sleepOff" style="width:100%;margin-top:12px;padding:12px;" onclick="pickSleep(0)">Stäng av timern</button>
+  </div>
+</div>
+
 <!-- Godnatt: spellista + längd -->
 <div class="sheet-bg" id="godnattSheet" onclick="if(event.target===this)closeGodnatt()">
   <div class="sheet">
@@ -691,6 +774,11 @@ async function sendWifiOverBluetooth() {
 // ═══════════════════════════════════════════════════
 // FLIKAR
 // ═══════════════════════════════════════════════════
+function setTopH(){                       // Musik-fliken fyller skärmen under flikraden
+  const tb = document.querySelector('.tabbar');
+  if (tb) document.documentElement.style.setProperty('--topH', Math.round(tb.getBoundingClientRect().bottom) + 'px');
+}
+window.addEventListener('resize', setTopH);
 let settingsLoaded = false;
 let currentTab = 'view';
 function showTab(name){
@@ -704,7 +792,8 @@ function showTab(name){
     loadTavlaPage();
   }
   if(name==='alarm') { refreshStatus(); }
-  if(name==='music') { loadListen(); renderRadio('radioBox'); refreshStatus(); }
+  if(name==='music') { setTopH(); loadListen(); loadMusic(true).then(() => { railSig = ''; renderRail(); renderMusicView(); }); loadPods();
+    fetch('/api/board/spotify').then(r => r.json()).then(d => { spotifySt = d; if (lastBoard) renderMusic(lastBoard); }).catch(() => {}); refreshStatus(); }
   try { sessionStorage.setItem('tavlaTab', name); } catch(e) {}
 }
 
@@ -1847,8 +1936,8 @@ function godnattRow(){
 
 // ── Menyn: startsidan för Inställningar ──
 const SET_PAGES = [
-  ['VARDAG', [['blod', '🩸', '#ffe1e1', 'Blodsocker & sensor'], ['musik', '🎵', '#e3f1ff', 'Musik & ljud'], ['alarm', '⏰', '#fff3c4', 'Alarm'], ['steg', '👟', '#e4f7ea', 'Steg']]],
-  ['TAVLANS SKÄRM', [['hem', '🏠', '#f1e8ff', 'Hemskärmen'], ['bilder', '🖼️', '#ffeede', 'Bilder & album'], ['buss', '🚌', '#e3f1ff', 'Lokaltrafik'],
+  ['VARDAG', [['blod', '🩸', '#ffe1e1', 'Blodsocker & sensor'], ['musik', '🎵', 'var(--hero-tint)', 'Musik & ljud'], ['alarm', '⏰', '#fff3c4', 'Alarm'], ['steg', '👟', '#e4f7ea', 'Steg']]],
+  ['TAVLANS SKÄRM', [['hem', '🏠', '#f1e8ff', 'Hemskärmen'], ['bilder', '🖼️', '#ffeede', 'Bilder & album'], ['buss', '🚌', 'var(--hero-tint)', 'Lokaltrafik'],
                      ['kalender', '📅', '#fff3c4', 'Kalender'], ['macropad', '🎛️', '#eee', 'Macropad']]],
   ['TAVLAN & SÄKERHET', [['status', '✅', '#e4f7ea', 'Tavlans status'], ['pin', '🔒', '#fff', 'PIN-kod'], ['avancerat', '🛠️', '#fff', 'Avancerat']]],
 ];
@@ -2101,48 +2190,276 @@ function trackCover(uri){
   const id = /^spotify:track:(\w{22})$/.exec(uri || '');
   return id && musicLib.tracks && musicLib.tracks[id[1]] ? musicLib.tracks[id[1]].cover : '';
 }
+// ── Spelaren (vit ruta längst ner) ──
+let npPos = null;                    // { ms, at, dur, playing } för tidslinjen
+function npKind(m){
+  if (m.radio) return 'radio';
+  if (m.podcast) return 'podfeed';
+  if (m.news) return 'news';
+  if (m.now && m.now.name && ['playing', 'paused', 'pausing'].includes(m.spotify)) return m.now.type === 'episode' ? 'podspot' : 'music';
+  return 'none';
+}
+function fmtTime(sec){ sec = Math.max(0, Math.round(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  return h ? `${h}:${pad2(m)}:${pad2(s)}` : `${m}:${pad2(s)}`; }
+function setArt(el, img, icon){
+  const key = img || icon;
+  if (el.dataset.k === key) return;
+  el.dataset.k = key;
+  el.innerHTML = img ? `<img src="${esc(img)}" alt="" onerror="this.parentNode.textContent='${icon}'">` : icon;
+}
 function renderMusic(board){
   const m = musicState(board);
+  const kind = npKind(m);
   const art = document.getElementById('npArt'), title = document.getElementById('npTitle'), sub = document.getElementById('npSub');
   let img = '', icon = '🎵';
-  if (m.radio) {
+  npPos = null;
+  if (kind === 'radio') {
     const st = stationById[m.radio.id] || m.radio;
-    title.textContent = m.radio.name || 'Radio'; sub.textContent = '📻 Radio'; img = st.favicon || ''; icon = '📻';
-  } else if (m.news) {
+    title.textContent = m.radio.name || 'Radio'; sub.textContent = 'Radio · direkt'; img = st.favicon || ''; icon = '📻';
+  } else if (kind === 'podfeed') {
+    title.textContent = m.podcast.name || 'Avsnitt'; sub.textContent = m.podcast.show || 'Podd'; img = m.podcast.cover || ''; icon = '🎙️';
+    if (m.podcast.duration) npPos = { ms: (m.podcast.pos || 0) * 1000, at: board.piStatusAt, dur: m.podcast.duration * 1000, playing: true };
+  } else if (kind === 'news') {
     title.textContent = 'Nyheter'; sub.textContent = 'Ekot senaste nytt'; icon = '📰';
-  } else if (m.now && m.now.name && (m.spotify === 'playing' || m.spotify === 'paused' || m.spotify === 'pausing')) {
+  } else if (kind === 'music' || kind === 'podspot') {
     title.textContent = m.now.name; sub.textContent = (m.now.artists || '') + (m.spotify === 'playing' ? '' : ' · pausad');
-    img = m.now.cover || trackCover(m.now.uri);
-  } else { title.textContent = 'Inget spelas'; sub.textContent = 'Välj något nedan'; }
-  const key = img || icon;
-  if (art.dataset.k !== key) { art.dataset.k = key; art.innerHTML = img ? `<img src="${esc(img)}" alt="" onerror="this.parentNode.textContent='${icon}'">` : icon; }
+    img = m.now.cover || trackCover(m.now.uri); icon = kind === 'podspot' ? '🎙️' : '🎵';
+    if (m.now.duration && typeof m.now.pos === 'number') npPos = { ms: m.now.pos, at: board.piStatusAt, dur: m.now.duration, playing: m.spotify === 'playing' };
+  } else { title.textContent = 'Inget spelas'; sub.textContent = 'Välj något till vänster'; }
+  setArt(art, img, icon);
   const playing = m.playing || m.news;
-  document.getElementById('npPlay').textContent = playing ? '⏸' : '▶';
-  document.getElementById('npNext').disabled = !!(m.radio || m.news);
-  if (Date.now() > volHoldUntil && typeof m.volume === 'number') {
-    document.getElementById('npVol').value = m.volume;
-    document.getElementById('npVolVal').textContent = m.volume + ' %';
-  }
+  document.getElementById('npPlayIcon').setAttribute('href', playing ? '#i-pause' : '#i-play');
+  const sp = !!(spotifySt && spotifySt.connected);
+  const pod = kind === 'podfeed' || kind === 'podspot';
+  const show = (id, on) => document.getElementById(id).classList.toggle('hide', !on);
+  show('npBack', kind === 'music' || pod); show('npFwd', kind === 'music' || pod);
+  show('npPrev', kind === 'music' || kind === 'none'); show('npNext', kind === 'music' || kind === 'none');
+  document.getElementById('npBack').disabled = document.getElementById('npFwd').disabled = !(kind === 'podfeed' || sp);
+  document.getElementById('npPrev').disabled = !(kind === 'music' && sp);
+  document.getElementById('npNext').disabled = kind !== 'music';
+  // ♡: låt (Spotify Gillade), avsnitt (spara i Spotify), radiokanal (favorit)
+  const like = document.getElementById('npLike');
+  const liked = likeState(m, kind);
+  like.style.display = ['music', 'podspot', 'podfeed', 'radio'].includes(kind) ? '' : 'none';
+  like.classList.toggle('liked', !!liked);
+  like.querySelector('use').setAttribute('href', liked ? '#i-heartf' : '#i-heart');
   const sl = m.sleep || {};
-  const chips = [15, 30, 45, 60, 90];
-  document.getElementById('sleepChips').innerHTML = chips.map(n => `<button onclick="setSleep(${n})">${n} min</button>`).join('')
-    + (sl.active ? `<button class="on" onclick="setSleep(0)">Av</button>` : '');
-  const t = sl.active ? new Date(sl.endsAt) : null;
-  document.getElementById('sleepInfo').textContent = t ? `🌙 Tyst kl ${pad2(t.getHours())}:${pad2(t.getMinutes())}${sl.fading ? ' · tonar ut nu' : ''}`
-    : playing ? 'Välj hur länge — musiken tonas ut mot slutet och stängs av.' : 'Startar när något spelas.';
+  document.getElementById('npMoon').classList.toggle('on', !!sl.active);
+  if (Date.now() > volHoldUntil && typeof m.volume === 'number') document.getElementById('npVol').value = m.volume;
   if (m.radioError && m.radioError.at !== lastRadioErrAt) {
     lastRadioErrAt = m.radioError.at;
     if (Date.now() - m.radioError.at < 60000) toast(`${m.radioError.name} gick inte att spela just nu`);
   }
+  tickScrub();
   markPlayingStation(m.radio && m.radio.id);
+  markPlayingTrack(m.now && m.now.uri);
+  renderRail();
 }
+const likedLocal = {};               // avsnitt hon gillat i appen (Spotify har ingen lista vi läser här)
+function likeState(m, kind){
+  if (kind === 'radio') return isFav(m.radio.id);
+  if (kind === 'music') { const id = ((m.now.uri || '').split(':')[2]); return !!(musicLib.liked && musicLib.liked.trackIds.includes(id)); }
+  const uri = kind === 'podfeed' ? m.podcast.id : (m.now || {}).uri;
+  return !!likedLocal[uri];
+}
+async function likeNow(){
+  const m = musicState(lastBoard), kind = npKind(m);
+  if (kind === 'radio') { const st = stationById[m.radio.id] || cleanSt(m.radio); stationById[st.id] = st; return toggleFavStation(st.id).then(() => renderMusic(lastBoard)); }
+  const uri = kind === 'music' || kind === 'podspot' ? m.now.uri : kind === 'podfeed' ? m.podcast.id : null;
+  if (!uri) return;
+  if (!(spotifySt && spotifySt.connected)) return toast('Koppla Spotify först (Inställningar → Musik & ljud)');
+  const on = !likeState(m, kind);
+  try {
+    const r = await (await fetch('/api/board/player', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'like', uri, on }) })).json();
+    if (r.error) throw new Error(r.error);
+    if (uri.startsWith('spotify:track:')) { await loadMusic(true); } else likedLocal[uri] = on;
+    toast(on ? (kind === 'music' ? 'Sparad i Gillade låtar 💚' : 'Sparat i Spotify 💚') : 'Borttagen');
+    renderMusic(lastBoard);
+  } catch(e) { toast(e.message); }
+}
+function cleanSt(r){ return { id: r.id, name: r.name, url: r.url, favicon: r.favicon || '', country: r.country || '' }; }
+function tickScrub(){
+  const box = document.getElementById('npScrub');
+  if (!npPos || !npPos.dur) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  let ms = npPos.ms + (npPos.playing && npPos.at ? Date.now() - npPos.at : 0);
+  ms = Math.min(ms, npPos.dur);
+  const f = (ms / npPos.dur) * 100;
+  document.getElementById('npBarFill').style.width = f + '%';
+  document.getElementById('npBarDot').style.left = f + '%';
+  document.getElementById('npPos').textContent = fmtTime(ms / 1000);
+  document.getElementById('npLeft').textContent = '−' + fmtTime((npPos.dur - ms) / 1000);
+}
+setInterval(() => { if (currentTab === 'music') tickScrub(); }, 1000);
+async function playerCall(body){
+  try {
+    const r = await (await fetch('/api/board/player', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
+    if (r.error) throw new Error(r.error);
+    return r;
+  } catch(e) { toast(e.message); return null; }
+}
+async function seekBy(d){
+  const r = await playerCall({ action: 'seek', delta: d });
+  if (r && npPos) { npPos.ms = (r.positionMs != null ? r.positionMs : npPos.ms + d * 1000); npPos.at = Date.now(); tickScrub(); }
+  setTimeout(refreshStatus, 1500);
+}
+function scrubTo(ev){
+  if (!npPos || !npPos.dur) return;
+  const r = ev.currentTarget.getBoundingClientRect();
+  const target = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width)) * npPos.dur;
+  const cur = npPos.ms + (npPos.playing && npPos.at ? Date.now() - npPos.at : 0);
+  seekBy(Math.round((target - cur) / 1000));
+}
+async function prevTrack(){ await playerCall({ action: 'prev' }); setTimeout(refreshStatus, 1500); }
 function musicPlayPause(){ sendMacropadCommand('spotify_play_pause'); setTimeout(refreshStatus, 1500); }
-function volInput(v){ volHoldUntil = Date.now() + 8000; document.getElementById('npVolVal').textContent = v + ' %'; }
+function volInput(v){ volHoldUntil = Date.now() + 8000; }
 function volChange(v){ volHoldUntil = Date.now() + 8000; sendMacropadCommand('set_volume', null, null, null, { volume: Number(v) }); }
-function setSleep(n){
+
+// ── Sov-timern: månen ──
+let sleepChoice = null;
+function openSleepSheet(){
+  const m = musicState(lastBoard), kind = npKind(m), sl = m.sleep || {};
+  const opts = [[15, '15 minuter'], [30, '30 minuter'], [45, '45 minuter'], [60, '1 timme'], [90, '1,5 timme']];
+  if (kind !== 'radio') opts.push([-1, 'Spela hela']);
+  if (!sl.active) sleepChoice = null;
+  else if (sl.untilEnd) sleepChoice = -1;
+  document.getElementById('sleepOpts').innerHTML = opts.map(([n, t]) =>
+    `<div class="sopt ${sleepChoice === n ? 'on' : ''}" onclick="pickSleep(${n})">${t}${sleepChoice === n ? '<span class="ck">✓</span>' : ''}</div>`).join('');
+  document.getElementById('sleepOff').style.display = sl.active ? '' : 'none';
+  document.getElementById('sleepSheet').classList.add('open');
+}
+function closeSleepSheet(){ document.getElementById('sleepSheet').classList.remove('open'); }
+function pickSleep(n){
+  closeSleepSheet();
+  const m = musicState(lastBoard);
+  if (n && !(m.playing || m.news)) return toast('Starta något först — timern gäller det som spelas');
+  sleepChoice = n || null;
   sendMacropadCommand('sleep_set', null, null, null, { minutes: n });
-  toast(n ? `Sov-timer ${n} min 🌙` : 'Sov-timern av');
+  toast(n === -1 ? 'Stannar när det här är slut 🌙' : n ? `Sov-timer ${n < 60 ? n + ' min' : n === 60 ? '1 timme' : '1,5 timme'} 🌙` : 'Sov-timern av');
   setTimeout(refreshStatus, 2500);
+}
+
+// ── Vänsterlistan och vyerna ──
+let mView = (() => { try { return sessionStorage.getItem('mView') || 'start'; } catch(e) { return 'start'; } })();
+let pods = null, podShow = null, railSig = '';
+function plCover(p){ return p.cover || (p.artistImages || [])[0] || ''; }
+function railPlaylists(){
+  return (musicLib.playlists || []).slice().sort((a, b) => (b.fav - a.fav) || ((b.source === 'spotify' && b.owned) - (a.source === 'spotify' && a.owned)) || (a.addedAt - b.addedAt));
+}
+function renderRail(){
+  const liked = musicLib.liked && musicLib.liked.trackIds.length;
+  const newN = (pods && pods.newCount) || 0;
+  const items = [['start', '🏠', '#fff', 'Start'], ...(liked ? [['liked', '💚', '#2DD881', 'Gillade låtar']] : []),
+                 ['radio', '📻', '#FFE600', 'Radio'], ['pods', '🎙️', '#c9b6ff', 'Poddar'], ['news', '📰', '#fff', 'Nyheter']];
+  const pls = railPlaylists();
+  const sig = mView + '|' + items.map(i => i[0]).join() + '|' + newN + '|' + pls.map(p => p.id + plCover(p)).join();
+  if (sig === railSig) return;
+  railSig = sig;
+  document.getElementById('mRail').innerHTML = items.map(([id, ico, bg, t]) =>
+    `<button class="ri ${mView === id ? 'sel' : ''}" style="background:${bg}" title="${t}" onclick="openMusicView('${id}')">${ico}${id === 'pods' && newN ? `<span class="badge">${newN}</span>` : ''}</button>`).join('')
+    + (pls.length ? '<div class="rsep"></div>' : '')
+    + pls.map(p => `<button class="ri ${mView === 'pl:' + p.id ? 'sel' : ''}" title="${esc(p.title)}" onclick="openMusicView('pl:${p.id}')">${plCover(p) ? `<img src="${esc(plCover(p))}" alt="" loading="lazy">` : '🔀'}</button>`).join('');
+}
+function openMusicView(v){
+  mView = v;
+  try { sessionStorage.setItem('mView', v); } catch(e) {}
+  document.getElementById('mMain').scrollTop = 0;
+  renderMusicView();
+  renderRail();
+}
+async function renderMusicView(){
+  const main = document.getElementById('mMain'), v = mView;
+  if (v === 'start') {
+    main.innerHTML = `<div class="vsec" style="margin-top:0">SPELA NU</div><div class="tiles" id="playNowTiles"></div>`;
+    renderPlayNow();
+  } else if (v === 'radio') {
+    main.innerHTML = `<div class="vhead"><div class="vcov" style="background:#FFE600">📻</div><div><div class="vtitle">Radio</div><div class="vsub">Favoriter, utvalda, populärt och sök</div></div></div><div id="radioBox"></div>`;
+    renderRadio('radioBox');
+  } else if (v === 'news') {
+    main.innerHTML = `<div class="vhead"><div class="vcov">📰</div><div><div class="vtitle">Nyheter</div><div class="vsub">Ekot senaste nytt · Sveriges Radio · 1–3 min</div></div></div>
+      <div class="vbtns"><button class="pill p" onclick="playNews()">▶ Spela senaste</button></div>`;
+  } else if (v === 'liked') {
+    main.innerHTML = trackListHtml('💚', '#2DD881', 'Gillade låtar', `${musicLib.liked.trackIds.length} låtar · från Spotify`, musicLib.liked.trackIds, 'liked', true);
+    markPlayingTrack(((musicState(lastBoard).now) || {}).uri);
+  } else if (v.startsWith('pl:')) {
+    const p = (musicLib.playlists || []).find(x => x.id === v.slice(3));
+    if (!p) { mView = 'start'; return renderMusicView(); }
+    const sub = `${p.source === 'spotify' ? (p.owned ? 'Hennes spellista' : 'Följd spellista') : 'Spellista'} · ${p.trackIds.length ? p.trackIds.length + ' låtar' : 'låtarna syns inte'}`;
+    main.innerHTML = trackListHtml(plCover(p) ? `<img src="${esc(plCover(p))}" alt="">` : '🔀', '', p.title, sub, p.trackIds, p.id, false, p);
+    markPlayingTrack(((musicState(lastBoard).now) || {}).uri);
+  } else if (v === 'pods') {
+    main.innerHTML = '<div class="music-empty">Hämtar poddar…</div>';
+    await loadPods();
+    if (mView !== 'pods') return;
+    if (!pods.connected) { main.innerHTML = `<div class="vhead"><div class="vcov" style="background:#c9b6ff">🎙️</div><div><div class="vtitle">Poddar</div><div class="vsub">Poddarna hon följer i Spotify</div></div></div>
+      <div class="hint" style="color:var(--ink);font-size:13px;">Koppla Spotify så dyker hennes poddar och nya avsnitt upp här.</div><button class="pill p" onclick="showTab('settings');openSetPage('musik')">Koppla Spotify</button>`; return; }
+    main.innerHTML = `<div class="vsec" style="margin-top:0">NYA AVSNITT</div>${pods.recent.length ? pods.recent.map(e => epRow(e, true)).join('') : '<div class="music-empty">Inga olyssnade avsnitt</div>'}
+      <div class="vsec" style="margin-top:14px">MINA PODDAR</div>
+      <div class="showgrid">${pods.shows.map(sh => `<button title="${esc(sh.name)}" onclick="openMusicView('pod:${sh.id}')">${sh.cover ? `<img src="${esc(sh.cover)}" alt="" loading="lazy">` : '🎙️'}${sh.newCount ? `<b>${sh.newCount}</b>` : ''}</button>`).join('')}</div>`;
+  } else if (v.startsWith('pod:')) {
+    main.innerHTML = '<div class="music-empty">Hämtar…</div>';
+    try { podShow = await (await fetch('/api/board/podcasts/' + v.slice(4))).json(); } catch(e) { podShow = null; }
+    if (mView !== v) return;
+    if (!podShow || podShow.error) { main.innerHTML = '<div class="music-empty">Podden finns inte längre</div>'; return; }
+    const sh = podShow.show, eps = podShow.episodes;
+    const nNew = eps.filter(e => e.isNew).length, cont = eps.find(e => e.resumeMs && !e.fullyPlayed);
+    main.innerHTML = `<div class="vhead"><div class="vcov">${sh.cover ? `<img src="${esc(sh.cover)}" alt="">` : '🎙️'}</div><div><div class="vtitle">${esc(sh.name)}</div><div class="vsub">Podd${nNew ? ` · ${nNew} ${nNew === 1 ? 'nytt avsnitt' : 'nya avsnitt'}` : ''}</div></div></div>
+      <div class="vbtns">${eps[0] ? `<button class="pill p" onclick="playEp('${eps[0].id}')">▶ Senaste</button>` : ''}${cont ? `<button class="pill" onclick="playEp('${cont.id}')">Fortsätt där jag var</button>` : ''}</div>
+      ${eps.map(e => epRow(e, false)).join('')}`;
+  }
+}
+function trackListHtml(cov, bg, title, sub, ids, key, isLiked, pl){
+  const rows = ids.slice(0, 300).map((id, i) => {
+    const t = musicLib.tracks[id] || { title: 'Låt', artist: '' };
+    return `<div class="trow" data-tid="${id}" onclick="playFromTrack('${key}', ${i})"><div class="tcov">${t.cover ? `<img src="${esc(t.cover)}" alt="" loading="lazy">` : ''}</div>
+      <div class="ttxt"><div class="tname">${esc(t.title)}</div><div class="tart">${esc(t.artist)}</div></div></div>`;
+  }).join('');
+  return `<div class="vhead"><div class="vcov" ${bg ? `style="background:${bg}"` : ''}>${cov}</div><div><div class="vtitle">${esc(title)}</div><div class="vsub">${esc(sub)}</div></div></div>
+    <div class="vbtns"><button class="pill p" onclick="playList('${key}', true)">🔀 Spela</button>${isLiked ? '' : `<button class="pill" onclick="playList('${key}', false)">▶ I ordning</button>
+      <button class="pill" onclick="toggleFav('playlist','${key}').then(() => { railSig=''; renderRail(); renderMusicView(); })">${pl && pl.fav ? '♥' : '♡'}</button>`}</div>
+    ${isLiked && ids.length > 20 ? `<input type="search" class="input-field" style="margin-bottom:6px;" placeholder="Sök bland gillade…" oninput="filterTracks(this.value)">` : ''}
+    <div id="trackRows">${rows || '<div class="music-empty">Låtlistan syns inte för den här spellistan — den går ändå att spela.</div>'}</div>`;
+}
+function filterTracks(q){
+  q = norm(q.trim());
+  document.querySelectorAll('#trackRows .trow').forEach(r => { r.style.display = !q || norm(r.textContent).includes(q) ? '' : 'none'; });
+}
+function shuffled(a){ a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function listIds(key){ return key === 'liked' ? (musicLib.liked || { trackIds: [] }).trackIds : (((musicLib.playlists || []).find(p => p.id === key)) || { trackIds: [] }).trackIds; }
+function playList(key, shuffle){
+  if (key === 'liked') {
+    sendMacropadCommand('play_music', null, null, null, { tracks: shuffled(listIds('liked')).slice(0, 100).map(x => 'spotify:track:' + x) });
+  } else sendMacropadCommand('play_music', null, null, null, { url: `https://open.spotify.com/playlist/${key}`, shuffle });
+  toast(shuffle ? 'Startar i shuffle…' : 'Startar…'); setTimeout(refreshStatus, 4000);
+}
+function playFromTrack(key, i){
+  const ids = listIds(key);
+  sendMacropadCommand('play_music', null, null, null, { tracks: ids.slice(i, i + 100).map(x => 'spotify:track:' + x) });
+  toast('Startar låten…'); setTimeout(refreshStatus, 4000);
+}
+function markPlayingTrack(uri){
+  const id = (uri || '').split(':')[2];
+  document.querySelectorAll('#trackRows .trow').forEach(r => r.classList.toggle('now', !!id && r.dataset.tid === id));
+}
+async function loadPods(){
+  try { pods = await (await fetch('/api/board/podcasts')).json(); } catch(e) { pods = pods || { connected: false, shows: [], recent: [], newCount: 0 }; }
+  renderRail();
+}
+function epRow(e, withShow){
+  const left = e.durationMs ? Math.max(0, e.durationMs - e.resumeMs) : 0;
+  const when = e.date ? dayWord(e.date) : '';
+  const meta = e.fullyPlayed ? 'lyssnad' : e.resumeMs && left ? `${fmtMinutes(left)} kvar` : e.durationMs ? fmtMinutes(e.durationMs) : '';
+  return `<div class="ep ${e.fullyPlayed ? 'done' : ''}" onclick="playEp('${e.id}')">${withShow ? `<div class="ecov">${e.cover ? `<img src="${esc(e.cover)}" alt="" loading="lazy">` : ''}</div>` : ''}
+    <div class="ttxt"><div class="et">${e.isNew ? '<span class="newtag">NY</span>' : ''}${e.fullyPlayed ? '✓ ' : ''}${esc(e.name)}</div>
+    <div class="em">${withShow ? esc(e.showName) + ' · ' : ''}${esc(when)}${meta ? ' · ' + meta : ''}</div>
+    ${e.resumeMs && !e.fullyPlayed && e.durationMs ? `<div class="prog"><i style="width:${Math.min(100, e.resumeMs / e.durationMs * 100)}%"></i></div>` : ''}</div></div>`;
+}
+function fmtMinutes(ms){ const m = Math.round(ms / 60000); return m >= 60 ? `${Math.floor(m / 60)} tim${m % 60 ? ' ' + (m % 60) + ' min' : ''}` : `${m} min`; }
+async function playEp(id){
+  toast('Startar avsnittet…');
+  const r = await playerCall({ action: 'episode', id });
+  if (r) toast(r.via === 'spotify' ? 'Spelar via Spotify ✓' : 'Spelar från poddens flöde ✓');
+  setTimeout(() => { refreshStatus(); loadPods(); }, 3000);
 }
 
 async function loadListen(){
@@ -2158,12 +2475,13 @@ function renderPlayNow(){
   else tiles.push(`<button class="tile" onclick="openMusicLibrary()"><span class="tt">🔀 Spellista</span><small>lägg till i musikbiblioteket</small></button>`);
   if (L.topRadio) tiles.push(`<button class="tile" onclick="playStation('${esc(L.topRadio.id)}')"><span class="tt">📻 ${esc(L.topRadio.name)}</span>
     <small>${L.topRadioCounted ? 'kanalen du lyssnar mest på' : 'din favoritkanal'}</small></button>`);
-  else tiles.push(`<button class="tile" onclick="document.getElementById('radioBox').scrollIntoView({behavior:'smooth'})"><span class="tt">📻 Radio</span><small>välj en kanal nedan</small></button>`);
+  else tiles.push(`<button class="tile" onclick="openMusicView('radio')"><span class="tt">📻 Radio</span><small>välj en kanal</small></button>`);
   tiles.push(`<button class="tile" onclick="playNews()"><span class="tt">📰 Nyheter</span><small>Ekot senaste nytt</small></button>`);
   const g = L.godnatt || {};
   tiles.push(`<button class="tile" onclick="playGodnatt()"><span class="tt">🌙 Godnatt</span>
     <small>${g.playlist ? `${esc(g.playlist.title)} · ${g.minutes} min` : 'välj spellista'} · <u onclick="event.stopPropagation();openGodnatt()">ändra</u></small></button>`);
-  document.getElementById('playNowTiles').innerHTML = tiles.join('');
+  const el = document.getElementById('playNowTiles');
+  if (el) el.innerHTML = tiles.join('');
 }
 function playPlaylist(id){
   sendMacropadCommand('play_music', null, null, null, { url: `https://open.spotify.com/playlist/${id}`, shuffle: true });
@@ -2210,6 +2528,7 @@ let curated = null, radioPickCb = null, radioSearchTimer = null;
 const topCache = {};
 async function renderRadio(boxId){
   const ui = radioUI[boxId], box = document.getElementById(boxId);
+  if (!box) return;
   const favs = (listen && listen.favs) || ((lastBoard || {}).radioFavs) || [];
   rememberStations(favs);
   if (!favs.length && ui.tab === 'fav' && !ui.touched) ui.tab = 'curated';

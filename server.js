@@ -1772,6 +1772,7 @@ app.post('/api/board/pi-sync', (req, res) => {
   const body = req.body || {};
   if (body.status && typeof body.status === 'object') {
     countListening(body.status, piStatusAt);
+    try { countPodcast(body.status); } catch (e) { console.log('[poddar] status:', e.message); }
     piStatus = body.status;
     piStatusAt = Date.now();
   }
@@ -1863,7 +1864,8 @@ app.post('/api/board/pi-schema', (req, res) => {
 // miljövariabler; inloggningen (refresh token) bara här på servern.
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '';
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || '';
-const SPOTIFY_SCOPES = 'playlist-read-private playlist-read-collaborative user-library-read user-read-recently-played user-top-read';
+const SPOTIFY_SCOPES = 'playlist-read-private playlist-read-collaborative user-library-read user-library-modify user-read-recently-played user-top-read '
+  + 'user-read-playback-position user-read-playback-state user-modify-playback-state';     // poddar: var hon slutade; spelaren: spola/föregående/avsnitt
 const SPOTIFY_LOGIN_DAYS = 180;
 const SPOTIFY_SYNC_MS = 6 * 3600e3;
 const LIKED_MAX = 500;
@@ -1983,7 +1985,10 @@ async function spotifySync(reason) {
     const likedIds = [];
     for (const row of liked) { const t = rowTrack(row); if (t && !likedIds.includes(t.id)) { storeTrack(M, t); likedIds.push(t.id); } }
     M.liked = { title: 'Gillade låtar', trackIds: likedIds, syncedAt: Date.now() };
-    // 3) Mest spelat (om Spotify fortfarande ger det till appar i Development mode)
+    // 3) Poddar hon följer och deras senaste avsnitt
+    try { A.shows = await syncPodcasts(); A.podError = null; }
+    catch (e) { A.podError = e.message; console.log('[poddar] synk:', e.message); }
+    // 4) Mest spelat (om Spotify fortfarande ger det till appar i Development mode)
     try {
       const top = await spotifyGet('/me/top/tracks?limit=30&time_range=short_term');
       M.top = (top.items || []).map(trackFromApi).filter(Boolean).map(t => { storeTrack(M, t); return t.id; });
@@ -2004,7 +2009,9 @@ function spotifyStatus() {
   return { configured: !!(SPOTIFY_CLIENT_ID && SPOTIFY_CLIENT_SECRET), connected, expired: !!A.expired,
            user: A.user ? A.user.name : null, lastSync: A.lastSync || null, error: A.error || null,
            loginUntil: A.connectedAt ? A.connectedAt + SPOTIFY_LOGIN_DAYS * 86400e3 : null,
-           liked: ((musicLib().liked || {}).trackIds || []).length, notReadable: A.notReadable || [], syncing: !!spotifySyncing };
+           liked: ((musicLib().liked || {}).trackIds || []).length, notReadable: A.notReadable || [], syncing: !!spotifySyncing,
+           shows: A.shows || 0, podError: A.podError || null,
+           needsRelogin: connected && !String(A.scope || '').includes('user-modify-playback-state') };
 }
 app.get('/api/board/spotify', (req, res) => res.json(spotifyStatus()));
 app.post('/api/board/spotify/login', requirePin, (req, res) => {
@@ -2038,7 +2045,7 @@ app.post('/api/board/spotify/sync', requirePin, async (req, res) => {
 app.post('/api/board/spotify/disconnect', requirePin, (req, res) => {
   const M = musicLib();
   for (const [id, pl] of Object.entries(M.playlists)) if (pl.source === 'spotify') delete M.playlists[id];
-  M.liked = null; M.top = null;
+  M.liked = null; M.top = null; M.shows = {}; M.episodes = {};
   dropUnusedTracks();
   delete boardState.spotifyAuth;
   writeJSON(BOARD_FILE, boardState);
@@ -2055,6 +2062,222 @@ setInterval(() => {
     pushToAll('🎵 Koppla Spotify igen', `Tavlans koppling till Spotify går ut om ${Math.max(0, Math.ceil(left / 86400e3))} dagar. Inställningar → Musik & ljud → Koppla Spotify.`, 'spotify').catch(() => {});
   }
 }, 10 * 60 * 1000);
+
+// ── Poddar + spelaren via Spotify (2026-10-17) ───────────────────
+// Poddarna hon följer i Spotify (GET /me/shows) och deras senaste
+// avsnitt med var hon slutade (resume_point — kräver behörigheten
+// user-read-playback-position). Ett avsnitt spelas på tavlan i första
+// hand via Spotify (Web API: spela på enheten "Tavlan" — då följer var
+// hon slutade med till telefonen). Kan tavlan inte spela det via Spotify
+// tar servern poddens öppna flöde (hittas via Apples poddkatalog) och
+// tavlan spelar ljudfilen själv (audio.py); var hon slutade sparas då här.
+const SHOWS_MAX = 40, EPISODES_PER_SHOW = 20, NEW_DAYS = 14;
+function podLib() {
+  const M = musicLib();
+  if (!M.shows) M.shows = {};
+  if (!M.episodes) M.episodes = {};
+  if (!M.progress) M.progress = {};          // avsnitt -> { pos (s), at, done } från tavlan
+  return M;
+}
+function epFromApi(e, showId) {
+  if (!e || !/^[A-Za-z0-9]{22}$/.test(String(e.id || ''))) return null;
+  const rp = e.resume_point || {};
+  const imgs = e.images || [];
+  return { id: e.id, show: showId, name: String(e.name || '').slice(0, 200), date: String(e.release_date || '').slice(0, 10),
+           durationMs: Number(e.duration_ms) || 0, resumeMs: Number(rp.resume_position_ms) || 0, fullyPlayed: !!rp.fully_played,
+           cover: ((imgs.find(i => i.width && i.width <= 320) || imgs[imgs.length - 1] || {}).url) || '',
+           desc: String(e.description || '').slice(0, 300), syncedAt: Date.now() };
+}
+async function syncPodcasts() {
+  const M = podLib();
+  const shows = await spotifyAll('/me/shows?limit=50', SHOWS_MAX);
+  const seen = new Set();
+  for (const row of shows) {
+    const sh = row.show || row;
+    if (!sh || !/^[A-Za-z0-9]{22}$/.test(String(sh.id || ''))) continue;
+    seen.add(sh.id);
+    const imgs = sh.images || [];
+    M.shows[sh.id] = { id: sh.id, name: String(sh.name || 'Podd').slice(0, 120), cover: ((imgs.find(i => i.width && i.width <= 320) || imgs[0] || {}).url) || '',
+                       total: Number(sh.total_episodes) || 0, addedAt: row.added_at || null, feed: (M.shows[sh.id] || {}).feed || null };
+    try {
+      const eps = await spotifyGet(`/shows/${sh.id}/episodes?limit=${EPISODES_PER_SHOW}`);
+      const keep = new Set();
+      for (const e of (eps.items || [])) { const ep = epFromApi(e, sh.id); if (ep) { M.episodes[ep.id] = ep; keep.add(ep.id); } }
+      for (const [id, ep] of Object.entries(M.episodes)) if (ep.show === sh.id && !keep.has(id)) delete M.episodes[id];
+    } catch (e) { console.log(`[poddar] ${sh.name}: ${e.message}`); }
+  }
+  for (const id of Object.keys(M.shows)) if (!seen.has(id)) delete M.shows[id];
+  for (const [id, ep] of Object.entries(M.episodes)) if (!M.shows[ep.show]) delete M.episodes[id];
+  return seen.size;
+}
+// Var hon slutade: det senaste av Spotifys resume_point och tavlans egen
+function epState(ep) {
+  const P = (podLib().progress || {})[ep.id];
+  let resumeMs = ep.resumeMs, done = ep.fullyPlayed;
+  if (P && P.at > (ep.syncedAt || 0)) { resumeMs = Math.round(P.pos * 1000); done = !!P.done; }
+  const isNew = !done && !resumeMs && ep.date && (Date.now() - new Date(ep.date + 'T12:00:00Z')) < NEW_DAYS * 86400e3;
+  return { ...ep, resumeMs, fullyPlayed: done, isNew };
+}
+app.get('/api/board/podcasts', (req, res) => {
+  const M = podLib();
+  const eps = Object.values(M.episodes).map(epState);
+  const shows = Object.values(M.shows).map(sh => ({ ...sh, feed: undefined,
+    newCount: eps.filter(e => e.show === sh.id && e.isNew).length,
+    latest: (eps.filter(e => e.show === sh.id).sort((a, b) => b.date.localeCompare(a.date))[0] || {}).date || '' }))
+    .sort((a, b) => b.latest.localeCompare(a.latest));
+  const recent = eps.filter(e => !e.fullyPlayed).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 30)
+    .map(e => ({ ...e, showName: (M.shows[e.show] || {}).name || '' }));
+  res.json({ connected: !!(boardState.spotifyAuth || {}).refresh, shows, recent, newCount: eps.filter(e => e.isNew).length });
+});
+app.get('/api/board/podcasts/:id', (req, res) => {
+  const M = podLib();
+  const sh = M.shows[req.params.id];
+  if (!sh) return res.status(404).json({ error: 'Podden finns inte' });
+  res.json({ show: { ...sh, feed: undefined },
+             episodes: Object.values(M.episodes).filter(e => e.show === sh.id).map(epState).sort((a, b) => b.date.localeCompare(a.date)) });
+});
+// Tavlans status: var hon är i avsnittet (öppna flödet) eller i Spotify
+function countPodcast(st) {
+  const m = st && st.music;
+  if (!m) return;
+  const M = podLib();
+  let changed = false;
+  const save = (uri, pos, done) => {
+    const id = (/^spotify:episode:([A-Za-z0-9]{22})$/.exec(String(uri || '')) || [])[1];
+    if (!id || !M.episodes[id]) return;
+    M.progress[id] = { pos: Math.max(0, Number(pos) || 0), at: Date.now(), done: !!done };
+    changed = true;
+  };
+  if (m.podcast && m.podcast.id) save(m.podcast.id, m.podcast.pos, false);
+  else if (m.spotify === 'playing' && m.now && m.now.type === 'episode' && typeof m.now.pos === 'number') save(m.now.uri, m.now.pos / 1000, false);
+  const fin = m.podcastFinished;
+  if (fin && fin.id && fin.at && fin.at !== podLib()._lastFin) { podLib()._lastFin = fin.at; save(fin.id, 0, true); }
+  if (changed && Date.now() - (countPodcast.saved || 0) > 60000) { countPodcast.saved = Date.now(); writeJSON(BOARD_FILE, boardState); }
+}
+
+// ── Spelaren via Spotify Web API (spola, föregående, avsnitt, ♡) ──
+function tavlanDeviceName() { return ((piStatus || {}).system || {}).spotifyDevice || 'Tavlan'; }
+async function tavlanDevice() {
+  const d = await spotifyGet('/me/player/devices');
+  const want = tavlanDeviceName().toLowerCase();
+  return (d.devices || []).find(x => String(x.name || '').toLowerCase() === want) || null;
+}
+async function spotifySend(method, path, body) {
+  const r = await fetch('https://api.spotify.com/v1' + path, {
+    method, signal: AbortSignal.timeout(15000),
+    headers: { Authorization: 'Bearer ' + await spotifyAccess(), 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined });
+  if (r.status === 204 || r.status === 200 || r.status === 202) return true;
+  const d = await r.json().catch(() => ({}));
+  const e = new Error(((d.error || {}).message) || `Spotify svarade ${r.status}`); e.status = r.status; throw e;
+}
+// Poddens öppna flöde (reserv): Apples poddkatalog -> RSS -> avsnittets ljudfil
+async function feedFor(show) {
+  const M = podLib();
+  const sh = M.shows[show];
+  if (!sh) throw new Error('Podden finns inte');
+  if (sh.feed && Date.now() - (sh.feed.at || 0) < 7 * 86400e3) return sh.feed.url;
+  const r = await fetch(`https://itunes.apple.com/search?media=podcast&entity=podcast&limit=5&term=${encodeURIComponent(sh.name)}`, { signal: AbortSignal.timeout(10000) });
+  const d = r.ok ? await r.json() : {};
+  const n = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+  const hit = (d.results || []).find(x => n(x.collectionName) === n(sh.name)) || (d.results || []).find(x => n(x.collectionName).includes(n(sh.name)));
+  sh.feed = { url: hit && hit.feedUrl ? hit.feedUrl : null, at: Date.now() };
+  if (!sh.feed.url) throw new Error('Podden har inget öppet flöde (finns bara på Spotify)');
+  return sh.feed.url;
+}
+function rssItems(xml) {
+  const out = [];
+  const tag = (s, t) => { const m = new RegExp(`<${t}[^>]*>([\\s\\S]*?)</${t}>`, 'i').exec(s); return m ? m[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').trim() : ''; };
+  for (const m of xml.matchAll(/<item[\s>][\s\S]*?<\/item>/gi)) {
+    const it = m[0];
+    const enc = /<enclosure[^>]*url=["']([^"']+)["']/i.exec(it);
+    if (!enc) continue;
+    out.push({ title: tag(it, 'title').replace(/&amp;/g, '&').replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"'), url: enc[1].replace(/&amp;/g, '&'), date: new Date(tag(it, 'pubDate') || 0) });
+  }
+  return out;
+}
+async function feedAudio(ep) {
+  const url = await feedFor(ep.show);
+  const r = await fetch(url, { signal: AbortSignal.timeout(15000), headers: { 'User-Agent': 'Tavlan/1.0' } });
+  if (!r.ok) throw new Error(`Poddens flöde svarade ${r.status}`);
+  const items = rssItems(await r.text());
+  const n = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+  const want = n(ep.name);
+  const day = ep.date ? new Date(ep.date + 'T12:00:00Z').getTime() : 0;
+  const hit = items.find(i => n(i.title) === want) || items.find(i => want && (n(i.title).includes(want) || want.includes(n(i.title))))
+    || items.find(i => day && Math.abs(i.date.getTime() - day) < 36 * 3600e3);
+  if (!hit) throw new Error('Hittade inte avsnittet i poddens flöde');
+  return hit.url;
+}
+async function playEpisode(id, fromStart) {
+  const M = podLib();
+  const ep = M.episodes[id] ? epState(M.episodes[id]) : null;
+  if (!ep) throw new Error('Avsnittet finns inte');
+  const startMs = fromStart || ep.fullyPlayed ? 0 : ep.resumeMs;
+  const show = M.shows[ep.show] || {};
+  // 1) Via Spotify på tavlan
+  let why = '';
+  try {
+    const dev = await tavlanDevice();
+    if (!dev) throw new Error(`hittar inte enheten "${tavlanDeviceName()}" i Spotify`);
+    await spotifySend('PUT', `/me/player/play?device_id=${encodeURIComponent(dev.id)}`, { uris: [`spotify:episode:${id}`], position_ms: startMs });
+    await new Promise(ok => setTimeout(ok, 5000));
+    const p = await spotifyGet('/me/player?additional_types=episode');
+    if (p && p.item && p.item.id === id && p.device && p.device.id === dev.id) return { via: 'spotify' };
+    why = 'Spotify på tavlan startade inte avsnittet';
+  } catch (e) { why = e.message; }
+  // 2) Poddens öppna flöde, ljudfilen spelas av tavlan
+  console.log(`[poddar] Spotify kunde inte (${why}) — provar poddens flöde`);
+  const audioUrl = await feedAudio(ep);
+  pendingCommand = { action: 'podcast_play', view: null, destination: null, direction: null, button: null, ts: Date.now(),
+                     params: { id: `spotify:episode:${id}`, name: ep.name, show: show.name || '', url: audioUrl, start: startMs / 1000,
+                               duration: ep.durationMs / 1000, cover: ep.cover || show.cover || '' } };
+  return { via: 'feed', why };
+}
+app.post('/api/board/player', async (req, res) => {
+  const { action } = req.body || {};
+  try {
+    if (action === 'episode') return res.json({ ok: true, ...(await playEpisode(String(req.body.id || ''), !!req.body.fromStart)) });
+    const m = ((piStatus || {}).music) || {};
+    if (action === 'seek') {
+      const delta = Math.max(-600, Math.min(600, Number(req.body.delta) || 0));
+      if (m.podcast) {                                    // avsnitt från öppna flödet: tavlan spolar själv
+        pendingCommand = { action: 'audio_seek', ts: Date.now(), params: { delta } };
+        return res.json({ ok: true, via: 'tavlan' });
+      }
+      const p = await spotifyGet('/me/player');
+      if (!p || !p.device) throw new Error('Inget spelar i Spotify');
+      const to = Math.max(0, (p.progress_ms || 0) + delta * 1000);
+      await spotifySend('PUT', `/me/player/seek?position_ms=${Math.round(to)}&device_id=${encodeURIComponent(p.device.id)}`);
+      return res.json({ ok: true, via: 'spotify', positionMs: to });
+    }
+    if (action === 'prev') {
+      const p = await spotifyGet('/me/player');
+      if (!p || !p.device) throw new Error('Inget spelar i Spotify');
+      await spotifySend('POST', `/me/player/previous?device_id=${encodeURIComponent(p.device.id)}`);
+      return res.json({ ok: true });
+    }
+    if (action === 'like') {
+      const uri = String(req.body.uri || '');
+      if (!/^spotify:(track|episode|show):[A-Za-z0-9]{22}$/.test(uri)) return res.status(400).json({ error: 'Okänt objekt' });
+      const on = req.body.on !== false;
+      await spotifySend(on ? 'PUT' : 'DELETE', `/me/library?uris=${encodeURIComponent(uri)}`);
+      const M = musicLib();
+      if (uri.startsWith('spotify:track:')) {
+        const id = uri.slice(14);
+        if (!M.liked) M.liked = { title: 'Gillade låtar', trackIds: [] };
+        M.liked.trackIds = M.liked.trackIds.filter(x => x !== id);
+        if (on) M.liked.trackIds.unshift(id);
+        writeJSON(BOARD_FILE, boardState);
+      }
+      return res.json({ ok: true, liked: on });
+    }
+    res.status(400).json({ error: 'Okänd åtgärd' });
+  } catch (e) {
+    res.status(e.status === 401 || /inte kopplat/.test(e.message) ? 400 : 502).json({ error: e.message.includes('inte kopplat') ? 'Koppla Spotify först (Inställningar → Musik & ljud)' : e.message });
+  }
+});
+
 // ── RADIO (Musik-fliken, 2026-10-17) ────────────────────────────
 // Kanallistan kommer från Radio Browser (öppen, gemenskapsdriven katalog
 // med tiotusentals stationer: https://www.radio-browser.info) och
