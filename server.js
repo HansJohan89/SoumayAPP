@@ -1114,7 +1114,7 @@ app.post('/api/journal', (req, res) => {
 app.get('/api/storage', (req, res) => res.json({ persistent: STORAGE_PERSISTENT, dataDir: DATA_DIR }));
 
 app.get('/api/board', (req, res) => {
-  const { images, pin, alarmTest, music: _music, calendarIcs, radioStats: _rs, playlistStats: _ps, spotifyAuth: _sa, ...settings } = boardState;
+  const { images, pin, alarmTest, music: _music, calendarIcs, radioStats: _rs, playlistStats: _ps, podStats: _pds, spotifyAuth: _sa, ...settings } = boardState;
   res.json({
     ...settings,
     timers: activeTimers(),
@@ -1274,6 +1274,7 @@ if (!Array.isArray(boardState.timers)) boardState.timers = [];
 if (!Array.isArray(boardState.radioFavs)) boardState.radioFavs = [];
 if (!boardState.radioStats || typeof boardState.radioStats !== 'object') boardState.radioStats = {};
 if (!boardState.playlistStats || typeof boardState.playlistStats !== 'object') boardState.playlistStats = {};
+if (!boardState.podStats || typeof boardState.podStats !== 'object') boardState.podStats = {};
 let piStatus = null, piStatusAt = null;
 
 function bumpConfig() {
@@ -2118,16 +2119,29 @@ function epState(ep) {
   const isNew = !done && !resumeMs && ep.date && (Date.now() - new Date(ep.date + 'T12:00:00Z')) < NEW_DAYS * 86400e3;
   return { ...ep, resumeMs, fullyPlayed: done, isNew };
 }
+// Hur mycket hon lyssnar på en podd: minuter på tavlan + avsnitt hon
+// påbörjat eller lyssnat klart (Spotifys resume_point, så det fungerar direkt)
+function podScore(showId, eps) {
+  const started = eps.filter(e => e.show === showId && (e.resumeMs || e.fullyPlayed)).length;
+  return (boardState.podStats[showId] || 0) / 60 + 10 * started;
+}
 app.get('/api/board/podcasts', (req, res) => {
   const M = podLib();
   const eps = Object.values(M.episodes).map(epState);
   const shows = Object.values(M.shows).map(sh => ({ ...sh, feed: undefined,
     newCount: eps.filter(e => e.show === sh.id && e.isNew).length,
     latest: (eps.filter(e => e.show === sh.id).sort((a, b) => b.date.localeCompare(a.date))[0] || {}).date || '' }))
-    .sort((a, b) => b.latest.localeCompare(a.latest));
+    .map(sh => ({ ...sh, score: podScore(sh.id, eps) }))
+    .sort((a, b) => (b.score - a.score) || b.latest.localeCompare(a.latest));
   const recent = eps.filter(e => !e.fullyPlayed).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 30)
     .map(e => ({ ...e, showName: (M.shows[e.show] || {}).name || '' }));
-  res.json({ connected: !!(boardState.spotifyAuth || {}).refresh, shows, recent, newCount: eps.filter(e => e.isNew).length });
+  // Tre olyssnade avsnitt, från de poddar hon lyssnar mest på (ett per podd först)
+  const cand = eps.filter(e => !e.fullyPlayed && (e.isNew || e.resumeMs));
+  const top = [];
+  for (const sh of shows) { const e = cand.filter(x => x.show === sh.id).sort((a, b) => b.date.localeCompare(a.date))[0]; if (e) top.push(e); if (top.length >= 3) break; }
+  if (top.length < 3) for (const e of cand.sort((a, b) => b.date.localeCompare(a.date))) { if (top.length >= 3) break; if (!top.includes(e)) top.push(e); }
+  res.json({ connected: !!(boardState.spotifyAuth || {}).refresh, shows, recent, newCount: eps.filter(e => e.isNew).length,
+             top: top.map(e => ({ ...e, showName: (M.shows[e.show] || {}).name || '' })) });
 });
 app.get('/api/board/podcasts/:id', (req, res) => {
   const M = podLib();
@@ -2176,7 +2190,10 @@ async function feedFor(show) {
   const M = podLib();
   const sh = M.shows[show];
   if (!sh) throw new Error('Podden finns inte');
-  if (sh.feed && Date.now() - (sh.feed.at || 0) < 7 * 86400e3) return sh.feed.url;
+  if (sh.feed && Date.now() - (sh.feed.at || 0) < 7 * 86400e3) {
+    if (!sh.feed.url) throw new Error('Podden har inget öppet flöde (finns bara på Spotify)');
+    return sh.feed.url;
+  }
   const r = await fetch(`https://itunes.apple.com/search?media=podcast&entity=podcast&limit=5&term=${encodeURIComponent(sh.name)}`, { signal: AbortSignal.timeout(10000) });
   const d = r.ok ? await r.json() : {};
   const n = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
@@ -2413,6 +2430,11 @@ function countListening(st, prevAt) {
     const pl = Object.values(musicLib().playlists).find(p => (p.trackIds || []).includes(tid));
     if (pl) { boardState.playlistStats[pl.id] = (boardState.playlistStats[pl.id] || 0) + dt; changed = true; }
   }
+  // Poddar: vilken podd avsnittet hör till (öppna flödet eller via Spotify)
+  const epUri = m.podcast && m.podcast.id ? m.podcast.id : (m.spotify === 'playing' && m.now && m.now.type === 'episode' ? m.now.uri : '');
+  const epId = (/^spotify:episode:([A-Za-z0-9]{22})$/.exec(String(epUri || '')) || [])[1];
+  const ep = epId && (musicLib().episodes || {})[epId];
+  if (ep && ep.show) { boardState.podStats[ep.show] = (boardState.podStats[ep.show] || 0) + dt; changed = true; }
   if (changed && Date.now() - statsSaveAt > 120000) { statsSaveAt = Date.now(); writeJSON(BOARD_FILE, boardState); }
 }
 function topOf(obj, val) {
@@ -2428,7 +2450,15 @@ app.get('/api/board/listen', (req, res) => {
   // Inget lyssnat än: favoritspellistan, annars den första i biblioteket
   const fallbackPl = Object.values(M.playlists).find(p => p.fav) || Object.values(M.playlists)[0];
   const g = boardState.godnatt || {};
+  // Populära spellistor: hennes lyssningstid på tavlan + hur många av
+  // hennes mest spelade låtar i Spotify (senaste veckorna) listan har
+  const topIds = new Set(M.top || []);
+  const plScore = p => (boardState.playlistStats[p.id] || 0) / 60 + 3 * (p.trackIds || []).filter(id => topIds.has(id)).length
+                     + (p.fav ? 5 : 0) + (p.source === 'spotify' && p.owned ? 1 : 0);
+  const topPlaylists = Object.values(M.playlists).map(p => [p, plScore(p)]).sort((a, b) => b[1] - a[1]).slice(0, 9)
+    .map(([p]) => ({ id: p.id, title: p.title, cover: p.cover || (p.artistImages || [])[0] || '' }));
   res.json({
+    topPlaylists,
     topPlaylist: pl(tp ? tp[0] : fallbackPl && fallbackPl.id), topPlaylistCounted: !!tp,
     topRadio: tr ? tr[1].station : (boardState.radioFavs[0] || null), topRadioCounted: !!tr,
     favs: boardState.radioFavs,

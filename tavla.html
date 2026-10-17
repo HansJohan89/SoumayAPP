@@ -315,6 +315,19 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 .header .status,.tab-btn.active,.btn-primary,.chip.on,.chips2 button.on,.seg3 button.on,.playing-tag,.pill.p,.mp-key.mp-sleep-on
   {color:#fff;text-shadow:1px 1px 0 var(--ink);}
 .tab-btn.active .ic,.btn-primary .ic,.pill.p .ic,.seg3 button.on .ic{filter:drop-shadow(1px 1px 0 var(--ink));}
+
+/* ── Musik/Start: bara ikoner (2026-10-17) ── */
+.qgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:8px;}
+.qc{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;}
+.qt{width:100%;aspect-ratio:1;border:2px solid var(--ink);border-radius:8px;background:var(--hero-tint);box-shadow:2px 2px 0 var(--ink);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;position:relative;overflow:hidden;color:var(--hero-blue-dark);}
+.qt .ic{width:30px;height:30px;}
+.qt img,.showgrid img{position:absolute;inset:0;z-index:1;background:#fff;}
+.showgrid button{display:flex;align-items:center;justify-content:center;}
+.showgrid button .ic{width:28px;height:28px;}
+.showgrid b{z-index:2;}
+.ri img{position:absolute;inset:0;z-index:1;}
+.qedit{font-size:12px;font-weight:700;color:var(--hero-blue-dark);cursor:pointer;}
 </style>
 </head>
 <body>
@@ -2371,7 +2384,7 @@ function renderRail(){
   document.getElementById('mRail').innerHTML = items.map(([id, ico, bg, t]) =>
     `<button class="ri ${mView === id ? 'sel' : ''}" style="background:${bg}" title="${t}" onclick="openMusicView('${id}')">${ico}${id === 'pods' && newN ? `<span class="badge">${newN}</span>` : ''}</button>`).join('')
     + (pls.length ? '<div class="rsep"></div>' : '')
-    + pls.map(p => `<button class="ri ${mView === 'pl:' + p.id ? 'sel' : ''}" title="${esc(p.title)}" onclick="openMusicView('pl:${p.id}')">${plCover(p) ? `<img src="${esc(plCover(p))}" alt="" loading="lazy">` : '<svg class="ic"><use href="#i-shuffle"/></svg>'}</button>`).join('');
+    + pls.map(p => `<button class="ri ${mView === 'pl:' + p.id ? 'sel' : ''}" title="${esc(p.title)}" onclick="openMusicView('pl:${p.id}')">${plCover(p) ? `<img src="${esc(plCover(p))}" alt="" loading="lazy" onerror="this.remove()">` : ''}<svg class="ic"><use href="#i-shuffle"/></svg></button>`).join('');
 }
 function openMusicView(v){
   mView = v;
@@ -2383,8 +2396,10 @@ function openMusicView(v){
 async function renderMusicView(){
   const main = document.getElementById('mMain'), v = mView;
   if (v === 'start') {
-    main.innerHTML = `<div class="vsec" style="margin-top:0">SPELA NU</div><div class="tiles" id="playNowTiles"></div>`;
-    renderPlayNow();
+    main.innerHTML = `<div class="vsec" style="margin-top:0">SPELA NU</div><div class="qgrid" id="playNowTiles"></div>
+      <div id="homePls"></div><div id="homePods"></div>`;
+    renderPlayNow(); renderHomePods();
+    loadPods().then(() => { if (mView === 'start') renderHomePods(); });
   } else if (v === 'radio') {
     main.innerHTML = `<div class="vhead"><div class="vcov"><svg class="ic"><use href="#i-radio"/></svg></div><div><div class="vtitle">Radio</div><div class="vsub">Favoriter, utvalda, populärt och sök</div></div></div><div id="radioBox"></div>`;
     renderRadio('radioBox');
@@ -2406,9 +2421,9 @@ async function renderMusicView(){
     if (mView !== 'pods') return;
     if (!pods.connected) { main.innerHTML = `<div class="vhead"><div class="vcov"><svg class="ic"><use href="#i-mic"/></svg></div><div><div class="vtitle">Poddar</div><div class="vsub">Poddarna hon följer i Spotify</div></div></div>
       <div class="hint" style="color:var(--ink);font-size:13px;">Koppla Spotify så dyker hennes poddar och nya avsnitt upp här.</div><button class="pill p" onclick="showTab('settings');openSetPage('musik')">Koppla Spotify</button>`; return; }
-    main.innerHTML = `<div class="vsec" style="margin-top:0">NYA AVSNITT</div>${pods.recent.length ? pods.recent.map(e => epRow(e, true)).join('') : '<div class="music-empty">Inga olyssnade avsnitt</div>'}
-      <div class="vsec" style="margin-top:14px">MINA PODDAR</div>
-      <div class="showgrid">${pods.shows.map(sh => `<button title="${esc(sh.name)}" onclick="openMusicView('pod:${sh.id}')">${sh.cover ? `<img src="${esc(sh.cover)}" alt="" loading="lazy">` : '<svg class="ic"><use href="#i-mic"/></svg>'}${sh.newCount ? `<b>${sh.newCount}</b>` : ''}</button>`).join('')}</div>`;
+    const top = pods.top || pods.recent.slice(0, 3);
+    main.innerHTML = `<div class="vsec" style="margin-top:0">NYA AVSNITT</div>${top.length ? top.map(e => epRow(e, true)).join('') : '<div class="music-empty">Inga olyssnade avsnitt</div>'}
+      <div class="vsec" style="margin-top:14px">MINA PODDAR</div>${podGridHtml()}`;
   } else if (v.startsWith('pod:')) {
     main.innerHTML = '<div class="music-empty">Hämtar…</div>';
     try { podShow = await (await fetch('/api/board/podcasts/' + v.slice(4))).json(); } catch(e) { podShow = null; }
@@ -2482,19 +2497,31 @@ async function loadListen(){
 }
 function renderPlayNow(){
   const L = listen || {};
+  const q = (onclick, title, inner, extra = '') => `<div class="qc"><button class="qt" title="${esc(title)}" aria-label="${esc(title)}" onclick="${onclick}">${inner}</button>${extra}</div>`;
+  const img = (src, ico) => src ? `<img src="${esc(src)}" alt="" onerror="this.remove()">${I_(ico)}` : I_(ico);
   const tiles = [];
-  if (L.topPlaylist) tiles.push(`<button class="tile" onclick="playPlaylist('${esc(L.topPlaylist.id)}')"><span class="tt"><svg class="ic"><use href="#i-shuffle"/></svg> ${esc(L.topPlaylist.title)}</span>
-    <small>${L.topPlaylistCounted ? 'spellistan du spelar oftast' : 'ur musikbiblioteket'}</small></button>`);
-  else tiles.push(`<button class="tile" onclick="openMusicLibrary()"><span class="tt"><svg class="ic"><use href="#i-shuffle"/></svg> Spellista</span><small>lägg till i musikbiblioteket</small></button>`);
-  if (L.topRadio) tiles.push(`<button class="tile" onclick="playStation('${esc(L.topRadio.id)}')"><span class="tt"><svg class="ic"><use href="#i-radio"/></svg> ${esc(L.topRadio.name)}</span>
-    <small>${L.topRadioCounted ? 'kanalen du lyssnar mest på' : 'din favoritkanal'}</small></button>`);
-  else tiles.push(`<button class="tile" onclick="openMusicView('radio')"><span class="tt"><svg class="ic"><use href="#i-radio"/></svg> Radio</span><small>välj en kanal</small></button>`);
-  tiles.push(`<button class="tile" onclick="playNews()"><span class="tt"><svg class="ic"><use href="#i-news"/></svg> Nyheter</span><small>Ekot senaste nytt</small></button>`);
+  tiles.push(L.topPlaylist ? q(`playPlaylist('${esc(L.topPlaylist.id)}')`, L.topPlaylist.title, img(L.topPlaylist.cover, 'shuffle'))
+                           : q('openMusicLibrary()', 'Spellista', I_('shuffle')));
+  const st = L.topRadio && (stationById[L.topRadio.id] || L.topRadio);
+  tiles.push(st ? q(`playStation('${esc(st.id)}')`, st.name, img(st.favicon, 'radio')) : q(`openMusicView('radio')`, 'Radio', I_('radio')));
+  tiles.push(q('playNews()', 'Nyheter', I_('news')));
   const g = L.godnatt || {};
-  tiles.push(`<button class="tile" onclick="playGodnatt()"><span class="tt"><svg class="ic"><use href="#i-moon"/></svg> Godnatt</span>
-    <small>${g.playlist ? `${esc(g.playlist.title)} · ${g.minutes} min` : 'välj spellista'} · <u onclick="event.stopPropagation();openGodnatt()">ändra</u></small></button>`);
+  tiles.push(q('playGodnatt()', g.playlist ? `Godnatt · ${g.playlist.title} · ${g.minutes} min` : 'Godnatt', I_('moon'),
+               `<u class="qedit" onclick="openGodnatt()">ändra</u>`));
   const el = document.getElementById('playNowTiles');
   if (el) el.innerHTML = tiles.join('');
+  const pl = document.getElementById('homePls');
+  if (pl) pl.innerHTML = (L.topPlaylists || []).length ? `<div class="vsec">SPELLISTOR</div><div class="showgrid">${L.topPlaylists.map(p =>
+    `<button title="${esc(p.title)}" aria-label="${esc(p.title)}" onclick="openMusicView('pl:${p.id}')">${p.cover ? `<img src="${esc(p.cover)}" alt="" loading="lazy" onerror="this.remove()">` : ''}${I_('shuffle')}</button>`).join('')}</div>` : '';
+}
+function I_(n){ return ic(n); }
+// Poddarna hon lyssnar mest på först, med antal olyssnade nya avsnitt
+function podGridHtml(){
+  return `<div class="showgrid">${pods.shows.map(sh => `<button title="${esc(sh.name)}" aria-label="${esc(sh.name)}" onclick="openMusicView('pod:${sh.id}')">${sh.cover ? `<img src="${esc(sh.cover)}" alt="" loading="lazy" onerror="this.remove()">` : ''}${ic('mic')}${sh.newCount ? `<b>${sh.newCount}</b>` : ''}</button>`).join('')}</div>`;
+}
+function renderHomePods(){
+  const el = document.getElementById('homePods');
+  if (el) el.innerHTML = pods && pods.connected && pods.shows.length ? `<div class="vsec">PODDAR</div>${podGridHtml()}` : '';
 }
 function playPlaylist(id){
   sendMacropadCommand('play_music', null, null, null, { url: `https://open.spotify.com/playlist/${id}`, shuffle: true });
