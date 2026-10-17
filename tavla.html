@@ -383,7 +383,6 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 
     <div class="card">
       <div class="card-label">SIMULERAD MACROPAD</div>
-      <div class="hint">Samma knappar och vred som TogKey Pad Plus — fungerar identiskt med den riktiga när den är inkopplad. Medan musik spelar blir en knapp sov-timer <svg class="ic"><use href="#i-moon"/></svg> (välj vilken under Inställningar).</div>
       <div class="macropad-body">
         <div class="oled-row">
           <div id="macropadOled">Redo</div>
@@ -430,17 +429,10 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
   <div class="tab-panel" id="tab-alarm">
     <div class="seg3" id="alarmSeg"><button class="on" onclick="alarmSegment('alarm')"><svg class="ic"><use href="#i-alarm"/></svg> Alarm</button><button onclick="alarmSegment('timer')"><svg class="ic"><use href="#i-timer"/></svg> Timer</button></div>
     <div id="timerPanel" style="display:none;">
-      <div class="card"><div class="card-label">NY TIMER</div>
-        <div class="big-num"><button onclick="timerStep(-1)">−</button><span id="timerMin">20</span><small>min</small><button onclick="timerStep(1)">+</button></div>
-        <div class="chips2" id="timerChips"></div>
-        <div class="field" style="margin-top:14px;"><div class="field-label">Ringer med</div><div id="timerSoundPick"></div></div>
-        <div class="field"><div class="field-label"><span>Volym</span><span id="timerVolText">40 %</span></div>
-          <input type="range" id="timerVol" min="1" max="100" value="40" oninput="document.getElementById('timerVolText').textContent=this.value+' %'"></div>
-        <div class="field"><div class="field-label">Namn (valfritt)</div><input type="text" class="input-field" id="timerLabel" maxlength="40" placeholder="t.ex. Pastan"></div>
-        <button class="btn btn-primary" style="width:100%;padding:13px;font-size:15px;" id="timerStart" onclick="startTimer()">▶ Starta timer</button>
-      </div>
-      <div class="card" id="timerRunning" style="display:none;"><div class="card-label">PÅGÅR</div><div id="timerList"></div></div>
-      <div class="hint">Timern ringer från tavlan som ett alarm (<svg class="ic"><use href="#i-playpause"/></svg> stänger av, tryck på vredet = snooza). Ringtiden syns på tavlan bredvid datumet.</div>
+      <div class="alarm-status" id="timerStatus" style="display:none;"><div class="alarm-status-title">INGA TIMERS IGÅNG</div></div>
+      <div id="timerList"></div>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="openTimerEditor()">+ Ny timer</button>
+      <div class="hint" style="margin-top:10px;">Timern ringer från tavlan som ett alarm (<svg class="ic"><use href="#i-playpause"/></svg> stänger av, tryck på vredet = snooza). Ringtiden syns på tavlan bredvid datumet.</div>
     </div>
     <div id="alarmPanel">
     <div class="alarm-status" id="alarmStatus">
@@ -638,8 +630,8 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
       <div id="alarmMusicPick"></div>
     </div>
     <div class="field">
-      <div class="field-label"><span>Volym</span><span id="alarmVolumeText">30 %</span></div>
-      <input type="range" id="alarmVolume" min="1" max="100" value="30" oninput="document.getElementById('alarmVolumeText').textContent=this.value+' %'">
+      <div class="field-label"><span>Volym</span><span id="alarmVolumeText">80 %</span></div>
+      <input type="range" id="alarmVolume" min="1" max="100" value="80" oninput="document.getElementById('alarmVolumeText').textContent=this.value+' %'">
     </div>
     <div class="field" style="display:flex;gap:10px;">
       <div style="flex:1;" id="alarmRampWrap">
@@ -671,6 +663,21 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 </div>
 
 <!-- Välj musik (spellistor/låtar ur musikbiblioteket) -->
+<!-- Ny timer -->
+<div class="sheet-bg" id="timerSheet" onclick="if(event.target===this)closeTimerEditor()">
+  <div class="sheet">
+    <div class="sheet-title">NY TIMER</div>
+    <div class="big-num"><button onclick="timerStep(-1)">−</button><span id="timerMin">20</span><small>min</small><button onclick="timerStep(1)">+</button></div>
+    <div class="chips2" id="timerChips"></div>
+    <div class="field" style="margin-top:14px;"><div class="field-label">Ringer med</div><div id="timerSoundPick"></div></div>
+    <div class="field"><div class="field-label"><span>Volym</span><span id="timerVolText">80 %</span></div>
+      <input type="range" id="timerVol" min="1" max="100" value="80" oninput="document.getElementById('timerVolText').textContent=this.value+' %'"></div>
+    <div class="field"><div class="field-label">Namn (valfritt)</div><input type="text" class="input-field" id="timerLabel" maxlength="40" placeholder="t.ex. Pastan"></div>
+    <button class="btn btn-primary" style="width:100%;padding:13px;font-size:15px;" id="timerStart" onclick="startTimer()">▶ Starta timer</button>
+    <div class="sheet-actions" style="margin-top:10px;"><button class="btn btn-ghost" onclick="closeTimerEditor()">Avbryt</button></div>
+  </div>
+</div>
+
 <div class="sheet-bg" id="musicSheet" onclick="if(event.target===this)closeMusicPicker()">
   <div class="sheet">
     <div class="music-head">
@@ -1816,7 +1823,7 @@ function openAlarmEditor(id){
   if (editRadio) rememberStations([editRadio]);
   editKind = a && ['news', 'signal'].includes(a.sound) ? a.sound : a && a.sound === 'radio' && editRadio ? 'radio'
     : editMusic ? editMusic.kind : (a && a.url ? 'link' : 'resume');
-  const vol = a ? a.volume : 30;
+  const vol = a ? a.volume : 80;
   document.getElementById('alarmVolume').value = vol;
   document.getElementById('alarmVolumeText').textContent = vol + ' %';
   fillSelect('alarmRamp', RAMP_CHOICES, a ? a.rampMinutes : 3, m => m ? `${m} min` : 'Av (direkt)');
@@ -2729,9 +2736,16 @@ function alarmSegment(seg){
   document.querySelectorAll('#alarmSeg button').forEach((b, i) => b.classList.toggle('on', (i === 1) === (seg === 'timer')));
   document.getElementById('timerPanel').style.display = seg === 'timer' ? '' : 'none';
   document.getElementById('alarmPanel').style.display = seg === 'timer' ? 'none' : '';
-  if (seg === 'timer') { renderTimerEditor(); renderTimers(lastBoard); }
+  if (seg === 'timer') renderTimers(lastBoard);
   try { sessionStorage.setItem('alarmSeg', seg); } catch(e) {}
 }
+function openTimerEditor(){
+  document.getElementById('timerLabel').value = '';
+  document.getElementById('timerVol').value = 80; document.getElementById('timerVolText').textContent = '80 %';
+  renderTimerEditor();
+  document.getElementById('timerSheet').classList.add('open');
+}
+function closeTimerEditor(){ document.getElementById('timerSheet').classList.remove('open'); }
 function renderTimerEditor(){
   document.getElementById('timerMin').textContent = timerMinutes;
   document.getElementById('timerChips').innerHTML = [5, 10, 15, 20, 30, 45, 60, 90].map(n =>
@@ -2781,33 +2795,40 @@ async function startTimer(){
   try {
     await api('POST', '/api/board/timers', { minutes: timerMinutes, label: document.getElementById('timerLabel').value.trim(),
       sound: timerSound.sound, radio: timerSound.radio, volume: Number(document.getElementById('timerVol').value) });
-    document.getElementById('timerLabel').value = '';
+    closeTimerEditor();
     toast(`Timer ${timerMinutes} min ✓`);
     await reloadBoard(); renderTimers(lastBoard);
   } catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
 }
 function renderTimers(board){
   const list = ((board || {}).timers || []).filter(t => t.endsAt > Date.now() - 60000).sort((a, b) => a.endsAt - b.endsAt);
-  const wrap = document.getElementById('timerRunning');
-  if (!wrap) return;
-  wrap.style.display = list.length ? '' : 'none';
-  document.getElementById('timerList').innerHTML = list.map(t => {
+  const box = document.getElementById('timerList');
+  if (!box) return;
+  document.getElementById('timerStatus').style.display = list.length ? 'none' : '';
+  box.innerHTML = list.map(t => {
     const left = Math.max(0, Math.round((t.endsAt - Date.now()) / 1000));
     const end = new Date(t.endsAt);
-    return `<div class="timer-row"><span style="font-size:24px"><svg class="ic"><use href="#i-timer"/></svg></span><div style="flex:1;min-width:0;">
-      <div class="timer-left" data-ends="${t.endsAt}">${left ? `${Math.floor(left / 60)}:${pad2(left % 60)}` : 'Ringer'}</div>
-      <div class="ms">${esc(t.label || 'Timer')} · ringer ${pad2(end.getHours())}:${pad2(end.getMinutes())}</div></div>
-      <button class="btn btn-ghost btn-sm" onclick="extendTimer('${t.id}')">+5 min</button>
-      <button class="btn btn-ghost btn-sm" onclick="cancelTimer('${t.id}')">✕</button></div>`;
+    const st = SOUND_TXT[t.sound] || SOUND_TXT.signal;
+    const what = t.sound === 'radio' && t.radio ? t.radio.name : st[1];
+    return `<div class="alarm-card">
+      <div class="alarm-info">
+        <div class="alarm-time timer-left" data-ends="${t.endsAt}">${left ? fmtLeft(left) : 'Ringer'}</div>
+        ${t.label ? `<div class="alarm-label">${esc(t.label)}</div>` : ''}
+        <div class="alarm-meta">ringer ${pad2(end.getHours())}:${pad2(end.getMinutes())} · ${t.volume || 80} % · ${st[0]} ${esc(what)}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <button class="btn btn-ghost btn-sm" onclick="extendTimer('${t.id}')">+5 min</button>
+        <button class="btn btn-ghost btn-sm" onclick="cancelTimer('${t.id}')">Ta bort</button></div></div>`;
   }).join('');
   clearInterval(timersTick);
   if (list.length) timersTick = setInterval(() => {
     document.querySelectorAll('.timer-left[data-ends]').forEach(el => {
       const left = Math.max(0, Math.round((Number(el.dataset.ends) - Date.now()) / 1000));
-      el.textContent = left ? `${Math.floor(left / 60)}:${pad2(left % 60)}` : 'Ringer';
+      el.textContent = left ? fmtLeft(left) : 'Ringer';
     });
   }, 1000);
 }
+function fmtLeft(s){ const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); return h ? `${h}:${pad2(m)}:${pad2(s % 60)}` : `${m}:${pad2(s % 60)}`; }
 async function extendTimer(id){ try { await api('POST', `/api/board/timers/${id}/extend`, { minutes: 5 }); await reloadBoard(); renderTimers(lastBoard); toast('+5 min ✓'); } catch(e) { if (e.message !== 'avbrutet') toast(e.message); } }
 async function cancelTimer(id){ try { await api('DELETE', `/api/board/timers/${id}`); await reloadBoard(); renderTimers(lastBoard); toast('Timern borttagen'); } catch(e) { if (e.message !== 'avbrutet') toast(e.message); } }
 

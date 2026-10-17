@@ -1657,7 +1657,7 @@ async function cleanAlarm(a) {
       label: String(a.label || '').slice(0, 40),
       url: play.url, urlTitle: play.urlTitle,
       music: play.music, shuffle: !!play.shuffle, tracks: play.tracks, shuffleRest: !!play.shuffleRest,
-      volume: intIn(a.volume, 1, 100, 30),
+      volume: intIn(a.volume, 1, 100, 80),
       rampMinutes: intIn(a.rampMinutes, 0, 30, 3),
       autoStopMinutes: intIn(a.autoStopMinutes, 5, 180, 30),
       news: a.news === true,      // Ekots senaste nytt efter att hon stängt av (tavlans news.py)
@@ -1722,7 +1722,7 @@ app.post('/api/board/timers', requirePin, (req, res) => {
   const { sound, radio } = alarmSound(req.body);
   const t = { id: crypto.randomUUID(), startedAt: Date.now(), endsAt: Date.now() + Math.round(minutes * 60000),
               minutes: Math.round(minutes), label: String(req.body.label || '').slice(0, 40), sound: sound === 'music' ? 'music' : sound,
-              radio, volume: intIn(req.body.volume, 1, 100, 40) };
+              radio, volume: intIn(req.body.volume, 1, 100, 80) };
   boardState.timers.push(t);
   bumpConfig();
   res.json({ ok: true, timer: t, timers: activeTimers() });
