@@ -612,7 +612,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
   <div class="sheet">
     <div class="sheet-title" id="alarmSheetTitle">NYTT ALARM</div>
     <div class="field">
-      <input type="time" class="time-input" id="alarmTime" value="07:00" onchange="updateOnceHint()">
+      <input type="time" class="time-input" id="alarmTime" value="07:00" onchange="alarmTimeChanged()" oninput="alarmTimeChanged()">
     </div>
     <div class="field">
       <div class="field-label"><span>Dagar</span><span id="alarmOnceHint" style="color:var(--hero-blue-dark);"></span></div>
@@ -1603,14 +1603,33 @@ function renderDayChips(){
     `<button class="chip ${editDays.includes(i) ? 'on' : ''}" onclick="toggleDay(${i})">${d}</button>`).join('');
   updateOnceHint();
 }
+function nextRingDate(time, days){
+  const [h, m] = (time || '07:00').split(':').map(Number);
+  const now = new Date();
+  for (let d = 0; d < 8; d++) {
+    const t = new Date(); t.setDate(t.getDate() + d); t.setHours(h, m, 0, 0);
+    if (t > now && (!days.length || days.includes((t.getDay() + 6) % 7))) return t;
+  }
+  return null;
+}
+// Förvalda dagar för ett nytt alarm: ringer det nästa gång en lördag/söndag
+// blir det Helger, annars Vardagar — så att det alltid ringer nästa gång
+function defaultDays(time){ const t = nextRingDate(time, []); return t && (t.getDay() + 6) % 7 >= 5 ? [5, 6] : [0, 1, 2, 3, 4]; }
+let daysTouched = false, tmplUrl = null;
+function alarmTimeChanged(){
+  if (!editing && !daysTouched) { editDays = defaultDays(document.getElementById('alarmTime').value); renderDayChips(); }
+  else updateOnceHint();
+}
 function toggleDay(i){
+  daysTouched = true;
   editDays = editDays.includes(i) ? editDays.filter(x => x !== i) : [...editDays, i].sort();
   renderDayChips();
 }
-function setAlarmDays(days){ editDays = days.slice(); renderDayChips(); }
+function setAlarmDays(days){ daysTouched = true; editDays = days.slice(); renderDayChips(); }
 function updateOnceHint(){
   const time = document.getElementById('alarmTime').value || '07:00';
-  document.getElementById('alarmOnceHint').textContent = editDays.length ? '' : `Ringer en gång: ${dayWord(nextOnceDate(time))} ${time}`;
+  const t = nextRingDate(time, editDays);
+  document.getElementById('alarmOnceHint').textContent = !t ? '' : `${editDays.length ? 'Ringer nästa gång' : 'Ringer en gång'}: ${dayWord(isoDate(t))}${['idag', 'imorgon'].includes(dayWord(isoDate(t))) ? ' ' + t.toLocaleDateString('sv-SE', { weekday: 'short' }) : ''} ${time}`;
 }
 // ── Musik i alarmet ──
 // "Spela" öppnar en lista: Fortsätt där jag slutade · ♥ Favoriter (→ Spellistor / Låtar)
@@ -1818,19 +1837,23 @@ function openAlarmEditor(id){
   editing = a ? { ...a } : null;
   document.getElementById('alarmSheetTitle').textContent = a ? 'ÄNDRA ALARM' : 'NYTT ALARM';
   document.getElementById('alarmTime').value = a ? a.time : '07:00';
-  editDays = a ? (a.days || []).slice() : [0,1,2,3,4];
+  daysTouched = !!a;
+  editDays = a ? (a.days || []).slice() : defaultDays('07:00');
   document.getElementById('alarmLabel').value = a ? (a.label || '') : '';
-  editMusic = a && a.music ? { ...a.music } : null;
-  editRadio = a && a.radio ? { ...a.radio } : null;
+  // Nytt alarm: samma val som förra gången (ljud, volym, mjuk start, stäng av, nyheter)
+  const tp = a || lastBoard.lastAlarmChoice || null;
+  tmplUrl = !a && tp && tp.url ? { url: tp.url, urlTitle: tp.urlTitle || '' } : null;
+  editMusic = tp && tp.music ? { ...tp.music } : null;
+  editRadio = tp && tp.radio ? { ...tp.radio } : null;
   if (editRadio) rememberStations([editRadio]);
-  editKind = a && ['news', 'signal'].includes(a.sound) ? a.sound : a && a.sound === 'radio' && editRadio ? 'radio'
-    : editMusic ? editMusic.kind : (a && a.url ? 'link' : 'resume');
-  const vol = a ? a.volume : 80;
+  editKind = tp && ['news', 'signal'].includes(tp.sound) ? tp.sound : tp && tp.sound === 'radio' && editRadio ? 'radio'
+    : editMusic ? editMusic.kind : (tp && tp.url ? 'link' : 'resume');
+  const vol = tp && tp.volume ? tp.volume : 80;
   document.getElementById('alarmVolume').value = vol;
   document.getElementById('alarmVolumeText').textContent = vol + ' %';
-  fillSelect('alarmRamp', RAMP_CHOICES, a ? a.rampMinutes : 3, m => m ? `${m} min` : 'Av (direkt)');
-  fillSelect('alarmAutoStop', STOP_CHOICES, a ? a.autoStopMinutes : 30, m => `${m} min`);
-  document.getElementById('alarmNews').checked = !!(a && a.news);
+  fillSelect('alarmRamp', RAMP_CHOICES, tp && tp.rampMinutes != null ? tp.rampMinutes : 3, m => m ? `${m} min` : 'Av (direkt)');
+  fillSelect('alarmAutoStop', STOP_CHOICES, tp && tp.autoStopMinutes ? tp.autoStopMinutes : 30, m => `${m} min`);
+  document.getElementById('alarmNews').checked = !!(tp && tp.news);
   document.getElementById('alarmDeleteWrap').style.display = a ? '' : 'none';
   document.getElementById('alarmError').textContent = '';
   renderMusicPick();
@@ -1853,7 +1876,7 @@ function alarmFromEditor(){
     days: editDays,
     date: editDays.length ? null : nextOnceDate(time || '07:00'),
     label: document.getElementById('alarmLabel').value.trim(),
-    url: kind === 'link' && editing ? (editing.url || '') : '',
+    url: kind === 'link' ? ((editing || tmplUrl || {}).url || '') : '',
     music: (kind === 'playlist' || kind === 'track' || kind === 'liked') && editMusic && editMusic.kind === kind ? editMusic : null,
     volume: Number(document.getElementById('alarmVolume').value),
     rampMinutes: Number(document.getElementById('alarmRamp').value),
@@ -2742,8 +2765,11 @@ function alarmSegment(seg){
   try { sessionStorage.setItem('alarmSeg', seg); } catch(e) {}
 }
 function openTimerEditor(){
+  const L = (lastBoard || {}).lastTimerChoice;
+  if (L) { timerSound = { sound: L.sound || 'signal', radio: L.radio || null }; if (L.minutes) timerMinutes = L.minutes; if (L.radio) rememberStations([L.radio]); }
+  const vol = L && L.volume ? L.volume : 80;
   document.getElementById('timerLabel').value = '';
-  document.getElementById('timerVol').value = 80; document.getElementById('timerVolText').textContent = '80 %';
+  document.getElementById('timerVol').value = vol; document.getElementById('timerVolText').textContent = vol + ' %';
   renderTimerEditor();
   document.getElementById('timerSheet').classList.add('open');
 }

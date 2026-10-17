@@ -1724,6 +1724,7 @@ app.post('/api/board/timers', requirePin, (req, res) => {
               minutes: Math.round(minutes), label: String(req.body.label || '').slice(0, 40), sound: sound === 'music' ? 'music' : sound,
               radio, volume: intIn(req.body.volume, 1, 100, 80) };
   boardState.timers.push(t);
+  boardState.lastTimerChoice = { sound: t.sound, radio: t.radio || null, volume: t.volume, minutes: t.minutes };
   bumpConfig();
   res.json({ ok: true, timer: t, timers: activeTimers() });
 });
@@ -1748,6 +1749,10 @@ app.post('/api/board/alarms', requirePin, async (req, res) => {
   if (i >= 0) boardState.alarms[i] = r.alarm;
   else if (boardState.alarms.length >= ALARM_MAX) return res.status(400).json({ error: `Högst ${ALARM_MAX} alarm` });
   else boardState.alarms.push(r.alarm);
+  // Nästa nya alarm börjar med samma val (ljud, volym, mjuk start …)
+  const A = r.alarm;
+  boardState.lastAlarmChoice = { sound: A.sound, music: A.music || null, radio: A.radio || null, url: A.url || '', urlTitle: A.urlTitle || '',
+                                 volume: A.volume, rampMinutes: A.rampMinutes, autoStopMinutes: A.autoStopMinutes, news: !!A.news };
   bumpConfig();
   res.json({ ok: true, alarm: r.alarm, alarms: boardState.alarms });
 });
