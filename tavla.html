@@ -305,7 +305,9 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 
 /* ── Enfärgade ikoner + vit text med skugga på grönt (2026-10-17) ── */
 .ic{width:1.15em;height:1.15em;display:inline-block;vertical-align:-.2em;flex:none;color:inherit;}
-.tab-ico .ic{width:22px;height:22px;}
+.tab-btn{height:56px;padding:0;border-radius:6px;display:flex;align-items:center;justify-content:center;}
+.tab-ico{display:flex;}
+.tab-ico .ic{width:28px;height:28px;}
 .mico .ic,.menu-ico .ic,.ri .ic,.vcov .ic,.pcov .ic,.showgrid .ic{color:var(--hero-blue-dark);}
 .ri .ic{width:26px;height:26px;} .vcov .ic{width:40px;height:40px;} .pcov .ic{width:26px;height:26px;}
 .mico,.menu-ico{background:var(--hero-tint);}
@@ -338,10 +340,10 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 </div>
 
 <div class="tabbar">
-  <button class="tab-btn active" id="tabBtnView" onclick="showTab('view')"><span class="tab-ico"><svg class="ic"><use href="#i-image"/></svg></span>Tavlan</button>
-  <button class="tab-btn" id="tabBtnMusic" onclick="showTab('music')"><span class="tab-ico"><svg class="ic"><use href="#i-music"/></svg></span>Musik</button>
-  <button class="tab-btn" id="tabBtnAlarm" onclick="showTab('alarm')"><span class="tab-ico"><svg class="ic"><use href="#i-alarm"/></svg></span>Alarm</button>
-  <button class="tab-btn" id="tabBtnSettings" onclick="showTab('settings')"><span class="tab-ico"><svg class="ic"><use href="#i-gear"/></svg></span>Inställn.</button>
+  <button class="tab-btn active" id="tabBtnView" title="Tavlan" aria-label="Tavlan" onclick="showTab('view')"><span class="tab-ico"><svg class="ic"><use href="#i-image"/></svg></span></button>
+  <button class="tab-btn" id="tabBtnMusic" title="Musik" aria-label="Musik" onclick="showTab('music')"><span class="tab-ico"><svg class="ic"><use href="#i-music"/></svg></span></button>
+  <button class="tab-btn" id="tabBtnAlarm" title="Alarm" aria-label="Alarm" onclick="showTab('alarm')"><span class="tab-ico"><svg class="ic"><use href="#i-alarm"/></svg></span></button>
+  <button class="tab-btn" id="tabBtnSettings" title="Inställningar" aria-label="Inställningar" onclick="showTab('settings')"><span class="tab-ico"><svg class="ic"><use href="#i-gear"/></svg></span></button>
 </div>
 
 <main>
