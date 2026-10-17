@@ -177,6 +177,67 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
 .set-ctrl input.wide{width:110px;}
 .set-reset{border:none;background:none;font-size:16px;cursor:pointer;color:var(--hero-blue-dark);padding:2px 4px;}
 .set-error{color:var(--pulse-red);font-size:12px;font-weight:700;margin-top:4px;}
+/* ── Musik-fliken, timer, inställningsmenyn (2026-10-17) ── */
+.np{display:flex;gap:14px;align-items:center;}
+.np-art{width:72px;height:72px;border:3px solid var(--ink);border-radius:12px;flex:none;overflow:hidden;
+  background:linear-gradient(135deg,#ff7a59,#ffd34d 55%,#169ee7);display:flex;align-items:center;justify-content:center;font-size:30px;}
+.np-art img{width:100%;height:100%;object-fit:cover;display:block;background:#fff;}
+.np-title{font-weight:800;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.np-sub{font-size:13px;color:var(--ink-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ctl{display:flex;gap:8px;margin-top:14px;}
+.ctl button{flex:1;border:2px solid var(--ink);border-radius:12px;padding:10px 0;font-size:20px;background:var(--white);box-shadow:2px 2px 0 var(--ink);cursor:pointer;font-family:var(--font-ui);}
+.ctl button.big{background:var(--hero-blue);color:#fff;}
+.ctl button:disabled{opacity:.35;}
+.vol{display:flex;align-items:center;gap:10px;margin-top:14px;}
+.vol-val{border:2px solid var(--ink);border-radius:8px;padding:3px 8px;font-family:var(--font-mono);font-weight:700;font-size:13px;min-width:56px;text-align:center;}
+.chips2{display:flex;gap:8px;flex-wrap:wrap;}
+.chips2 button{border:2px solid var(--ink);border-radius:20px;padding:7px 13px;font-weight:700;font-size:13px;background:var(--white);cursor:pointer;font-family:var(--font-ui);}
+.chips2 button.on{background:#1d2b4f;color:#fff;}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.tile{border:2px solid var(--ink);border-radius:12px;padding:12px;background:var(--white);font-weight:800;font-size:14px;box-shadow:2px 2px 0 var(--ink);cursor:pointer;text-align:left;font-family:var(--font-ui);min-width:0;}
+.tile small{display:block;font-weight:500;color:var(--ink-muted);font-size:11px;margin-top:4px;}
+.tile .tt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
+.seg3{display:flex;border:2px solid var(--ink);border-radius:11px;overflow:hidden;margin-bottom:14px;box-shadow:2px 2px 0 var(--ink);background:var(--white);}
+.seg3 button{flex:1;padding:9px 2px;font-weight:700;font-size:13px;border:none;border-right:2px solid var(--ink);background:none;cursor:pointer;font-family:var(--font-ui);}
+.seg3 button:last-child{border-right:none;}
+.seg3 button.on{background:var(--hero-blue);color:#fff;}
+.rrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--paper-soft);cursor:pointer;}
+.rrow:last-child{border-bottom:none;}
+.rlogo{width:38px;height:38px;border:2px solid var(--ink);border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex:none;overflow:hidden;background:var(--paper-soft);}
+.rlogo img{width:100%;height:100%;object-fit:contain;background:#fff;}
+.rname{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rsub{font-size:11px;color:var(--ink-muted);}
+.rtxt{flex:1;min-width:0;}
+.star{background:none;border:none;font-size:22px;cursor:pointer;padding:4px;color:var(--ink-muted);flex:none;}
+.star.on{color:#E8A800;}
+.playing-tag{font-size:10px;font-weight:800;color:#fff;background:var(--hero-blue);border:2px solid var(--ink);border-radius:6px;padding:0 5px;margin-left:6px;vertical-align:2px;}
+.big-num{font-family:var(--font-mono);font-size:56px;font-weight:700;text-align:center;border:var(--border-thick);border-radius:14px;background:var(--white);padding:4px 0;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:12px;}
+.big-num button{border:2px solid var(--ink);border-radius:10px;background:var(--white);font-size:22px;width:44px;height:44px;cursor:pointer;font-weight:800;}
+.big-num small{font-size:20px;}
+.timer-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--paper-soft);}
+.timer-row:last-child{border-bottom:none;}
+.timer-left{font-family:var(--font-mono);font-size:28px;font-weight:700;}
+.skip-link{display:inline-block;margin-top:6px;font-size:12px;font-weight:700;color:var(--hero-blue-dark);background:none;border:none;padding:0;cursor:pointer;text-decoration:underline;font-family:var(--font-ui);}
+.skip-on{color:#9a5b00;}
+.set-search{margin-bottom:14px;}
+.menu{background:var(--white);border:var(--border-thick);border-radius:14px;box-shadow:3px 3px 0 var(--ink);margin-bottom:16px;overflow:hidden;}
+.mrow{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--paper-soft);cursor:pointer;}
+.mrow:last-child{border-bottom:none;}
+.mico{width:38px;height:38px;border:2px solid var(--ink);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;flex:none;}
+.mt{font-weight:700;font-size:15px;}
+.ms{font-size:12px;color:var(--ink-muted);margin-top:2px;}
+.marrow{margin-left:auto;font-weight:700;font-size:18px;color:var(--ink-muted);}
+.sec{font-family:var(--font-burst);font-size:12px;letter-spacing:1px;margin:4px 4px 8px;color:#444;}
+.page-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.page-title{font-family:var(--font-burst);font-size:17px;letter-spacing:1px;}
+.set-page{display:none;}
+.set-page.open{display:block;}
+.set-row.flash{background:#FFF7D6;transition:background 1.5s;}
+details.adv{margin-bottom:20px;}
+details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor:pointer;padding:6px 2px;}
+.status-line{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--paper-soft);font-size:14px;}
+.status-line:last-child{border-bottom:none;}
+.status-line b{font-weight:700;}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:white;
   padding:10px 16px;border-radius:10px;font-weight:700;font-size:13px;z-index:2000;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center;}
 .toast.show{opacity:1;}
@@ -194,8 +255,9 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
 
 <div class="tabbar">
   <button class="tab-btn active" id="tabBtnView" onclick="showTab('view')"><span class="tab-ico">🖼️</span>Tavlan</button>
+  <button class="tab-btn" id="tabBtnMusic" onclick="showTab('music')"><span class="tab-ico">🎵</span>Musik</button>
   <button class="tab-btn" id="tabBtnAlarm" onclick="showTab('alarm')"><span class="tab-ico">⏰</span>Alarm</button>
-  <button class="tab-btn" id="tabBtnSettings" onclick="showTab('settings')"><span class="tab-ico">⚙️</span>Inställningar</button>
+  <button class="tab-btn" id="tabBtnSettings" onclick="showTab('settings')"><span class="tab-ico">⚙️</span>Inställn.</button>
 </div>
 
 <main>
@@ -231,8 +293,52 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
     </div>
   </div>
 
+  <!-- ═══════════════════════ FLIK: MUSIK ═══════════════════════ -->
+  <div class="tab-panel" id="tab-music">
+    <div class="card">
+      <div class="card-label">SPELAS NU</div>
+      <div class="np">
+        <div class="np-art" id="npArt">🎵</div>
+        <div style="min-width:0;flex:1;"><div class="np-title" id="npTitle">Inget spelas</div><div class="np-sub" id="npSub">Välj något nedan</div></div>
+      </div>
+      <div class="ctl">
+        <button class="big" id="npPlay" onclick="musicPlayPause()">⏯</button>
+        <button id="npNext" onclick="sendMacropadCommand('spotify_next')">⏭</button>
+      </div>
+      <div class="vol"><span>🔈</span><input type="range" id="npVol" min="0" max="100" value="0" oninput="volInput(this.value)" onchange="volChange(this.value)"><span class="vol-val" id="npVolVal">– %</span></div>
+    </div>
+    <div class="card">
+      <div class="card-label">SOV-TIMER 🌙</div>
+      <div class="chips2" id="sleepChips"></div>
+      <div class="hint" id="sleepInfo" style="margin:10px 0 0;"></div>
+    </div>
+    <div class="card">
+      <div class="card-label">SPELA NU</div>
+      <div class="tiles" id="playNowTiles"></div>
+    </div>
+    <div class="card">
+      <div class="card-label">RADIO</div>
+      <div id="radioBox"></div>
+    </div>
+  </div>
+
   <!-- ═══════════════════════ FLIK: ALARM ═══════════════════════ -->
   <div class="tab-panel" id="tab-alarm">
+    <div class="seg3" id="alarmSeg"><button class="on" onclick="alarmSegment('alarm')">⏰ Alarm</button><button onclick="alarmSegment('timer')">⏱ Timer</button></div>
+    <div id="timerPanel" style="display:none;">
+      <div class="card"><div class="card-label">NY TIMER</div>
+        <div class="big-num"><button onclick="timerStep(-1)">−</button><span id="timerMin">20</span><small>min</small><button onclick="timerStep(1)">+</button></div>
+        <div class="chips2" id="timerChips"></div>
+        <div class="field" style="margin-top:14px;"><div class="field-label">Ringer med</div><div id="timerSoundPick"></div></div>
+        <div class="field"><div class="field-label"><span>Volym</span><span id="timerVolText">40 %</span></div>
+          <input type="range" id="timerVol" min="1" max="100" value="40" oninput="document.getElementById('timerVolText').textContent=this.value+' %'"></div>
+        <div class="field"><div class="field-label">Namn (valfritt)</div><input type="text" class="input-field" id="timerLabel" maxlength="40" placeholder="t.ex. Pastan"></div>
+        <button class="btn btn-primary" style="width:100%;padding:13px;font-size:15px;" id="timerStart" onclick="startTimer()">▶ Starta timer</button>
+      </div>
+      <div class="card" id="timerRunning" style="display:none;"><div class="card-label">PÅGÅR</div><div id="timerList"></div></div>
+      <div class="hint">Timern ringer från tavlan som ett alarm (⏯ stänger av, tryck på vredet = snooza). Ringtiden syns på tavlan bredvid datumet.</div>
+    </div>
+    <div id="alarmPanel">
     <div class="alarm-status" id="alarmStatus">
       <div class="alarm-status-title">Laddar…</div>
     </div>
@@ -241,33 +347,43 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
     <div class="hint" style="margin-top:14px;">
       Alarmet ringer från tavlan — det går även om appen är stängd.
       Högtalaren måste vara på. När det ringer: ⏯️ stänger av, tryck på vredet = snooza.
+      Går det valda ljudet inte att spela ringer det med signalen Morgonljus i stället.
+    </div>
     </div>
   </div>
 
   <!-- ═══════════════════════ FLIK: INSTÄLLNINGAR ═══════════════════════ -->
   <div class="tab-panel" id="tab-settings">
-
-    <div class="card">
-      <div class="card-label">WIFI VIA BLUETOOTH (för flytt/byte av nätverk)</div>
-      <p style="font-size:14px;color:#666;margin:4px 0 12px;">
-        Kräver Chrome på Android eller dator — fungerar inte i Safari på iPhone.
-        Kör <code>python3 ble_wifi_provision.py</code> på Pi:n FÖRST, sen tryck
-        knappen nedan medan du är nära Pi:n (Bluetooth har kort räckvidd).
-      </p>
-      <div class="setting-row">
-        <input type="text" id="bleWifiSsid" placeholder="WiFi-namn (SSID)" style="flex:1;padding:8px;">
-      </div>
-      <div class="setting-row">
-        <input type="password" id="bleWifiPassword" placeholder="WiFi-lösenord" style="flex:1;padding:8px;">
-      </div>
-      <button onclick="sendWifiOverBluetooth()" style="width:100%;padding:10px;margin-top:8px;">
-        📡 Anslut till Pi:n och skicka WiFi-uppgifter
-      </button>
-      <div id="bleWifiStatus" style="margin-top:10px;font-size:14px;color:#444;"></div>
+    <div id="setHome">
+      <input type="search" class="input-field set-search" id="setSearch" placeholder="🔍 Sök inställning… (t.ex. snooze)" oninput="renderSetHome()">
+      <div id="setMenu"></div>
     </div>
-
+    <div id="setPageWrap" style="display:none;">
+      <div class="page-head"><button class="music-back" onclick="closeSetPage()">‹</button><div class="page-title" id="setPageTitle"></div></div>
+    <section class="set-page" data-page="blod">
+      <div class="card pi-block" data-title="Gränser" data-keys="glucoseLow,glucoseHigh"></div>
+      <div class="card pi-block" data-title="Varning på tavlan" data-keys="alertEnabled,alertLow,alertHigh,alertRedrawLowMinutes,alertRedrawHighMinutes"></div>
+      <div class="card pi-block" data-title="Sensorbyte" data-keys="sensorReminder,sensorDays" data-extra="sensor"></div>
+    </section>
+    <section class="set-page" data-page="musik">
+      <div class="card pi-block" data-title="Volym" data-keys="maxVolume,volumeStep"></div>
+      <div class="card pi-block" data-title="Sov-timer 🌙" data-keys="sleepMinutes,sleepFadeMinutes" data-extra="godnatt"></div>
+      <div class="card pi-block" data-title="Reservspellista" data-keys="fallbackPlaylist"></div>
+      <details class="adv"><summary>Avancerat: upp- och nedtoning vid play/paus</summary>
+      <div class="card pi-block" data-title="Upp- och nedtoning" data-keys="fadeInSeconds,fadeOutSeconds"></div>
+      </details>
+    </section>
+    <section class="set-page" data-page="alarm">
+      <div class="card pi-block" data-title="Alarm" data-keys="snoozeMinutes"></div>
+      <div class="hint">Alarmen och timrarna ställer du in under fliken ⏰ Alarm.</div>
+    </section>
+    <section class="set-page" data-page="steg">
+      <div class="card pi-block" data-title="Steg" data-keys="stepsGoal"></div>
+    </section>
+    <section class="set-page" data-page="hem">
     <div class="card">
       <div class="card-label">Visa på hemskärmen</div>
+      <div class="hint">Vilka block som syns på tavlans Hem-vy.</div>
       <div class="setting-row">
         <div class="setting-label">Blodsocker</div>
         <input type="checkbox" id="tavlaShowGlucose" onchange="saveTavlaSettings()" style="width:22px;height:22px;">
@@ -282,15 +398,9 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-label">Lokaltrafik</div>
-      <div class="hint">Rutter som visas när Lokaltrafik-knappen på macropaden trycks. Lägg till så många du vill — markera en som "Visa på hemskärmen".</div>
-      <div id="tavlaBusList"></div>
-      <button class="btn btn-ghost btn-sm btn-inline" onclick="addTavlaBusRoute()" style="margin-top:8px;">+ Lägg till rutt</button>
-    </div>
-
-    <div id="piSettings"></div>
-
+    </section>
+    <section class="set-page" data-page="bilder">
+      <div class="card pi-block" data-title="Bildväxling" data-keys="tavlaRotateMinutes"></div>
     <div class="card">
       <div class="card-label">Google Photos-album (Tavla-bilder)</div>
       <textarea class="input-field" id="tavlaGooglePhotosUrls" rows="3" placeholder="https://photos.app.goo.gl/...&#10;https://photos.app.goo.gl/... (en länk per rad, valfritt antal album)" onchange="saveTavlaSettings()" style="resize:vertical;font-family:inherit;"></textarea>
@@ -325,6 +435,38 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
       <div id="tavlaGallery" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;"></div>
     </div>
 
+    </section>
+    <section class="set-page" data-page="buss">
+    <div class="card">
+      <div class="card-label">Lokaltrafik</div>
+      <div class="hint">Rutter som visas när Lokaltrafik-knappen på macropaden trycks. Lägg till så många du vill — markera en som "Visa på hemskärmen".</div>
+      <div id="tavlaBusList"></div>
+      <button class="btn btn-ghost btn-sm btn-inline" onclick="addTavlaBusRoute()" style="margin-top:8px;">+ Lägg till rutt</button>
+    </div>
+
+    </section>
+    <section class="set-page" data-page="kalender">
+      <div class="card"><div class="card-label">Google Kalender</div>
+        <div class="hint" id="calState"></div>
+        <div class="set-help" style="font-size:12px;margin-bottom:10px;">Öppna Google Kalender på en dator → ⚙️ Inställningar → välj din kalender → <b>Integrera kalender</b> → kopiera <b>Hemlig adress i iCal-format</b> och klistra in den här. Länken sparas bara på servern.</div>
+        <input type="url" class="input-field" id="calUrl" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics">
+        <div style="display:flex;gap:8px;margin-top:10px;"><button class="btn btn-primary btn-sm" onclick="saveCalendar()">Spara</button>
+          <button class="btn btn-ghost btn-sm" id="calRemove" onclick="removeCalendar()">Koppla bort</button></div>
+      </div>
+      <div class="card yellow"><div class="card-label">Lapp på tavlan</div>
+        <div class="hint" style="color:var(--ink);font-size:13px;">Börja titeln med <b>🔔</b> eller <b>!</b> — t.ex. <b>! Tandläkaren</b> — så syns händelsen som en gul lapp på tavlans vyer från morgonen samma dag tills den börjar. Heldagshändelser syns hela dagen. I Kalender-vyn blir raden gul.</div>
+      </div>
+    </section>
+    <section class="set-page" data-page="macropad">
+      <div class="card pi-block" data-title="Knapparna" data-keys="button1View,button2View,button3View,button4View,button5View"></div>
+      <div class="card pi-block" data-title="Sov-timer" data-keys="sleepButton"></div>
+    </section>
+    <section class="set-page" data-page="status">
+      <div class="card"><div class="card-label">Tavlan just nu</div><div id="statusBox"></div>
+        <button class="btn btn-ghost" style="width:100%;margin-top:12px;" onclick="testSpeaker()">🔊 Testa högtalaren</button>
+        <div class="hint" style="margin:8px 0 0;">Spelar Morgonljus i 4 sekunder på 30 % — hörs det fungerar högtalaren.</div></div>
+    </section>
+    <section class="set-page" data-page="pin">
     <div class="card">
       <div class="card-label">PIN-kod</div>
       <div class="hint" id="pinCardHint">Behövs för att ändra inställningar, bilder och alarm. Telefonen kommer ihåg den.</div>
@@ -334,7 +476,33 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
       </div>
       <button class="link-btn" onclick="forgotPin()">Glömt PIN-koden?</button>
     </div>
+    </section>
+    <section class="set-page" data-page="avancerat">
+      <div class="card pi-block" data-title="Uppdatering" data-keys="dataRefreshMinutes,displayRefreshMinutes,footballRefreshMinutes"></div>
+      <div class="card pi-block" data-title="Plats (väder och sol)" data-keys="latitude,longitude"></div>
+      <div class="card pi-block" data-title="Övrigt" data-keys="*rest*"></div>
+    <div class="card">
+      <div class="card-label">WIFI VIA BLUETOOTH (för flytt/byte av nätverk)</div>
+      <p style="font-size:14px;color:#666;margin:4px 0 12px;">
+        Kräver Chrome på Android eller dator — fungerar inte i Safari på iPhone.
+        Kör <code>python3 ble_wifi_provision.py</code> på Pi:n FÖRST, sen tryck
+        knappen nedan medan du är nära Pi:n (Bluetooth har kort räckvidd).
+      </p>
+      <div class="setting-row">
+        <input type="text" id="bleWifiSsid" placeholder="WiFi-namn (SSID)" style="flex:1;padding:8px;">
+      </div>
+      <div class="setting-row">
+        <input type="password" id="bleWifiPassword" placeholder="WiFi-lösenord" style="flex:1;padding:8px;">
+      </div>
+      <button onclick="sendWifiOverBluetooth()" style="width:100%;padding:10px;margin-top:8px;">
+        📡 Anslut till Pi:n och skicka WiFi-uppgifter
+      </button>
+      <div id="bleWifiStatus" style="margin-top:10px;font-size:14px;color:#444;"></div>
+    </div>
 
+      <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:20px;" onclick="resetAllSettings()">↺ Återställ alla tavlans inställningar till standard</button>
+    </section>
+    </div>
   </div>
 
 </main>
@@ -418,6 +586,26 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
     <div class="sheet-actions" style="margin-top:12px;">
       <button class="btn btn-ghost" onclick="closeMusicPicker()">Stäng</button>
     </div>
+  </div>
+</div>
+
+<!-- Välj radiokanal (alarm/timer) -->
+<div class="sheet-bg" id="radioSheet" onclick="if(event.target===this)closeRadioSheet()">
+  <div class="sheet">
+    <div class="sheet-title" id="radioSheetTitle">VÄLJ RADIOKANAL</div>
+    <div id="radioSheetBox"></div>
+    <div class="sheet-actions" style="margin-top:12px;"><button class="btn btn-ghost" onclick="closeRadioSheet()">Stäng</button></div>
+  </div>
+</div>
+
+<!-- Godnatt: spellista + längd -->
+<div class="sheet-bg" id="godnattSheet" onclick="if(event.target===this)closeGodnatt()">
+  <div class="sheet">
+    <div class="sheet-title">🌙 GODNATT</div>
+    <div class="hint">Ett tryck på Godnatt startar spellistan och sov-timern.</div>
+    <div class="field"><div class="field-label">Sov-timer</div><div class="chips2" id="godnattMin"></div></div>
+    <div class="field"><div class="field-label">Spellista</div><div class="music-list" id="godnattList"></div></div>
+    <div class="sheet-actions"><button class="btn btn-ghost" onclick="closeGodnatt()">Avbryt</button><button class="btn btn-primary" onclick="saveGodnatt()">Spara</button></div>
   </div>
 </div>
 
@@ -506,7 +694,7 @@ let settingsLoaded = false;
 let currentTab = 'view';
 function showTab(name){
   currentTab = name;
-  ['view','alarm','settings'].forEach(t => {
+  ['view','music','alarm','settings'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('active', name===t);
     document.getElementById('tabBtn'+t[0].toUpperCase()+t.slice(1)).classList.toggle('active', name===t);
   });
@@ -515,6 +703,7 @@ function showTab(name){
     loadTavlaPage();
   }
   if(name==='alarm') { refreshStatus(); }
+  if(name==='music') { loadListen(); renderRadio('radioBox'); refreshStatus(); }
   try { sessionStorage.setItem('tavlaTab', name); } catch(e) {}
 }
 
@@ -529,7 +718,9 @@ async function refreshStatus(){
     const board = await res.json();
     lastBoard = board;
     renderKeys(board);
-    if (currentTab === 'alarm') { renderAlarmStatus(board); if (!alarmEditorOpen) renderAlarmList(board); }
+    if (currentTab === 'alarm') { renderAlarmStatus(board); if (!alarmEditorOpen) renderAlarmList(board); renderTimers(board); }
+    if (currentTab === 'music') renderMusic(board);
+    if (currentTab === 'settings') { renderStatusBox(); if (document.getElementById('setHome').style.display !== 'none' && !document.getElementById('setSearch').value) renderSetHome(); }
     const seenRecently = board.lastPiSeenAt && (Date.now() - board.lastPiSeenAt) < 15000;
     if (seenRecently) {
       dot.style.background = 'var(--in-range)';
@@ -596,9 +787,11 @@ const MACROPAD_LABELS = {
   sleep_timer: 'Sov-timer',
   alarm_stop: 'Alarm av',
   alarm_snooze: 'Snooze',
+  radio_play: 'Radio', audio_stop: 'Tyst', play_music: 'Spelar', set_volume: 'Volym',
+  news_now: 'Nyheter', sleep_set: 'Sov-timer', godnatt: 'Godnatt', sound_test: 'Högtalartest',
 };
 let macropadOledTimer = null;
-async function sendMacropadCommand(action, viewOrParam, direction, button){
+async function sendMacropadCommand(action, viewOrParam, direction, button, params){
   const oled = document.getElementById('macropadOled');
   let label = MACROPAD_LABELS[action];
   if(typeof label === 'object') label = label[viewOrParam ?? direction] || action;
@@ -611,7 +804,7 @@ async function sendMacropadCommand(action, viewOrParam, direction, button){
     await fetch('/api/board/command', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ action, view: action === 'show_view' ? viewOrParam : null, direction: direction || null, button: button || null })
+      body: JSON.stringify({ action, view: action === 'show_view' ? viewOrParam : null, direction: direction || null, button: button || null, params: params || null })
     });
   } catch(e) {
     oled.textContent = 'Fel: ej ansluten';
@@ -641,6 +834,7 @@ async function loadTavlaPage(){
   renderTavlaBusList();
   renderTavlaGallery();
   renderPiSettings();
+  try { const pg = sessionStorage.getItem('setPage'); if (pg) openSetPage(pg); } catch(e) {}
 }
 
 function renderTavlaBusList(){
@@ -1182,7 +1376,7 @@ function renderAlarmStatus(board){
     return;
   }
   if (st.mode === 'ringing') {
-    box.innerHTML = `<div class="alarm-status-title">⏰ ALARMET RINGER</div>
+    box.innerHTML = `<div class="alarm-status-title">${st.timer ? '⏱ TIMERN RINGER' : '⏰ ALARMET RINGER'}</div>
       <div class="alarm-status-sub">${esc(st.label || '')}</div>
       <div class="alarm-status-actions">
         <button class="btn btn-ghost" onclick="alarmCommand('alarm_snooze')">💤 Snooza ${snooze} min</button>
@@ -1220,7 +1414,9 @@ function renderAlarmList(board){
   wrap.innerHTML = alarms.map(a => {
     const past = !(a.days || []).length && a.date && a.date < isoDate(new Date());
     const on = a.enabled && !past;
-    const music = a.sound === 'news' ? '📻 Ekot senaste nytt'
+    const music = a.sound === 'news' ? '📰 Ekot senaste nytt'
+      : a.sound === 'signal' ? '🔔 Morgonljus'
+      : a.sound === 'radio' ? `📻 ${(a.radio || {}).name || 'Radio'}`
       : a.music && a.music.kind === 'playlist' ? `🔀 ${a.urlTitle || 'Spellista'}`
       : a.music && a.music.kind === 'track' ? `🎵 ${a.urlTitle || 'Låt'}`
       : a.url ? `🎵 ${a.urlTitle || 'Spotify-länk'}` : '🎵 Fortsätter där du slutade';
@@ -1228,7 +1424,8 @@ function renderAlarmList(board){
       <div class="alarm-info">
         <div class="alarm-time">${esc(a.time)}</div>
         ${a.label ? `<div class="alarm-label">${esc(a.label)}</div>` : ''}
-        <div class="alarm-meta">${esc(daysText(a))} · ${a.volume} % · ${esc(music)}${a.news && a.sound !== 'news' ? ' · 📻 Nyheter' : ''}</div>
+        <div class="alarm-meta">${esc(daysText(a))} · ${a.volume} % · ${esc(music)}${a.news && (a.sound || 'music') === 'music' ? ' · 📰 Nyheter' : ''}</div>
+        ${skipHtml(a, on)}
       </div>
       <label class="switch" onclick="event.stopPropagation()">
         <input type="checkbox" ${on ? 'checked' : ''} onchange="toggleAlarm('${a.id}', this.checked)"><span></span>
@@ -1237,6 +1434,14 @@ function renderAlarmList(board){
   }).join('');
 }
 
+function skipHtml(a, on){
+  if (!on || !(a.days || []).length) return '';           // engångsalarm: stäng av det i stället
+  const today = isoDate(new Date());
+  const skipped = (a.skipDates || []).filter(d => d >= today).sort()[0];
+  if (skipped) return `<button class="skip-link skip-on" onclick="event.stopPropagation();skipAlarm('${a.id}','${skipped}',false)">⏭ Hoppar över ${esc(dayWord(skipped))} · ångra</button>`;
+  const nd = nextAlarmDate(a);
+  return nd ? `<button class="skip-link" onclick="event.stopPropagation();skipAlarm('${a.id}','${nd}',true)">⏭ Hoppa över ${esc(dayWord(nd))}</button>` : '';
+}
 async function reloadBoard(){
   const res = await fetch('/api/board');
   lastBoard = await res.json();
@@ -1279,7 +1484,8 @@ function updateOnceHint(){
 // "Spela" öppnar en lista: Fortsätt där jag slutade · ♥ Favoriter (→ Spellistor / Låtar)
 // · Spellistor (alla, ♡, sök, lägg till) · Låtar (alla, ♡, sök).
 let musicLib = { playlists: [], tracks: {} };
-let editKind = 'resume';        // 'resume' | 'news' | 'playlist' | 'track' | 'link' (gammal sparad länk)
+let editKind = 'resume';        // 'resume' | 'news' | 'radio' | 'signal' | 'playlist' | 'track' | 'link' (gammal sparad länk)
+let editRadio = null;           // vald radiokanal (editKind 'radio')
 let editMusic = null;           // { kind: 'playlist'|'track', id }
 let musicView = 'root';         // root | fav | fav-playlists | fav-tracks | playlists | tracks
 let musicLoadedAt = 0;
@@ -1305,7 +1511,11 @@ function renderMusicPick(){
   let inner = '';
   // Bara nyheter: mjuk start (10 s, inbyggd) och "nyheter efter" behövs inte
   document.getElementById('alarmRampWrap').style.display = editKind === 'news' ? 'none' : '';
-  document.getElementById('alarmNewsWrap').style.display = editKind === 'news' ? 'none' : '';
+  document.getElementById('alarmNewsWrap').style.display = ['news', 'radio', 'signal'].includes(editKind) ? 'none' : '';
+  if (editKind === 'radio' || editKind === 'signal') {
+    box.innerHTML = soundPickHtml({ sound: editKind, radio: editRadio }, 'openMusicPicker()');
+    return;
+  }
   if (editKind === 'news') {
     inner = `<div class="menu-ico">📻</div><div class="mp-txt"><div class="mp-title">Bara nyheter</div>
       <div class="mp-sub">Ekot senaste nytt (1–3 min), sedan tyst</div></div>`;
@@ -1373,7 +1583,9 @@ function renderMusicList(){
   if (v === 'root') {
     list.innerHTML =
       menuRow("pickResume()", '⏯', 'Fortsätt där jag slutade', 'Det som spelades senast', editKind === 'resume', false) +
-      menuRow("pickNews()", '📻', 'Bara nyheter', 'Ekot senaste nytt i stället för musik', editKind === 'news', false) +
+      menuRow("pickNews()", '📰', 'Bara nyheter', 'Ekot senaste nytt i stället för musik', editKind === 'news', false) +
+      menuRow("pickRadio()", '📻', 'Radio', editKind === 'radio' && editRadio ? editRadio.name : 'välj en kanal', editKind === 'radio') +
+      menuRow("pickSignal()", '🔔', 'Signal: Morgonljus', 'mjuk marimba som stiger', editKind === 'signal', false) +
       menuRow("musicGo('fav')", '♥', 'Favoriter', `${favP} spellistor · ${favT} låtar`) +
       menuRow("musicGo('playlists')", '🔀', 'Spellistor', `${musicLib.playlists.length} st · spelas i shuffle`, editKind === 'playlist') +
       menuRow("musicGo('tracks')", '🎵', 'Låtar', `${allTrackIds().length} st från spellistorna`, editKind === 'track');
@@ -1420,6 +1632,11 @@ function renderMusicList(){
 }
 function pickResume(){ editKind = 'resume'; editMusic = null; closeMusicPicker(); }
 function pickNews(){ editKind = 'news'; editMusic = null; closeMusicPicker(); }
+function pickSignal(){ editKind = 'signal'; editMusic = null; closeMusicPicker(); }
+function pickRadio(){
+  closeMusicPicker();
+  openRadioSheet(st => { editKind = 'radio'; editMusic = null; editRadio = st; renderMusicPick(); });
+}
 function pickMusic(kind, id){
   editKind = kind;
   editMusic = { kind, id };
@@ -1467,7 +1684,10 @@ function openAlarmEditor(id){
   editDays = a ? (a.days || []).slice() : [0,1,2,3,4];
   document.getElementById('alarmLabel').value = a ? (a.label || '') : '';
   editMusic = a && a.music ? { ...a.music } : null;
-  editKind = a && a.sound === 'news' ? 'news' : editMusic ? editMusic.kind : (a && a.url ? 'link' : 'resume');
+  editRadio = a && a.radio ? { ...a.radio } : null;
+  if (editRadio) rememberStations([editRadio]);
+  editKind = a && ['news', 'signal'].includes(a.sound) ? a.sound : a && a.sound === 'radio' && editRadio ? 'radio'
+    : editMusic ? editMusic.kind : (a && a.url ? 'link' : 'resume');
   const vol = a ? a.volume : 30;
   document.getElementById('alarmVolume').value = vol;
   document.getElementById('alarmVolumeText').textContent = vol + ' %';
@@ -1501,8 +1721,10 @@ function alarmFromEditor(){
     volume: Number(document.getElementById('alarmVolume').value),
     rampMinutes: Number(document.getElementById('alarmRamp').value),
     autoStopMinutes: Number(document.getElementById('alarmAutoStop').value),
-    news: kind !== 'news' && document.getElementById('alarmNews').checked,
-    sound: kind === 'news' ? 'news' : 'music',
+    news: !['news', 'radio', 'signal'].includes(kind) && document.getElementById('alarmNews').checked,
+    sound: ['news', 'radio', 'signal'].includes(kind) ? kind : 'music',
+    radio: kind === 'radio' ? editRadio : null,
+    skipDates: editing ? (editing.skipDates || []) : [],
   };
 }
 function alarmEditorError(text){ document.getElementById('alarmError').textContent = text; }
@@ -1511,6 +1733,7 @@ async function saveAlarm(){
   if (!a.time) return alarmEditorError('Välj en tid');
   const kind = playKind();
   if ((kind === 'playlist' || kind === 'track') && !a.music) return alarmEditorError(kind === 'track' ? 'Välj en låt' : 'Välj en spellista');
+  if (kind === 'radio' && !a.radio) return alarmEditorError('Välj en radiokanal');
   try {
     await api('POST', '/api/board/alarms', { alarm: a });
     closeAlarmEditor();
@@ -1550,52 +1773,200 @@ function fmtValue(item, v){
   if (item.type === 'spotify') return v ? 'vald' : 'ingen';
   return `${fmtNum(v)}${item.unit ? ' ' + item.unit : ''}`;
 }
+// Inställningarna ligger på egna sidor (2026-10-17): varje .pi-block
+// visar de nycklar det listar (data-keys); nycklar som inte finns på
+// någon sida hamnar under Avancerat -> Övrigt (data-keys="*rest*").
+function piItemHtml(it, saved, titles, errors){
+  const changed = saved[it.key] !== undefined;
+  const v = changed ? saved[it.key] : it.default;
+  let ctrl = '';
+  if (it.type === 'bool') {
+    ctrl = `<label class="switch"><input type="checkbox" ${v ? 'checked' : ''} onchange="saveSetting('${it.key}', this.checked)"><span></span></label>`;
+  } else if (it.type === 'select') {
+    ctrl = `<select onchange="saveSetting('${it.key}', this.value)">${(it.options || []).map(o =>
+      `<option value="${esc(o.value)}" ${o.value === v ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select>`;
+  } else if (it.type === 'int' || it.type === 'float') {
+    ctrl = `<input type="number" class="input-field${it.step < 0.01 ? ' wide' : ''}" inputmode="decimal" value="${v}" min="${it.min}" max="${it.max}" step="${it.step}"
+              onchange="saveNumber('${it.key}', this)"><span class="set-unit">${esc(it.unit || '')}</span>`;
+  }
+  const wide = it.type === 'spotify' || it.type === 'str';
+  const wideCtrl = wide ? `<input type="url" class="input-field" style="margin-top:8px;" value="${esc(v || '')}"
+        placeholder="Klistra in Spotify-länk" onchange="saveSetting('${it.key}', this.value.trim())">
+        ${v && titles[it.key] ? `<div class="set-help">🎵 ${esc(titles[it.key])}</div>` : ''}` : '';
+  const range = (it.type === 'int' || it.type === 'float') ? ` · ${fmtNum(it.min)}–${fmtNum(it.max)}` : '';
+  return `<div class="set-row" id="set-${it.key}">
+    <div class="set-top">
+      <div class="setting-label">${esc(it.label)}</div>
+      <div class="set-ctrl">${ctrl}${changed ? `<button class="set-reset" title="Återställ" onclick="saveSetting('${it.key}', null)">↺</button>` : ''}</div>
+    </div>
+    ${wideCtrl}
+    ${it.help ? `<div class="set-help">${esc(it.help)}</div>` : ''}
+    <div class="set-default ${changed ? 'changed' : ''}">${changed ? 'Ändrad · standard ' + esc(fmtValue(it, it.default)) : 'Standard'}${range}</div>
+    ${errors[it.key] ? `<div class="set-error">${esc(errors[it.key])}</div>` : ''}
+  </div>`;
+}
+function schemaItems(){
+  const out = {};
+  for (const g of (((tavlaState || {}).settingsSchema || {}).groups || [])) for (const it of g.items) out[it.key] = it;
+  return out;
+}
+function placedKeys(){
+  const keys = new Set();
+  document.querySelectorAll('.pi-block').forEach(b => (b.dataset.keys || '').split(',').forEach(k => keys.add(k)));
+  return keys;
+}
 function renderPiSettings(errors){
-  const wrap = document.getElementById('piSettings');
-  const schema = (tavlaState || {}).settingsSchema;
-  if (!schema || !schema.groups) {
-    wrap.innerHTML = `<div class="card yellow"><div class="card-label">FLER INSTÄLLNINGAR</div>
-      <div class="hint">Tavlan har inte skickat sina inställningar än. Starta om tavlan efter uppdateringen, så dyker de upp här.</div></div>`;
+  const items = schemaItems();
+  const saved = (tavlaState || {}).settings || {}, titles = (tavlaState || {}).settingTitles || {};
+  errors = errors || {};
+  const placed = placedKeys();
+  document.querySelectorAll('.pi-block').forEach(b => {
+    if (!Object.keys(items).length) {
+      b.innerHTML = `<div class="card-label">${esc(b.dataset.title)}</div><div class="hint">Tavlan har inte skickat sina inställningar än. Starta om tavlan efter uppdateringen, så dyker de upp här.</div>`;
+      return;
+    }
+    const keys = b.dataset.keys === '*rest*' ? Object.keys(items).filter(k => !placed.has(k)) : b.dataset.keys.split(',').filter(k => items[k]);
+    const extra = b.dataset.extra === 'sensor' ? sensorRow() : b.dataset.extra === 'godnatt' ? godnattRow() : '';
+    b.style.display = keys.length || extra ? '' : 'none';
+    b.innerHTML = `<div class="card-label">${esc(b.dataset.title)}</div>` + keys.map(k => piItemHtml(items[k], saved, titles, errors)).join('') + extra;
+  });
+  renderSetHome();
+}
+function godnattRow(){
+  const g = (listen || {}).godnatt || {};
+  return `<div class="set-row"><div class="set-top"><div class="setting-label">🌙 Godnatt (Musik-fliken)</div>
+    <div class="set-ctrl"><button class="btn btn-ghost btn-sm" onclick="openGodnatt()">Ändra</button></div></div>
+    <div class="set-help">${g.playlist ? `${esc(g.playlist.title)} · sov-timer ${g.minutes} min` : 'Ingen spellista vald än'}</div></div>`;
+}
+
+// ── Menyn: startsidan för Inställningar ──
+const SET_PAGES = [
+  ['VARDAG', [['blod', '🩸', '#ffe1e1', 'Blodsocker & sensor'], ['musik', '🎵', '#e3f1ff', 'Musik & ljud'], ['alarm', '⏰', '#fff3c4', 'Alarm'], ['steg', '👟', '#e4f7ea', 'Steg']]],
+  ['TAVLANS SKÄRM', [['hem', '🏠', '#f1e8ff', 'Hemskärmen'], ['bilder', '🖼️', '#ffeede', 'Bilder & album'], ['buss', '🚌', '#e3f1ff', 'Lokaltrafik'],
+                     ['kalender', '📅', '#fff3c4', 'Kalender'], ['macropad', '🎛️', '#eee', 'Macropad']]],
+  ['TAVLAN & SÄKERHET', [['status', '✅', '#e4f7ea', 'Tavlans status'], ['pin', '🔒', '#fff', 'PIN-kod'], ['avancerat', '🛠️', '#fff', 'Avancerat']]],
+];
+const PAGE_TITLE = Object.fromEntries(SET_PAGES.flatMap(([, rows]) => rows.map(r => [r[0], r[3]])));
+const SET_EXTRA = {   // fler sökord per sida (utöver inställningarnas namn)
+  hem: ['Visa på hemskärmen', 'Blodsocker på Hem', 'Väder', 'Buss på Hem'], buss: ['Hållplats', 'Rutt', 'Buss', 'Reseplan'],
+  bilder: ['Google Photos', 'Album', 'Ladda upp bild', 'Foton'], pin: ['Byt PIN', 'Lås telefonen', 'Glömt PIN'],
+  avancerat: ['Wifi via Bluetooth', 'Återställ inställningar'], kalender: ['Google Kalender', 'iCal-länk', 'Påminnelse', 'Lapp på tavlan'],
+  status: ['Testa högtalaren', 'Högtalare', 'Anslutning'], musik: ['Godnatt', 'Volym'], alarm: ['Timer'],
+};
+function sv(key, fallback){ return boardValue(tavlaState, key, fallback); }
+function pageSummary(id){
+  const st = tavlaState || {};
+  switch (id) {
+    case 'blod': {
+      let t = `${fmtNum(sv('glucoseLow', 4))}–${fmtNum(sv('glucoseHigh', 10))} mmol/L · varning ${sv('alertEnabled', true) ? 'på' : 'av'}`;
+      if (sv('sensorReminder', false) && st.sensor && st.sensor.startedAt) {
+        const e = new Date(st.sensor.startedAt + sv('sensorDays', 14) * 86400000); t += ` · sensor går ut ${e.getDate()}/${e.getMonth() + 1}`;
+      }
+      return t;
+    }
+    case 'musik': return `Max ${sv('maxVolume', 100)} % · sov-timer ${sv('sleepMinutes', 30)} min`;
+    case 'alarm': return `Snooze ${sv('snoozeMinutes', 9)} min · ${(st.alarms || []).length} alarm`;
+    case 'steg': return `Dagsmål ${Number(sv('stepsGoal', 10000)).toLocaleString('sv-SE')}`;
+    case 'hem': return [st.showGlucose && 'Blodsocker', st.showWeather && 'väder', st.showBus && 'buss'].filter(Boolean).join(' · ') || 'Inget valt';
+    case 'bilder': { const n = (st.googlePhotosAlbumUrls || []).length; return `${n} album · ${(st.images || []).length} bilder · byter var ${sv('tavlaRotateMinutes', 30)}:e min`; }
+    case 'buss': { const b = st.busDestinations || []; return b.length ? `${b.length} ${b.length === 1 ? 'rutt' : 'rutter'} · ${b.map(x => x.label).filter(Boolean).join(', ')}` : 'Inga rutter'; }
+    case 'kalender': return st.calendarSet ? 'Kopplad · 🔔 eller ! först i titeln = lapp' : 'Inte kopplad';
+    case 'macropad': return sv('sleepButton', '3') === 'off' ? 'Knapparna 1–5' : `Knapp ${sv('sleepButton', '3')} = sov-timer när musik spelar`;
+    case 'status': return statusSummary();
+    case 'pin': return 'Byt · lås telefonen';
+    case 'avancerat': return 'Plats · uppdateringstider · wifi · återställ';
+  }
+  return '';
+}
+function statusSummary(){
+  const b = lastBoard || {};
+  if (!(b.lastPiSeenAt && Date.now() - b.lastPiSeenAt < 15000)) return '⚠️ Tavlan svarar inte';
+  const sys = ((b.piStatus || {}).system) || {};
+  return sys.speaker === false ? '⚠️ Högtalaren är inte ansluten' : 'Allt fungerar';
+}
+function renderSetHome(){
+  const q = norm((document.getElementById('setSearch') || {}).value || '').trim();
+  const menu = document.getElementById('setMenu');
+  if (!menu) return;
+  if (q) {
+    const items = schemaItems(), placed = {};
+    document.querySelectorAll('.set-page').forEach(pg => pg.querySelectorAll('.pi-block').forEach(b =>
+      (b.dataset.keys || '').split(',').forEach(k => { if (k && k !== '*rest*') placed[k] = pg.dataset.page; })));
+    const hits = [];
+    for (const [k, it] of Object.entries(items)) if (norm(it.label + ' ' + (it.help || '')).includes(q)) hits.push([placed[k] || 'avancerat', it.label, k]);
+    for (const [pg, words] of Object.entries(SET_EXTRA)) for (const w of words) if (norm(w).includes(q)) hits.push([pg, w, null]);
+    for (const pg of Object.keys(PAGE_TITLE)) if (norm(PAGE_TITLE[pg]).includes(q) && !hits.some(h => h[0] === pg)) hits.push([pg, PAGE_TITLE[pg], null]);
+    menu.innerHTML = hits.length ? `<div class="menu">${hits.slice(0, 30).map(([pg, label, k]) =>
+      `<div class="mrow" onclick="openSetPage('${pg}', ${k ? `'${k}'` : 'null'})"><div><div class="mt">${esc(label)}</div><div class="ms">${esc(PAGE_TITLE[pg])}</div></div><span class="marrow">›</span></div>`).join('')}</div>`
+      : '<div class="music-empty">Ingen inställning heter så</div>';
     return;
   }
-  const saved = tavlaState.settings || {}, titles = tavlaState.settingTitles || {};
-  errors = errors || {};
-  wrap.innerHTML = schema.groups.map(g => `
-    <div class="card">
-      <div class="card-label">${esc(g.group)}</div>
-      ${g.items.map(it => {
-        const changed = saved[it.key] !== undefined;
-        const v = changed ? saved[it.key] : it.default;
-        let ctrl = '';
-        if (it.type === 'bool') {
-          ctrl = `<label class="switch"><input type="checkbox" ${v ? 'checked' : ''} onchange="saveSetting('${it.key}', this.checked)"><span></span></label>`;
-        } else if (it.type === 'select') {
-          ctrl = `<select onchange="saveSetting('${it.key}', this.value)">${(it.options || []).map(o =>
-            `<option value="${esc(o.value)}" ${o.value === v ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select>`;
-        } else if (it.type === 'int' || it.type === 'float') {
-          ctrl = `<input type="number" class="input-field${it.step < 0.01 ? ' wide' : ''}" inputmode="decimal" value="${v}" min="${it.min}" max="${it.max}" step="${it.step}"
-                    onchange="saveNumber('${it.key}', this)"><span class="set-unit">${esc(it.unit || '')}</span>`;
-        }
-        const wide = it.type === 'spotify' || it.type === 'str';
-        const wideCtrl = wide ? `<input type="url" class="input-field" style="margin-top:8px;" value="${esc(v || '')}"
-              placeholder="Klistra in Spotify-länk" onchange="saveSetting('${it.key}', this.value.trim())">
-              ${v && titles[it.key] ? `<div class="set-help">🎵 ${esc(titles[it.key])}</div>` : ''}` : '';
-        const range = (it.type === 'int' || it.type === 'float') ? ` · ${fmtNum(it.min)}–${fmtNum(it.max)}` : '';
-        return `<div class="set-row">
-          <div class="set-top">
-            <div class="setting-label">${esc(it.label)}</div>
-            <div class="set-ctrl">${ctrl}${changed ? `<button class="set-reset" title="Återställ" onclick="saveSetting('${it.key}', null)">↺</button>` : ''}</div>
-          </div>
-          ${wideCtrl}
-          ${it.help ? `<div class="set-help">${esc(it.help)}</div>` : ''}
-          <div class="set-default ${changed ? 'changed' : ''}">${changed ? 'Ändrad · standard ' + esc(fmtValue(it, it.default)) : 'Standard'}${range}</div>
-          ${errors[it.key] ? `<div class="set-error">${esc(errors[it.key])}</div>` : ''}
-        </div>`;
-      }).join('')}
-      ${g.group === 'Blodsocker' ? sensorRow() : ''}
-    </div>`).join('') + `
-    <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:20px;" onclick="resetAllSettings()">↺ Återställ alla inställningar ovan till standard</button>`;
+  menu.innerHTML = SET_PAGES.map(([sec, rows]) => `<div class="sec">${sec}</div><div class="menu">${rows.map(([id, ico, bg, title]) =>
+    `<div class="mrow" onclick="openSetPage('${id}')"><div class="mico" style="background:${bg}">${ico}</div>
+      <div style="min-width:0"><div class="mt">${esc(title)}</div><div class="ms">${esc(pageSummary(id))}</div></div><span class="marrow">›</span></div>`).join('')}</div>`).join('');
 }
+function openSetPage(id, key){
+  document.getElementById('setHome').style.display = 'none';
+  document.getElementById('setPageWrap').style.display = '';
+  document.getElementById('setPageTitle').textContent = (PAGE_TITLE[id] || '').toUpperCase();
+  document.querySelectorAll('.set-page').forEach(p => p.classList.toggle('open', p.dataset.page === id));
+  if (id === 'kalender') renderCalendarState();
+  if (id === 'status') renderStatusBox();
+  if (id === 'musik' && !listen) loadListen().then(() => renderPiSettings());
+  window.scrollTo(0, 0);
+  if (key) setTimeout(() => {
+    const el = document.getElementById('set-' + key);
+    if (!el) return;
+    const d = el.closest('details'); if (d) d.open = true;
+    el.scrollIntoView({ block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600);
+  }, 60);
+  try { sessionStorage.setItem('setPage', id); } catch(e) {}
+}
+function closeSetPage(){
+  document.getElementById('setPageWrap').style.display = 'none';
+  document.getElementById('setHome').style.display = '';
+  renderSetHome();
+  try { sessionStorage.removeItem('setPage'); } catch(e) {}
+}
+
+// ── Kalender (iCal) ──
+function renderCalendarState(){
+  const on = !!(tavlaState || {}).calendarSet;
+  document.getElementById('calState').innerHTML = on ? '✅ <b>Kopplad.</b> Klistra in en ny länk för att byta kalender.' : 'Inte kopplad än.';
+  document.getElementById('calRemove').style.display = on ? '' : 'none';
+}
+async function saveCalendar(){
+  const url = document.getElementById('calUrl').value.trim();
+  if (!url) return toast('Klistra in länken först');
+  try {
+    const d = await api('POST', '/api/board/calendar', { url });
+    tavlaState.calendarSet = true; document.getElementById('calUrl').value = '';
+    renderCalendarState(); toast(`Kalendern är kopplad ✓ (${d.today} händelser idag)`);
+  } catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+}
+async function removeCalendar(){
+  if (!confirm('Koppla bort kalendern?')) return;
+  try { await api('POST', '/api/board/calendar', { url: '' }); tavlaState.calendarSet = false; renderCalendarState(); toast('Bortkopplad'); }
+  catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+}
+
+// ── Tavlans status ──
+function renderStatusBox(){
+  const box = document.getElementById('statusBox');
+  if (!box) return;
+  const b = lastBoard || {}, ps = b.piStatus || {}, sys = ps.system || {}, m = musicState(b), al = ps.alarm || {};
+  const seen = b.lastPiSeenAt && Date.now() - b.lastPiSeenAt < 15000;
+  const line = (k, v, ok) => `<div class="status-line"><span>${k}</span><b style="color:${ok === false ? 'var(--pulse-red)' : 'inherit'}">${v}</b></div>`;
+  const nx = al.next ? new Date(al.next.at) : null;
+  box.innerHTML = line('Tavlan', seen ? '✅ Ansluten' : (b.lastPiSeenAt ? `⚠️ Senast ${formatAge(Date.now() - b.lastPiSeenAt)}` : '⚠️ Har aldrig anslutit'), !!seen)
+    + line('Högtalaren', sys.speaker === undefined ? '–' : sys.speaker ? '✅ Ansluten' : '⚠️ Inte ansluten', sys.speaker !== false)
+    + line('Spelar', m.radio ? `📻 ${esc(m.radio.name)}` : m.news ? '📰 Nyheter' : m.spotify === 'playing' ? '🎵 Spotify' : 'Inget')
+    + line('Nästa alarm', nx ? `${dayWord(isoDate(nx))} ${pad2(nx.getHours())}:${pad2(nx.getMinutes())}` : 'Inget')
+    + line('Kalender', (tavlaState || {}).calendarSet ? '✅ Kopplad' : 'Inte kopplad')
+    + (al.error ? `<div class="set-error" style="margin-top:8px;">⚠️ ${esc(al.error)}</div>` : '');
+}
+async function testSpeaker(){ sendMacropadCommand('sound_test'); toast('Tavlan spelar en ton om några sekunder…'); }
+
 // Sensorstarten (för påminnelsen om sensorbyte): från xDrip eller knappen här.
 function sensorRow(){
   const sen = (tavlaState || {}).sensor;
@@ -1652,11 +2023,344 @@ async function resetAllSettings(){
   } catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
 }
 
+
+// ═══════════════════════════════════════════════════
+// MUSIK-FLIKEN (2026-10-17): spelas nu, sov-timer, spela nu, radio
+// Allt går till tavlan som kommandon (samma väg som macropaden i appen).
+// ═══════════════════════════════════════════════════
+const stationById = {};
+let listen = null, volHoldUntil = 0, lastRadioErrAt = 0;
+function rememberStations(list){ (list || []).forEach(st => { if (st && st.id) stationById[st.id] = st; }); }
+function initials(name){
+  const w = String(name || '').replace(/[^\p{L}\p{N} ]/gu, '').split(' ').filter(Boolean);
+  const t = w.length === 1 ? w[0].slice(0, 3) : w.slice(0, 2).map(x => x[0]).join('');   // "P1", "SWR", "BW"
+  return esc(t.toUpperCase() || '📻');
+}
+function stationLogo(st){
+  return `<div class="rlogo">${st && st.favicon ? `<img src="${esc(st.favicon)}" alt="" loading="lazy" onerror="this.replaceWith(document.createTextNode('${initials(st.name)}'))">` : initials(st && st.name)}</div>`;
+}
+function trackCover(uri){
+  const id = /^spotify:track:(\w{22})$/.exec(uri || '');
+  return id && musicLib.tracks && musicLib.tracks[id[1]] ? musicLib.tracks[id[1]].cover : '';
+}
+function renderMusic(board){
+  const m = musicState(board);
+  const art = document.getElementById('npArt'), title = document.getElementById('npTitle'), sub = document.getElementById('npSub');
+  let img = '', icon = '🎵';
+  if (m.radio) {
+    const st = stationById[m.radio.id] || m.radio;
+    title.textContent = m.radio.name || 'Radio'; sub.textContent = '📻 Radio'; img = st.favicon || ''; icon = '📻';
+  } else if (m.news) {
+    title.textContent = 'Nyheter'; sub.textContent = 'Ekot senaste nytt'; icon = '📰';
+  } else if (m.now && m.now.name && (m.spotify === 'playing' || m.spotify === 'paused' || m.spotify === 'pausing')) {
+    title.textContent = m.now.name; sub.textContent = (m.now.artists || '') + (m.spotify === 'playing' ? '' : ' · pausad');
+    img = m.now.cover || trackCover(m.now.uri);
+  } else { title.textContent = 'Inget spelas'; sub.textContent = 'Välj något nedan'; }
+  const key = img || icon;
+  if (art.dataset.k !== key) { art.dataset.k = key; art.innerHTML = img ? `<img src="${esc(img)}" alt="" onerror="this.parentNode.textContent='${icon}'">` : icon; }
+  const playing = m.playing || m.news;
+  document.getElementById('npPlay').textContent = playing ? '⏸' : '▶';
+  document.getElementById('npNext').disabled = !!(m.radio || m.news);
+  if (Date.now() > volHoldUntil && typeof m.volume === 'number') {
+    document.getElementById('npVol').value = m.volume;
+    document.getElementById('npVolVal').textContent = m.volume + ' %';
+  }
+  const sl = m.sleep || {};
+  const chips = [15, 30, 45, 60, 90];
+  document.getElementById('sleepChips').innerHTML = chips.map(n => `<button onclick="setSleep(${n})">${n} min</button>`).join('')
+    + (sl.active ? `<button class="on" onclick="setSleep(0)">Av</button>` : '');
+  const t = sl.active ? new Date(sl.endsAt) : null;
+  document.getElementById('sleepInfo').textContent = t ? `🌙 Tyst kl ${pad2(t.getHours())}:${pad2(t.getMinutes())}${sl.fading ? ' · tonar ut nu' : ''}`
+    : playing ? 'Välj hur länge — musiken tonas ut mot slutet och stängs av.' : 'Startar när något spelas.';
+  if (m.radioError && m.radioError.at !== lastRadioErrAt) {
+    lastRadioErrAt = m.radioError.at;
+    if (Date.now() - m.radioError.at < 60000) toast(`${m.radioError.name} gick inte att spela just nu`);
+  }
+  markPlayingStation(m.radio && m.radio.id);
+}
+function musicPlayPause(){ sendMacropadCommand('spotify_play_pause'); setTimeout(refreshStatus, 1500); }
+function volInput(v){ volHoldUntil = Date.now() + 8000; document.getElementById('npVolVal').textContent = v + ' %'; }
+function volChange(v){ volHoldUntil = Date.now() + 8000; sendMacropadCommand('set_volume', null, null, null, { volume: Number(v) }); }
+function setSleep(n){
+  sendMacropadCommand('sleep_set', null, null, null, { minutes: n });
+  toast(n ? `Sov-timer ${n} min 🌙` : 'Sov-timern av');
+  setTimeout(refreshStatus, 2500);
+}
+
+async function loadListen(){
+  try { listen = await (await fetch('/api/board/listen')).json(); } catch(e) { return; }
+  rememberStations(listen.favs); if (listen.topRadio) rememberStations([listen.topRadio]);
+  renderPlayNow();
+}
+function renderPlayNow(){
+  const L = listen || {};
+  const tiles = [];
+  if (L.topPlaylist) tiles.push(`<button class="tile" onclick="playPlaylist('${esc(L.topPlaylist.id)}')"><span class="tt">🔀 ${esc(L.topPlaylist.title)}</span>
+    <small>${L.topPlaylistCounted ? 'spellistan du spelar oftast' : 'ur musikbiblioteket'}</small></button>`);
+  else tiles.push(`<button class="tile" onclick="openMusicLibrary()"><span class="tt">🔀 Spellista</span><small>lägg till i musikbiblioteket</small></button>`);
+  if (L.topRadio) tiles.push(`<button class="tile" onclick="playStation('${esc(L.topRadio.id)}')"><span class="tt">📻 ${esc(L.topRadio.name)}</span>
+    <small>${L.topRadioCounted ? 'kanalen du lyssnar mest på' : 'din favoritkanal'}</small></button>`);
+  else tiles.push(`<button class="tile" onclick="document.getElementById('radioBox').scrollIntoView({behavior:'smooth'})"><span class="tt">📻 Radio</span><small>välj en kanal nedan</small></button>`);
+  tiles.push(`<button class="tile" onclick="playNews()"><span class="tt">📰 Nyheter</span><small>Ekot senaste nytt</small></button>`);
+  const g = L.godnatt || {};
+  tiles.push(`<button class="tile" onclick="playGodnatt()"><span class="tt">🌙 Godnatt</span>
+    <small>${g.playlist ? `${esc(g.playlist.title)} · ${g.minutes} min` : 'välj spellista'} · <u onclick="event.stopPropagation();openGodnatt()">ändra</u></small></button>`);
+  document.getElementById('playNowTiles').innerHTML = tiles.join('');
+}
+function playPlaylist(id){
+  sendMacropadCommand('play_music', null, null, null, { url: `https://open.spotify.com/playlist/${id}`, shuffle: true });
+  toast('Startar spellistan…'); setTimeout(refreshStatus, 4000);
+}
+function playNews(){ sendMacropadCommand('news_now'); toast('Nyheterna startar…'); setTimeout(refreshStatus, 4000); }
+function playGodnatt(){
+  const g = (listen || {}).godnatt || {};
+  if (!g.playlist) return openGodnatt();
+  sendMacropadCommand('godnatt', null, null, null, { url: `https://open.spotify.com/playlist/${g.playlist.id}`, minutes: g.minutes });
+  toast(`Godnatt 🌙 — ${g.minutes} min`); setTimeout(refreshStatus, 6000);
+}
+function openMusicLibrary(){ editKind = editKind || 'resume'; openMusicPicker(); }
+
+// ── Godnatt-inställningen ──
+let godnattSel = null, godnattMin = 30;
+async function openGodnatt(){
+  const g = (listen || {}).godnatt || {};
+  godnattSel = g.playlist ? g.playlist.id : null; godnattMin = g.minutes || 30;
+  await loadMusic(true);
+  renderGodnatt();
+  document.getElementById('godnattSheet').classList.add('open');
+}
+function closeGodnatt(){ document.getElementById('godnattSheet').classList.remove('open'); }
+function renderGodnatt(){
+  document.getElementById('godnattMin').innerHTML = [15, 20, 30, 45, 60, 90].map(n =>
+    `<button class="${n === godnattMin ? 'on' : ''}" onclick="godnattMin=${n};renderGodnatt()">${n} min</button>`).join('');
+  const pls = musicLib.playlists || [];
+  document.getElementById('godnattList').innerHTML = pls.length ? pls.map(p =>
+    `<div class="music-row ${p.id === godnattSel ? 'sel' : ''}" onclick="godnattSel='${esc(p.id)}';renderGodnatt()">${playlistArt(p)}
+      <div class="mp-txt"><div class="mp-title">${esc(p.title)}</div><div class="mp-sub">${p.trackIds.length} låtar · shuffle</div></div></div>`).join('')
+    : '<div class="music-empty">Inga spellistor i musikbiblioteket än — lägg till under Alarm → Spela.</div>';
+}
+async function saveGodnatt(){
+  if (!godnattSel) return toast('Välj en spellista');
+  try { await api('POST', '/api/board/godnatt', { playlistId: godnattSel, minutes: godnattMin }); closeGodnatt(); toast('Godnatt sparad ✓'); loadListen(); }
+  catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+}
+
+// ── Radio: favoriter, utvalda, populärt, sök ──
+// mode 'play' (Musik-fliken: spela direkt) eller 'pick' (välj till alarm/timer)
+const radioUI = { radioBox: { tab: 'fav', cc: 'DE', q: '' }, radioSheetBox: { tab: 'fav', cc: 'DE', q: '' } };
+let curated = null, radioPickCb = null, radioSearchTimer = null;
+const topCache = {};
+async function renderRadio(boxId){
+  const ui = radioUI[boxId], box = document.getElementById(boxId);
+  const favs = (listen && listen.favs) || ((lastBoard || {}).radioFavs) || [];
+  rememberStations(favs);
+  if (!favs.length && ui.tab === 'fav' && !ui.touched) ui.tab = 'curated';
+  const tabs = [['fav', '⭐ Favoriter'], ['curated', 'Utvalda'], ['top', 'Populärt'], ['search', '🔍 Sök']];
+  let head = `<div class="seg3">${tabs.map(([k, l]) => `<button class="${ui.tab === k ? 'on' : ''}" onclick="radioTab('${boxId}','${k}')">${l}</button>`).join('')}</div>`;
+  let body = '';
+  if (ui.tab === 'fav') {
+    body = favs.length ? favs.map(st => stationRow(st, boxId)).join('') : '<div class="music-empty">Inga favoriter än — tryck ☆ på en kanal.</div>';
+  } else if (ui.tab === 'curated') {
+    if (!curated) {
+      body = '<div class="music-empty">Hämtar kanaler…</div>';
+      fetch('/api/board/radio?list=curated').then(r => r.json()).then(d => {
+        if (d.error) { box.innerHTML = head + `<div class="music-empty">${esc(d.error)}</div>`; return; }
+        curated = d.groups; curated.forEach(g => rememberStations(g.stations)); renderRadio(boxId);
+      }).catch(() => { box.innerHTML = head + '<div class="music-empty">Radiokatalogen svarar inte just nu.</div>'; });
+    } else {
+      body = curated.map(g => g.stations.length ? `<div class="music-group" style="margin:10px 0 2px;">${esc(g.group.toUpperCase())}</div>` + g.stations.map(st => stationRow(st, boxId)).join('') : '').join('');
+    }
+  } else if (ui.tab === 'top') {
+    head += `<div class="chips2" style="margin-bottom:8px;">${[['DE', '🇩🇪 Tyskland'], ['SE', '🇸🇪 Sverige'], ['', '🌍 Världen']].map(([c, l]) =>
+      `<button class="${ui.cc === c ? 'on' : ''}" onclick="radioUI['${boxId}'].cc='${c}';renderRadio('${boxId}')">${l}</button>`).join('')}</div>`;
+    const list = topCache[ui.cc];
+    if (!list) {
+      body = '<div class="music-empty">Hämtar…</div>';
+      fetch('/api/board/radio?list=top&cc=' + ui.cc).then(r => r.json()).then(d => {
+        if (d.error) { box.innerHTML = head + `<div class="music-empty">${esc(d.error)}</div>`; return; }
+        topCache[ui.cc] = d.stations; rememberStations(d.stations); renderRadio(boxId);
+      }).catch(() => { box.innerHTML = head + '<div class="music-empty">Radiokatalogen svarar inte just nu.</div>'; });
+    } else body = list.slice(0, 25).map(st => stationRow(st, boxId)).join('');
+  } else {
+    head += `<input type="search" class="input-field" style="margin-bottom:8px;" placeholder="Sök kanal, t.ex. Antenne eller jazz" value="${esc(ui.q)}"
+      oninput="radioSearch('${boxId}', this.value)" id="${boxId}Q">`;
+    body = `<div id="${boxId}Res">${ui.results ? (ui.results.length ? ui.results.map(st => stationRow(st, boxId)).join('') : '<div class="music-empty">Inga träffar</div>') : ''}</div>`;
+  }
+  box.innerHTML = head + body;
+  markPlayingStation(((musicState(lastBoard).radio) || {}).id);
+}
+function radioTab(boxId, tab){ radioUI[boxId].tab = tab; radioUI[boxId].touched = true; renderRadio(boxId);
+  if (tab === 'search') setTimeout(() => { const q = document.getElementById(boxId + 'Q'); if (q) q.focus(); }, 30); }
+function radioSearch(boxId, q){
+  const ui = radioUI[boxId]; ui.q = q;
+  clearTimeout(radioSearchTimer);
+  radioSearchTimer = setTimeout(async () => {
+    if (q.trim().length < 2) { ui.results = null; document.getElementById(boxId + 'Res').innerHTML = ''; return; }
+    try {
+      const d = await (await fetch('/api/board/radio/search?q=' + encodeURIComponent(q.trim()))).json();
+      ui.results = d.stations || []; rememberStations(ui.results);
+      document.getElementById(boxId + 'Res').innerHTML = d.error ? `<div class="music-empty">${esc(d.error)}</div>`
+        : ui.results.length ? ui.results.map(st => stationRow(st, boxId)).join('') : '<div class="music-empty">Inga träffar</div>';
+    } catch(e) {}
+  }, 350);
+}
+function isFav(id){ return ((listen && listen.favs) || []).some(f => f.id === id); }
+function stationRow(st, boxId){
+  const sub = [st.country, st.codec && st.codec.toUpperCase() !== 'UNKNOWN' ? st.codec : ''].filter(Boolean).join(' · ');
+  return `<div class="rrow" data-st="${esc(st.id)}" onclick="stationTap('${esc(st.id)}','${boxId}')">${stationLogo(st)}
+    <div class="rtxt"><div class="rname">${esc(st.name)}</div><div class="rsub">${esc(sub)}</div></div>
+    <button class="star ${isFav(st.id) ? 'on' : ''}" onclick="event.stopPropagation();toggleFavStation('${esc(st.id)}')">${isFav(st.id) ? '★' : '☆'}</button></div>`;
+}
+function markPlayingStation(id){
+  document.querySelectorAll('#radioBox .rrow').forEach(r => {
+    const on = id && r.dataset.st === id, tag = r.querySelector('.playing-tag');
+    if (on && !tag) r.querySelector('.rname').insertAdjacentHTML('beforeend', '<span class="playing-tag">SPELAR</span>');
+    if (!on && tag) tag.remove();
+  });
+}
+function stationTap(id, boxId){
+  const st = stationById[id]; if (!st) return;
+  if (boxId === 'radioSheetBox') { const cb = radioPickCb; closeRadioSheet(); if (cb) cb(st); return; }
+  playStation(id);
+}
+function playStation(id){
+  const st = stationById[id]; if (!st) return;
+  sendMacropadCommand('radio_play', null, null, null, { id: st.id, name: st.name, url: st.url });
+  toast(`📻 ${st.name}…`); setTimeout(refreshStatus, 4000);
+}
+async function toggleFavStation(id){
+  const st = stationById[id]; if (!st) return;
+  try {
+    const d = await api('POST', '/api/board/radio/fav', { station: st, fav: !isFav(id) });
+    if (!listen) listen = {};
+    listen.favs = d.favs;
+    renderRadio('radioBox');
+    if (document.getElementById('radioSheet').classList.contains('open')) renderRadio('radioSheetBox');
+    renderPlayNow();
+  } catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+}
+async function openRadioSheet(cb){
+  radioPickCb = cb;
+  document.getElementById('radioSheetTitle').textContent = 'VÄLJ RADIOKANAL';
+  if (!listen) await loadListen();
+  renderRadio('radioSheetBox');
+  document.getElementById('radioSheet').classList.add('open');
+}
+function closeRadioSheet(){ document.getElementById('radioSheet').classList.remove('open'); radioPickCb = null; }
+
+// ═══════════════════════════════════════════════════
+// TIMER (Alarm -> Timer): minuter i stället för klockslag
+// ═══════════════════════════════════════════════════
+let timerMinutes = 20, timerSound = { sound: 'signal', radio: null }, timersTick = null;
+function alarmSegment(seg){
+  document.querySelectorAll('#alarmSeg button').forEach((b, i) => b.classList.toggle('on', (i === 1) === (seg === 'timer')));
+  document.getElementById('timerPanel').style.display = seg === 'timer' ? '' : 'none';
+  document.getElementById('alarmPanel').style.display = seg === 'timer' ? 'none' : '';
+  if (seg === 'timer') { renderTimerEditor(); renderTimers(lastBoard); }
+  try { sessionStorage.setItem('alarmSeg', seg); } catch(e) {}
+}
+function renderTimerEditor(){
+  document.getElementById('timerMin').textContent = timerMinutes;
+  document.getElementById('timerChips').innerHTML = [5, 10, 15, 20, 30, 45, 60, 90].map(n =>
+    `<button class="${n === timerMinutes ? 'on' : ''}" onclick="timerMinutes=${n};renderTimerEditor()">${n}</button>`).join('');
+  const end = new Date(Date.now() + timerMinutes * 60000);
+  document.getElementById('timerStart').textContent = `▶ Starta timer · ringer ${pad2(end.getHours())}:${pad2(end.getMinutes())}`;
+  document.getElementById('timerSoundPick').innerHTML = soundPickHtml(timerSound, 'openTimerSound()');
+}
+function timerStep(d){
+  const steps = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30, 40, 45, 50, 60, 75, 90, 120, 150, 180, 240];
+  let i = steps.findIndex(x => x >= timerMinutes);
+  if (i < 0) i = steps.length - 1;
+  if (steps[i] !== timerMinutes && d < 0) i += 1;
+  timerMinutes = steps[Math.max(0, Math.min(steps.length - 1, i + d))];
+  renderTimerEditor();
+}
+const SOUND_TXT = { signal: ['🔔', 'Signal: Morgonljus', 'mjuk marimba som stiger'], music: ['⏯', 'Musik', 'fortsätt det som spelades senast'],
+                    news: ['📰', 'Nyheter', 'Ekot senaste nytt'], radio: ['📻', 'Radio', ''] };
+function soundPickHtml(sel, onclick){
+  const t = SOUND_TXT[sel.sound] || SOUND_TXT.signal;
+  const title = sel.sound === 'radio' && sel.radio ? sel.radio.name : t[1];
+  const sub = sel.sound === 'radio' ? 'radiokanal' : t[2];
+  const art = sel.sound === 'radio' && sel.radio ? stationLogo(sel.radio).replace('rlogo', 'menu-ico') : `<div class="menu-ico">${t[0]}</div>`;
+  return `<div class="music-pick" onclick="${onclick}">${art}<div class="mp-txt"><div class="mp-title">${esc(title)}</div><div class="mp-sub">${esc(sub)}</div></div><span class="mp-change">Byt ›</span></div>`;
+}
+function openTimerSound(){
+  const choose = k => { timerSound = { sound: k, radio: null }; renderTimerEditor(); };
+  openSoundMenu(timerSound.sound, choose, st => { timerSound = { sound: 'radio', radio: st }; renderTimerEditor(); });
+}
+// Liten meny: Signal / Musik / Nyheter / Radio (… väljer kanal)
+function openSoundMenu(current, choose, chooseRadio){
+  const box = document.getElementById('radioSheetBox');
+  radioPickCb = null;
+  document.getElementById('radioSheetTitle').textContent = 'RINGER MED';
+  box.innerHTML = ['signal', 'music', 'news', 'radio'].map(k => {
+    const t = SOUND_TXT[k];
+    return menuRow(`soundMenuPick('${k}')`, t[0], t[1], k === 'radio' ? 'välj kanal…' : t[2], current === k, k === 'radio');
+  }).join('<div style="height:8px"></div>');
+  window._soundChoose = choose; window._soundRadio = chooseRadio;
+  document.getElementById('radioSheet').classList.add('open');
+}
+function soundMenuPick(k){
+  if (k === 'radio') { const cb = window._soundRadio; openRadioSheet(cb); return; }
+  closeRadioSheet(); window._soundChoose(k);
+}
+async function startTimer(){
+  try {
+    await api('POST', '/api/board/timers', { minutes: timerMinutes, label: document.getElementById('timerLabel').value.trim(),
+      sound: timerSound.sound, radio: timerSound.radio, volume: Number(document.getElementById('timerVol').value) });
+    document.getElementById('timerLabel').value = '';
+    toast(`Timer ${timerMinutes} min ✓`);
+    await reloadBoard(); renderTimers(lastBoard);
+  } catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+}
+function renderTimers(board){
+  const list = ((board || {}).timers || []).filter(t => t.endsAt > Date.now() - 60000).sort((a, b) => a.endsAt - b.endsAt);
+  const wrap = document.getElementById('timerRunning');
+  if (!wrap) return;
+  wrap.style.display = list.length ? '' : 'none';
+  document.getElementById('timerList').innerHTML = list.map(t => {
+    const left = Math.max(0, Math.round((t.endsAt - Date.now()) / 1000));
+    const end = new Date(t.endsAt);
+    return `<div class="timer-row"><span style="font-size:24px">⏱</span><div style="flex:1;min-width:0;">
+      <div class="timer-left" data-ends="${t.endsAt}">${left ? `${Math.floor(left / 60)}:${pad2(left % 60)}` : 'Ringer'}</div>
+      <div class="ms">${esc(t.label || 'Timer')} · ringer ${pad2(end.getHours())}:${pad2(end.getMinutes())}</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="extendTimer('${t.id}')">+5 min</button>
+      <button class="btn btn-ghost btn-sm" onclick="cancelTimer('${t.id}')">✕</button></div>`;
+  }).join('');
+  clearInterval(timersTick);
+  if (list.length) timersTick = setInterval(() => {
+    document.querySelectorAll('.timer-left[data-ends]').forEach(el => {
+      const left = Math.max(0, Math.round((Number(el.dataset.ends) - Date.now()) / 1000));
+      el.textContent = left ? `${Math.floor(left / 60)}:${pad2(left % 60)}` : 'Ringer';
+    });
+  }, 1000);
+}
+async function extendTimer(id){ try { await api('POST', `/api/board/timers/${id}/extend`, { minutes: 5 }); await reloadBoard(); renderTimers(lastBoard); toast('+5 min ✓'); } catch(e) { if (e.message !== 'avbrutet') toast(e.message); } }
+async function cancelTimer(id){ try { await api('DELETE', `/api/board/timers/${id}`); await reloadBoard(); renderTimers(lastBoard); toast('Timern borttagen'); } catch(e) { if (e.message !== 'avbrutet') toast(e.message); } }
+
+// ── Hoppa över nästa alarm ──
+function nextAlarmDate(a){
+  const [h, m] = a.time.split(':').map(Number);
+  for (let i = 0; i < 8; i++) {
+    const d = new Date(); d.setDate(d.getDate() + i); d.setHours(h, m, 0, 0);
+    if (d <= new Date()) continue;
+    const iso = isoDate(d);
+    if ((a.skipDates || []).includes(iso)) continue;
+    if ((a.days || []).length ? a.days.includes(mondayIndex(d)) : a.date === iso) return iso;
+  }
+  return null;
+}
+async function skipAlarm(id, date, skip){
+  try { await api('POST', `/api/board/alarms/${id}/skip`, { date, skip }); toast(skip ? `Hoppar över ${dayWord(date)} ✓` : 'Ringer som vanligt igen ✓'); reloadBoard(); }
+  catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+}
 // ═══════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════
 renderKeys(null);
 try { const t = sessionStorage.getItem('tavlaTab'); if (t && t !== 'view') showTab(t); } catch(e) {}
+try { if (sessionStorage.getItem('alarmSeg') === 'timer') alarmSegment('timer'); } catch(e) {}
+renderSetHome();
 refreshStatus();
 refreshCurrentView();
 setInterval(refreshStatus, 5000);

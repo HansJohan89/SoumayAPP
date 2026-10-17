@@ -1114,9 +1114,11 @@ app.post('/api/journal', (req, res) => {
 app.get('/api/storage', (req, res) => res.json({ persistent: STORAGE_PERSISTENT, dataDir: DATA_DIR }));
 
 app.get('/api/board', (req, res) => {
-  const { images, pin, alarmTest, music: _music, ...settings } = boardState;
+  const { images, pin, alarmTest, music: _music, calendarIcs, radioStats: _rs, playlistStats: _ps, ...settings } = boardState;
   res.json({
     ...settings,
+    timers: activeTimers(),
+    calendarSet: !!calendarIcs,             // själva länken är hemlig och lämnar aldrig servern
     hasPin: !!pin,
     images: images.map(({ id, name, addedAt }) => ({ id, name, addedAt })),
     lastPiSeenAt, // null om Pi:n aldrig hörts av — appen använder detta för statusen
@@ -1212,10 +1214,12 @@ app.post('/api/board/select', requirePin, (req, res) => {
 
 // Simulerad macropad i appen — lägger en knapptryckning i kö
 app.post('/api/board/command', (req, res) => {
-  const { action, view, destination, direction, button } = req.body;
+  const { action, view, destination, direction, button, params } = req.body;
   if (!action) return res.status(400).json({ error: 'Saknar action' });
   const btn = Number.isInteger(button) && button >= 1 && button <= 5 ? button : null;
-  pendingCommand = { action, view: view || null, destination: destination || null, direction: direction || null, button: btn, ts: Date.now() };
+  // params: Musik-fliken (radio, spellista, volym …) — tavlan kontrollerar själv
+  const p = params && typeof params === 'object' && !Array.isArray(params) && JSON.stringify(params).length < 6000 ? params : null;
+  pendingCommand = { action, view: view || null, destination: destination || null, direction: direction || null, button: btn, params: p, ts: Date.now() };
   res.json({ ok: true });
 });
 
@@ -1266,6 +1270,10 @@ app.get('/api/board/current-view', (req, res) => {
 if (typeof boardState.configVersion !== 'number') boardState.configVersion = 1;
 if (!boardState.settings) boardState.settings = {};
 if (!Array.isArray(boardState.alarms)) boardState.alarms = [];
+if (!Array.isArray(boardState.timers)) boardState.timers = [];
+if (!Array.isArray(boardState.radioFavs)) boardState.radioFavs = [];
+if (!boardState.radioStats || typeof boardState.radioStats !== 'object') boardState.radioStats = {};
+if (!boardState.playlistStats || typeof boardState.playlistStats !== 'object') boardState.playlistStats = {};
 let piStatus = null, piStatusAt = null;
 
 function bumpConfig() {
@@ -1642,10 +1650,85 @@ async function cleanAlarm(a) {
       rampMinutes: intIn(a.rampMinutes, 0, 30, 3),
       autoStopMinutes: intIn(a.autoStopMinutes, 5, 180, 30),
       news: a.news === true,      // Ekots senaste nytt efter att hon stängt av (tavlans news.py)
-      sound: a.sound === 'news' ? 'news' : 'music',   // 'news' = BARA Ekots senaste nytt i stället för musik
+      ...alarmSound(a),           // music / news / radio / signal (tavlans alarms.py)
+      skipDates: cleanSkipDates(a.skipDates),
     },
   };
 }
+
+// Vad alarmet/timern ringer med. Radio: kanalen som den valdes i appen
+// (namn + strömadress ur radiokatalogen). Går det inte att spela ringer
+// tavlan med signalen Morgonljus i stället.
+const SOUNDS = ['music', 'news', 'radio', 'signal'];
+function cleanStation(r) {
+  if (!r || typeof r !== 'object') return null;
+  const url = String(r.url || '');
+  if (!/^https?:\/\/[^\s]{4,500}$/.test(url)) return null;
+  return { id: String(r.id || '').slice(0, 80), name: String(r.name || 'Radio').slice(0, 80), url,
+           favicon: /^https:\/\/[^\s]{4,400}$/.test(String(r.favicon || '')) ? String(r.favicon) : '',
+           country: String(r.country || '').slice(0, 40) };
+}
+function alarmSound(a) {
+  const sound = SOUNDS.includes(a.sound) ? a.sound : 'music';
+  const radio = sound === 'radio' ? cleanStation(a.radio) : null;
+  return radio || sound !== 'radio' ? { sound, radio } : { sound: 'signal', radio: null };
+}
+function stockholmDate(d = new Date()) {           // "YYYY-MM-DD" i Sverige (servern går på UTC)
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Stockholm', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+}
+function cleanSkipDates(list) {
+  const today = stockholmDate();
+  return [...new Set((Array.isArray(list) ? list : []).map(String).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d) && d >= today))].sort().slice(0, 10);
+}
+
+// "Hoppa över nästa gång": datumet (räknat i appen) läggs till/tas bort
+app.post('/api/board/alarms/:id/skip', requirePin, (req, res) => {
+  const a = boardState.alarms.find(x => x.id === req.params.id);
+  if (!a) return res.status(404).json({ error: 'Alarmet finns inte' });
+  const date = String(req.body.date || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'Ogiltigt datum' });
+  const set = new Set(cleanSkipDates(a.skipDates));
+  if (req.body.skip === false) set.delete(date); else set.add(date);
+  a.skipDates = cleanSkipDates([...set]);
+  bumpConfig();
+  res.json({ ok: true, alarm: a, alarms: boardState.alarms });
+});
+
+// ── Timer (Alarm -> Timer): ringer från tavlan på sekunden ──
+const TIMER_MAX = 5;
+function activeTimers() {
+  const now = Date.now();
+  const before = (boardState.timers || []).length;
+  boardState.timers = (boardState.timers || []).filter(t => t.endsAt > now - 15 * 60000);   // kvar en stund (tavlan kan ringa sent)
+  if (boardState.timers.length !== before) writeJSON(BOARD_FILE, boardState);
+  return boardState.timers;
+}
+app.post('/api/board/timers', requirePin, (req, res) => {
+  const minutes = Number(req.body.minutes);
+  if (!Number.isFinite(minutes) || minutes < 1 || minutes > 600) return res.status(400).json({ error: 'Välj 1–600 minuter' });
+  const live = activeTimers().filter(t => t.endsAt > Date.now());
+  if (live.length >= TIMER_MAX) return res.status(400).json({ error: `Högst ${TIMER_MAX} timrar samtidigt` });
+  const { sound, radio } = alarmSound(req.body);
+  const t = { id: crypto.randomUUID(), startedAt: Date.now(), endsAt: Date.now() + Math.round(minutes * 60000),
+              minutes: Math.round(minutes), label: String(req.body.label || '').slice(0, 40), sound: sound === 'music' ? 'music' : sound,
+              radio, volume: intIn(req.body.volume, 1, 100, 40) };
+  boardState.timers.push(t);
+  bumpConfig();
+  res.json({ ok: true, timer: t, timers: activeTimers() });
+});
+app.post('/api/board/timers/:id/extend', requirePin, (req, res) => {
+  const t = activeTimers().find(x => x.id === req.params.id && x.endsAt > Date.now());
+  if (!t) return res.status(404).json({ error: 'Timern är redan klar' });
+  t.endsAt += intIn(req.body.minutes, 1, 60, 5) * 60000;
+  t.id = crypto.randomUUID();                       // ny nyckel: tavlan ringer på den nya tiden
+  bumpConfig();
+  res.json({ ok: true, timers: activeTimers() });
+});
+app.delete('/api/board/timers/:id', requirePin, (req, res) => {
+  boardState.timers = activeTimers().filter(t => t.id !== req.params.id);
+  bumpConfig();
+  res.json({ ok: true, timers: boardState.timers });
+});
 
 app.post('/api/board/alarms', requirePin, async (req, res) => {
   const r = await cleanAlarm(req.body.alarm);
@@ -1678,6 +1761,7 @@ app.post('/api/board/pi-sync', (req, res) => {
   lastPiSeenAt = Date.now();
   const body = req.body || {};
   if (body.status && typeof body.status === 'object') {
+    countListening(body.status, piStatusAt);
     piStatus = body.status;
     piStatusAt = Date.now();
   }
@@ -1691,6 +1775,7 @@ app.post('/api/board/pi-sync', (req, res) => {
     out.boardChangedAt = boardState.boardChangedAt || null;
     out.alarmTest = boardState.alarmTest || null;
     out.sensor = boardState.sensor || null;
+    out.timers = activeTimers();
   }
   res.json(out);
 });
@@ -1755,8 +1840,257 @@ app.post('/api/board/pi-schema', (req, res) => {
   res.json({ ok: true });
 });
 
+
+// ── RADIO (Musik-fliken, 2026-10-17) ────────────────────────────
+// Kanallistan kommer från Radio Browser (öppen, gemenskapsdriven katalog
+// med tiotusentals stationer: https://www.radio-browser.info) och
+// Sveriges Radios öppna API (deras egna strömadresser). Tavlan spelar
+// strömmen själv (audio.py); fungerar en kanal inte syns det i appen.
+const RB_FALLBACK = ['de1.api.radio-browser.info', 'fi1.api.radio-browser.info', 'nl1.api.radio-browser.info'];
+let rbHosts = null;
+async function rb(pathq) {
+  if (!rbHosts) {
+    try {
+      const r = await fetch('https://all.api.radio-browser.info/json/servers', { signal: AbortSignal.timeout(6000), headers: { 'User-Agent': 'Tavlan/1.0' } });
+      const list = r.ok ? (await r.json()).map(x => String(x.name || '')).filter(n => /^[a-z0-9.-]+\.api\.radio-browser\.info$/.test(n)) : [];
+      rbHosts = [...new Set([...list, ...RB_FALLBACK])];
+    } catch (e) { rbHosts = RB_FALLBACK.slice(); }
+  }
+  let last;
+  for (const h of rbHosts) {
+    try {
+      const r = await fetch(`https://${h}${pathq}`, { signal: AbortSignal.timeout(8000), headers: { 'User-Agent': 'Tavlan/1.0' } });
+      if (r.ok) return await r.json();
+      last = new Error(`Radio Browser svarade ${r.status}`);
+    } catch (e) { last = e; }
+  }
+  throw last || new Error('Radio Browser svarar inte');
+}
+function rbStation(x) {
+  return cleanStation({ id: 'rb:' + x.stationuuid, name: String(x.name || '').trim(), url: x.url_resolved || x.url,
+                        favicon: x.favicon, country: x.countrycode || x.country });
+}
+async function rbList(pathq) {
+  const list = await rb(pathq);
+  const seen = new Set();
+  return (Array.isArray(list) ? list : []).filter(x => x.lastcheckok !== 0)
+    .map(x => ({ st: rbStation(x), codec: x.codec, bitrate: x.bitrate }))
+    .filter(x => x.st && !seen.has(x.st.name.toLowerCase()) && seen.add(x.st.name.toLowerCase()))
+    .map(x => ({ ...x.st, codec: String(x.codec || '').slice(0, 10), bitrate: Number(x.bitrate) || 0 }));
+}
+// Utvalda (på begäran: lite av allt, och tyska kanaler — hon är tyska)
+const RADIO_CURATED = [
+  ['Tyskland', [['1LIVE', 'DE'], ['SWR3', 'DE'], ['Bayern 3', 'DE'], ['Antenne Bayern', 'DE'], ['NDR 2', 'DE'], ['WDR 2', 'DE'],
+                ['hr3', 'DE'], ['Hit Radio FFH', 'DE'], ['bigFM', 'DE'], ['Radio Bob', 'DE'], ['Deutschlandfunk', 'DE'],
+                ['Klassik Radio', 'DE'], ['sunshine live', 'DE']]],
+  ['Sverige', [['sr:P1'], ['sr:P2'], ['sr:P3'], ['sr:P4 Stockholm'], ['Mix Megapol', 'SE'], ['Rix FM', 'SE'], ['NRJ', 'SE'], ['Lugna Favoriter', 'SE']]],
+  ['Världen', [['BBC World Service', 'GB'], ['FIP', 'FR'], ['KEXP', 'US']]],
+  ['Internetradio', [['Radio Paradise Main Mix', ''], ['Groove Salad', 'US'], ['Drone Zone', 'US'], ['Jazz24', 'US']]],
+];
+const radioCache = {};
+async function cached(key, ms, fn) {
+  const c = radioCache[key];
+  if (c && Date.now() - c.at < ms) return c.data;
+  const data = await fn();
+  radioCache[key] = { at: Date.now(), data };
+  return data;
+}
+async function srChannels() {
+  return cached('sr', 24 * 3600e3, async () => {
+    const r = await fetch('https://api.sr.se/api/v2/channels?format=json&pagination=false', { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) throw new Error(`Sveriges Radio svarade ${r.status}`);
+    return ((await r.json()).channels || []).map(c => cleanStation({ id: 'sr:' + c.id, name: c.name, url: (c.liveaudio || {}).url,
+                                                                       favicon: c.image, country: 'SE' })).filter(Boolean);
+  });
+}
+async function curatedRadio() {
+  return cached('curated', 24 * 3600e3, async () => {
+    const groups = [];
+    for (const [group, wanted] of RADIO_CURATED) {
+      const out = [];
+      await inPool(wanted.map((w, i) => [w, i]), 4, async ([[q, cc], i]) => {
+        try {
+          let st = null;
+          if (q.startsWith('sr:')) st = (await srChannels()).find(c => c.name.toLowerCase() === q.slice(3).toLowerCase()) || null;
+          else {
+            const hits = await rbList(`/json/stations/search?name=${encodeURIComponent(q)}${cc ? '&countrycode=' + cc : ''}&hidebroken=true&order=clickcount&reverse=true&limit=5`);
+            st = hits.find(h => h.name.toLowerCase().startsWith(q.toLowerCase())) || hits[0] || null;
+          }
+          if (st) out[i] = st;
+        } catch (e) { console.log(`[radio] ${q}: ${e.message}`); }
+      });
+      groups.push({ group, stations: out.filter(Boolean) });
+    }
+    return groups;
+  });
+}
+app.get('/api/board/radio', async (req, res) => {
+  try {
+    const list = String(req.query.list || 'curated');
+    if (list === 'curated') return res.json({ groups: await curatedRadio(), favs: boardState.radioFavs });
+    const cc = String(req.query.cc || '').toUpperCase();
+    if (list === 'top') {
+      const path = /^[A-Z]{2}$/.test(cc)
+        ? `/json/stations/bycountrycodeexact/${cc}?order=clickcount&reverse=true&hidebroken=true&limit=40`
+        : '/json/stations/topclick/40?hidebroken=true';
+      return res.json({ stations: await cached('top:' + cc, 6 * 3600e3, () => rbList(path)) });
+    }
+    res.status(400).json({ error: 'Okänd lista' });
+  } catch (e) { res.status(502).json({ error: 'Radiokatalogen svarar inte just nu: ' + e.message }); }
+});
+app.get('/api/board/radio/search', async (req, res) => {
+  const q = String(req.query.q || '').trim().slice(0, 60);
+  if (q.length < 2) return res.json({ stations: [] });
+  try {
+    res.json({ stations: await rbList(`/json/stations/search?name=${encodeURIComponent(q)}&hidebroken=true&order=clickcount&reverse=true&limit=30`) });
+  } catch (e) { res.status(502).json({ error: 'Radiokatalogen svarar inte just nu: ' + e.message }); }
+});
+app.post('/api/board/radio/fav', requirePin, (req, res) => {
+  const st = cleanStation(req.body.station);
+  if (!st) return res.status(400).json({ error: 'Okänd kanal' });
+  boardState.radioFavs = boardState.radioFavs.filter(f => f.id !== st.id);
+  if (req.body.fav !== false) boardState.radioFavs.unshift(st);
+  boardState.radioFavs = boardState.radioFavs.slice(0, 50);
+  writeJSON(BOARD_FILE, boardState);
+  res.json({ ok: true, favs: boardState.radioFavs });
+});
+
+// ── Lyssningsstatistik: vad hon spelar mest (för "Spela nu") ──
+// Räknas från tavlans status var 5:e sekund: radiokanalen, eller vilken
+// spellista i musikbiblioteket låten som spelas finns i.
+let statsSaveAt = 0;
+function countListening(st, prevAt) {
+  const m = st && st.music;
+  if (!m || !prevAt) return;
+  const dt = Math.min(15, (Date.now() - prevAt) / 1000);
+  if (dt <= 0) return;
+  let changed = false;
+  if (m.radio && m.radio.id) {
+    const id = String(m.radio.id).slice(0, 80);
+    const fav = boardState.radioFavs.find(f => f.id === id);
+    const known = fav || cleanStation(m.radio) || (boardState.radioStats[id] || {}).station || null;
+    boardState.radioStats[id] = { secs: ((boardState.radioStats[id] || {}).secs || 0) + dt, station: known };
+    changed = true;
+  } else if (m.spotify === 'playing' && m.now && /^spotify:track:[A-Za-z0-9]{22}$/.test(String(m.now.uri || ''))) {
+    const tid = m.now.uri.slice(14);
+    const pl = Object.values(musicLib().playlists).find(p => (p.trackIds || []).includes(tid));
+    if (pl) { boardState.playlistStats[pl.id] = (boardState.playlistStats[pl.id] || 0) + dt; changed = true; }
+  }
+  if (changed && Date.now() - statsSaveAt > 120000) { statsSaveAt = Date.now(); writeJSON(BOARD_FILE, boardState); }
+}
+function topOf(obj, val) {
+  let best = null;
+  for (const [k, v] of Object.entries(obj || {})) if (!best || val(v) > val(best[1])) best = [k, v];
+  return best;
+}
+app.get('/api/board/listen', (req, res) => {
+  const M = musicLib();
+  const tp = topOf(Object.fromEntries(Object.entries(boardState.playlistStats).filter(([id]) => M.playlists[id])), v => v);
+  const tr = topOf(Object.fromEntries(Object.entries(boardState.radioStats).filter(([, v]) => v && v.station)), v => v.secs);
+  const pl = id => id && M.playlists[id] ? { id, title: M.playlists[id].title, cover: M.playlists[id].cover || '' } : null;
+  // Inget lyssnat än: favoritspellistan, annars den första i biblioteket
+  const fallbackPl = Object.values(M.playlists).find(p => p.fav) || Object.values(M.playlists)[0];
+  const g = boardState.godnatt || {};
+  res.json({
+    topPlaylist: pl(tp ? tp[0] : fallbackPl && fallbackPl.id), topPlaylistCounted: !!tp,
+    topRadio: tr ? tr[1].station : (boardState.radioFavs[0] || null), topRadioCounted: !!tr,
+    favs: boardState.radioFavs,
+    godnatt: { playlist: pl(g.playlistId), minutes: g.minutes || 30 },
+  });
+});
+// Godnatt: spellistan och längden väljer hon själv
+app.post('/api/board/godnatt', requirePin, (req, res) => {
+  const id = String(req.body.playlistId || '');
+  if (id && !musicLib().playlists[id]) return res.status(400).json({ error: 'Spellistan finns inte i biblioteket' });
+  boardState.godnatt = { playlistId: id || null, minutes: intIn(req.body.minutes, 5, 120, 30) };
+  writeJSON(BOARD_FILE, boardState);
+  res.json({ ok: true, godnatt: boardState.godnatt });
+});
+
+// ── Kalender via Googles hemliga iCal-adress ──
+// (Google Kalender -> Inställningar -> kalendern -> "Hemlig adress i
+// iCal-format"). Händelser vars titel börjar med 🔔 eller ! blir en
+// lapp på tavlans övriga vyer samma dag (render.py). Länken lämnar
+// aldrig servern (GET /api/board visar bara calendarSet).
+const ical = require('node-ical');
+const ICS_RE = /^https:\/\/calendar\.google\.com\/calendar\/ical\/[^\s]{5,300}\.ics$/;
+let icsCache = null;
+function stockholmIso(d) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Stockholm', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).formatToParts(d).map(p => [p.type, p.value]));
+  const local = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour % 24, +parts.minute, +parts.second);
+  const off = Math.round((local - d.getTime()) / 60000);
+  const sign = off >= 0 ? '+' : '-', a = Math.abs(off);
+  return `${parts.year}-${parts.month}-${parts.day}T${String(parts.hour % 24).padStart(2, '0')}:${parts.minute}:${parts.second}${sign}${String(Math.floor(a / 60)).padStart(2, '0')}:${String(a % 60).padStart(2, '0')}`;
+}
+function dateOnlyStr(d) {                           // heldag: node-ical ger midnatt i serverns tidszon
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function noteTitle(title) {
+  const m = /^\s*(🔔|!)\s*(.*)$/u.exec(title || '');
+  return m ? { note: true, title: m[2].trim() || '(Ingen titel)' } : { note: false, title: title || '(Ingen titel)' };
+}
+async function icsEventsToday(url) {
+  if (!icsCache || icsCache.url !== url || Date.now() - icsCache.at > 5 * 60000) {
+    const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if (!r.ok) throw new Error(`Google svarade ${r.status} — stämmer länken?`);
+    const text = await r.text();
+    if (!/BEGIN:VCALENDAR/.test(text)) throw new Error('Länken gav ingen kalender');
+    icsCache = { url, at: Date.now(), data: ical.sync.parseICS(text) };
+  }
+  const today = stockholmDate();
+  const dayStart = new Date(stockholmIso(new Date()).slice(0, 10) + 'T00:00:00' + stockholmIso(new Date()).slice(19));
+  const dayEnd = new Date(dayStart.getTime() + 24 * 3600e3);
+  const out = [];
+  const add = (ev, start, end) => {
+    if (!ev || ev.status === 'CANCELLED') return;
+    const allDay = !!(ev.start && ev.start.dateOnly) || ev.datetype === 'date';
+    const dur = (ev.end && ev.start) ? ev.end - ev.start : 0;
+    end = end || new Date(start.getTime() + dur);
+    if (allDay) {
+      const sd = dateOnlyStr(start), ed = dateOnlyStr(end);
+      if (!(sd <= today && (ed > today || ed === sd))) return;
+      out.push({ ...noteTitle(String(ev.summary || '')), start: sd, end: ed, allDay: true, location: String(ev.location || '') });
+    } else {
+      if (!(start < dayEnd && end > dayStart)) return;
+      out.push({ ...noteTitle(String(ev.summary || '')), start: stockholmIso(start), end: stockholmIso(end), allDay: false, location: String(ev.location || '') });
+    }
+  };
+  for (const ev of Object.values(icsCache.data)) {
+    if (!ev || ev.type !== 'VEVENT') continue;
+    if (ev.rrule) {
+      const dur = ev.end - ev.start;
+      for (const occ of ev.rrule.between(new Date(dayStart.getTime() - Math.max(dur, 0) - 36 * 3600e3), new Date(dayEnd.getTime() + 36 * 3600e3), true)) {
+        const key = occ.toISOString().slice(0, 10);
+        if (ev.exdate && Object.keys(ev.exdate).some(k => k.slice(0, 10) === key && Math.abs(new Date(ev.exdate[k]) - occ) < 60000)) continue;
+        const ov = ev.recurrences && Object.entries(ev.recurrences).find(([k]) => k.slice(0, 10) === key);
+        if (ov) add(ov[1], ov[1].start, ov[1].end);
+        else add(ev, occ, new Date(occ.getTime() + dur));
+      }
+    } else if (!ev.recurrenceid) add(ev, ev.start, ev.end);
+  }
+  const seen = new Set();
+  return out.filter(e => { const k = e.title + e.start; return !seen.has(k) && seen.add(k); })
+            .sort((a, b) => (a.allDay === b.allDay ? a.start.localeCompare(b.start) : a.allDay ? -1 : 1));
+}
+app.post('/api/board/calendar', requirePin, async (req, res) => {
+  const url = String(req.body.url || '').trim();
+  if (!url) { delete boardState.calendarIcs; icsCache = null; touchBoard(); return res.json({ ok: true, calendarSet: false }); }
+  if (!ICS_RE.test(url)) return res.status(400).json({ error: 'Klistra in den hemliga adressen i iCal-format från Google Kalender (slutar på .ics)' });
+  try {
+    const events = await icsEventsToday(url);
+    boardState.calendarIcs = url;
+    touchBoard();
+    res.json({ ok: true, calendarSet: true, today: events.length });
+  } catch (e) { icsCache = null; res.status(400).json({ error: 'Kunde inte läsa kalendern: ' + e.message }); }
+});
+
 // ── KALENDER (Google Calendar) ──────────────────────────────────
 app.get('/api/calendar/today', async (req, res) => {
+  if (boardState.calendarIcs) {
+    try { return res.json({ events: await icsEventsToday(boardState.calendarIcs), source: 'ical' }); }
+    catch (e) { return res.status(502).json({ error: 'Kunde inte hämta kalendern: ' + e.message }); }
+  }
   if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REFRESH_TOKEN) {
     return res.status(400).json({ error: 'Google Calendar är inte konfigurerat (saknar GOOGLE_CLIENT_ID/SECRET/REFRESH_TOKEN)' });
   }
@@ -1776,7 +2110,7 @@ app.get('/api/calendar/today', async (req, res) => {
     });
 
     const events = (result.data.items || []).map(e => ({
-      title: e.summary || '(Ingen titel)',
+      ...noteTitle(e.summary || ''),
       start: e.start.dateTime || e.start.date,
       end: e.end.dateTime || e.end.date,
       allDay: !e.start.dateTime,
