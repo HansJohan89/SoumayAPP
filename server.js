@@ -1642,6 +1642,7 @@ async function cleanAlarm(a) {
       rampMinutes: intIn(a.rampMinutes, 0, 30, 3),
       autoStopMinutes: intIn(a.autoStopMinutes, 5, 180, 30),
       news: a.news === true,      // Ekots senaste nytt efter att hon stängt av (tavlans news.py)
+      sound: a.sound === 'news' ? 'news' : 'music',   // 'news' = BARA Ekots senaste nytt i stället för musik
     },
   };
 }

@@ -369,7 +369,7 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
       <input type="range" id="alarmVolume" min="1" max="100" value="30" oninput="document.getElementById('alarmVolumeText').textContent=this.value+' %'">
     </div>
     <div class="field" style="display:flex;gap:10px;">
-      <div style="flex:1;">
+      <div style="flex:1;" id="alarmRampWrap">
         <div class="field-label">Mjuk start</div>
         <select class="input-field" id="alarmRamp"></select>
       </div>
@@ -378,7 +378,7 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
         <select class="input-field" id="alarmAutoStop"></select>
       </div>
     </div>
-    <div class="field" style="display:flex;align-items:center;gap:12px;">
+    <div class="field" style="display:flex;align-items:center;gap:12px;" id="alarmNewsWrap">
       <div style="flex:1;">
         <div class="field-label" style="margin-bottom:2px;">Nyheter efter alarmet</div>
         <div class="hint" style="margin:0;">Ekot senaste nytt (1–3 min) på 65 % när du stängt av</div>
@@ -1220,14 +1220,15 @@ function renderAlarmList(board){
   wrap.innerHTML = alarms.map(a => {
     const past = !(a.days || []).length && a.date && a.date < isoDate(new Date());
     const on = a.enabled && !past;
-    const music = a.music && a.music.kind === 'playlist' ? `🔀 ${a.urlTitle || 'Spellista'}`
+    const music = a.sound === 'news' ? '📻 Ekot senaste nytt'
+      : a.music && a.music.kind === 'playlist' ? `🔀 ${a.urlTitle || 'Spellista'}`
       : a.music && a.music.kind === 'track' ? `🎵 ${a.urlTitle || 'Låt'}`
       : a.url ? `🎵 ${a.urlTitle || 'Spotify-länk'}` : '🎵 Fortsätter där du slutade';
     return `<div class="alarm-card ${on ? '' : 'off'}" onclick="openAlarmEditor('${a.id}')">
       <div class="alarm-info">
         <div class="alarm-time">${esc(a.time)}</div>
         ${a.label ? `<div class="alarm-label">${esc(a.label)}</div>` : ''}
-        <div class="alarm-meta">${esc(daysText(a))} · ${a.volume} % · ${esc(music)}${a.news ? ' · 📻 Nyheter' : ''}</div>
+        <div class="alarm-meta">${esc(daysText(a))} · ${a.volume} % · ${esc(music)}${a.news && a.sound !== 'news' ? ' · 📻 Nyheter' : ''}</div>
       </div>
       <label class="switch" onclick="event.stopPropagation()">
         <input type="checkbox" ${on ? 'checked' : ''} onchange="toggleAlarm('${a.id}', this.checked)"><span></span>
@@ -1278,7 +1279,7 @@ function updateOnceHint(){
 // "Spela" öppnar en lista: Fortsätt där jag slutade · ♥ Favoriter (→ Spellistor / Låtar)
 // · Spellistor (alla, ♡, sök, lägg till) · Låtar (alla, ♡, sök).
 let musicLib = { playlists: [], tracks: {} };
-let editKind = 'resume';        // 'resume' | 'playlist' | 'track' | 'link' (gammal sparad länk)
+let editKind = 'resume';        // 'resume' | 'news' | 'playlist' | 'track' | 'link' (gammal sparad länk)
 let editMusic = null;           // { kind: 'playlist'|'track', id }
 let musicView = 'root';         // root | fav | fav-playlists | fav-tracks | playlists | tracks
 let musicLoadedAt = 0;
@@ -1302,7 +1303,13 @@ function playKind(){ return editKind; }
 function renderMusicPick(){
   const box = document.getElementById('alarmMusicPick');
   let inner = '';
-  if (editKind === 'resume') {
+  // Bara nyheter: mjuk start (10 s, inbyggd) och "nyheter efter" behövs inte
+  document.getElementById('alarmRampWrap').style.display = editKind === 'news' ? 'none' : '';
+  document.getElementById('alarmNewsWrap').style.display = editKind === 'news' ? 'none' : '';
+  if (editKind === 'news') {
+    inner = `<div class="menu-ico">📻</div><div class="mp-txt"><div class="mp-title">Bara nyheter</div>
+      <div class="mp-sub">Ekot senaste nytt (1–3 min), sedan tyst</div></div>`;
+  } else if (editKind === 'resume') {
     inner = `<div class="menu-ico">⏯</div><div class="mp-txt"><div class="mp-title">Fortsätt där jag slutade</div>
       <div class="mp-sub">Det som spelades senast</div></div>`;
   } else if (editKind === 'link') {
@@ -1366,6 +1373,7 @@ function renderMusicList(){
   if (v === 'root') {
     list.innerHTML =
       menuRow("pickResume()", '⏯', 'Fortsätt där jag slutade', 'Det som spelades senast', editKind === 'resume', false) +
+      menuRow("pickNews()", '📻', 'Bara nyheter', 'Ekot senaste nytt i stället för musik', editKind === 'news', false) +
       menuRow("musicGo('fav')", '♥', 'Favoriter', `${favP} spellistor · ${favT} låtar`) +
       menuRow("musicGo('playlists')", '🔀', 'Spellistor', `${musicLib.playlists.length} st · spelas i shuffle`, editKind === 'playlist') +
       menuRow("musicGo('tracks')", '🎵', 'Låtar', `${allTrackIds().length} st från spellistorna`, editKind === 'track');
@@ -1411,6 +1419,7 @@ function renderMusicList(){
     </div>`).join('') + (items.length > shown.length ? `<div class="music-empty">…och ${items.length - shown.length} till — sök för att hitta dem.</div>` : '');
 }
 function pickResume(){ editKind = 'resume'; editMusic = null; closeMusicPicker(); }
+function pickNews(){ editKind = 'news'; editMusic = null; closeMusicPicker(); }
 function pickMusic(kind, id){
   editKind = kind;
   editMusic = { kind, id };
@@ -1458,7 +1467,7 @@ function openAlarmEditor(id){
   editDays = a ? (a.days || []).slice() : [0,1,2,3,4];
   document.getElementById('alarmLabel').value = a ? (a.label || '') : '';
   editMusic = a && a.music ? { ...a.music } : null;
-  editKind = editMusic ? editMusic.kind : (a && a.url ? 'link' : 'resume');
+  editKind = a && a.sound === 'news' ? 'news' : editMusic ? editMusic.kind : (a && a.url ? 'link' : 'resume');
   const vol = a ? a.volume : 30;
   document.getElementById('alarmVolume').value = vol;
   document.getElementById('alarmVolumeText').textContent = vol + ' %';
@@ -1492,7 +1501,8 @@ function alarmFromEditor(){
     volume: Number(document.getElementById('alarmVolume').value),
     rampMinutes: Number(document.getElementById('alarmRamp').value),
     autoStopMinutes: Number(document.getElementById('alarmAutoStop').value),
-    news: document.getElementById('alarmNews').checked,
+    news: kind !== 'news' && document.getElementById('alarmNews').checked,
+    sound: kind === 'news' ? 'news' : 'music',
   };
 }
 function alarmEditorError(text){ document.getElementById('alarmError').textContent = text; }
