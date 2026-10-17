@@ -1114,7 +1114,7 @@ app.post('/api/journal', (req, res) => {
 app.get('/api/storage', (req, res) => res.json({ persistent: STORAGE_PERSISTENT, dataDir: DATA_DIR }));
 
 app.get('/api/board', (req, res) => {
-  const { images, pin, alarmTest, music: _music, calendarIcs, radioStats: _rs, playlistStats: _ps, ...settings } = boardState;
+  const { images, pin, alarmTest, music: _music, calendarIcs, radioStats: _rs, playlistStats: _ps, spotifyAuth: _sa, ...settings } = boardState;
   res.json({
     ...settings,
     timers: activeTimers(),
@@ -1531,14 +1531,16 @@ function musicPayload() {
   const M = musicLib();
   const used = new Set();
   Object.values(M.playlists).forEach(p => p.trackIds.forEach(t => used.add(t)));
+  ((M.liked || {}).trackIds || []).forEach(t => used.add(t));
   const tracks = {};
   for (const [tid, t] of Object.entries(M.tracks)) if (used.has(tid) || t.fav) tracks[tid] = t;
-  return { playlists: Object.values(M.playlists), tracks };
+  return { playlists: Object.values(M.playlists), tracks, liked: M.liked || null };
 }
 function dropUnusedTracks() {
   const M = musicLib();
   const used = new Set();
   Object.values(M.playlists).forEach(p => p.trackIds.forEach(t => used.add(t)));
+  ((M.liked || {}).trackIds || []).forEach(t => used.add(t));
   for (const tid of Object.keys(M.tracks)) if (!used.has(tid) && !M.tracks[tid].fav) delete M.tracks[tid];
 }
 
@@ -1585,6 +1587,7 @@ setInterval(async () => {
   const M = musicLib();
   for (const pl of Object.values(M.playlists)) {
     if (Date.now() - (pl.indexedAt || 0) < 24 * 3600 * 1000) continue;
+    if (pl.source === 'spotify' && pl.owned) continue;      // hennes egna: läses via Spotify-kopplingen (spotifySync)
     try { await indexPlaylist(pl.id); dropUnusedTracks(); }
     catch (e) { pl.error = e.message; pl.indexedAt = Date.now(); saveMusicSoon(); console.log(`[musik] ${pl.id}: ${e.message}`); }
   }
@@ -1612,6 +1615,13 @@ function alarmMusic(music) {
     return { music: { kind: 'track', id: t.id, playlistId: pl ? pl.id : null },
              url: `https://open.spotify.com/track/${t.id}`, urlTitle: `${t.title} – ${t.artist}`.slice(0, 80),
              shuffle: false, tracks: [`spotify:track:${t.id}`, ...rest.map(x => `spotify:track:${x}`)], shuffleRest: true };
+  }
+  if (music.kind === 'liked') {
+    const ids = ((M.liked || {}).trackIds || []).slice();
+    if (!ids.length) return { error: 'Inga gillade låtar hämtade från Spotify än' };
+    for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+    return { music: { kind: 'liked' }, url: '', urlTitle: '♥ Gillade låtar', shuffle: false,
+             tracks: ids.slice(0, 100).map(x => `spotify:track:${x}`), shuffleRest: true };
   }
   return { error: 'Okänt musikval' };
 }
@@ -1841,6 +1851,210 @@ app.post('/api/board/pi-schema', (req, res) => {
 });
 
 
+
+// ── SPOTIFY-KOPPLING (Web API, 2026-10-17) ───────────────────────
+// Hennes egen Spotify-app (developer.spotify.com, Development mode —
+// ägaren behöver Premium). Hon loggar in en gång i appen; servern hämtar
+// sedan själv var 6:e timme: hennes spellistor (egna: med alla låtar,
+// även privata; följda: namn/omslag + låtarna om listan är offentlig)
+// och Gillade låtar. Inloggningen gäller 180 dagar (Spotifys gräns för
+// nya appar) — appen påminner innan den går ut.
+// Hemligheterna (SPOTIFY_CLIENT_ID/SECRET) ligger bara i Railways
+// miljövariabler; inloggningen (refresh token) bara här på servern.
+const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '';
+const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || '';
+const SPOTIFY_SCOPES = 'playlist-read-private playlist-read-collaborative user-library-read user-read-recently-played user-top-read';
+const SPOTIFY_LOGIN_DAYS = 180;
+const SPOTIFY_SYNC_MS = 6 * 3600e3;
+const LIKED_MAX = 500;
+const spotifyStates = new Map();               // state -> skapad (inloggningen pågår)
+let spotifySyncing = null;
+function spotifyRedirect(req) {
+  const host = req.get('x-forwarded-host') || req.get('host');
+  const proto = req.get('x-forwarded-proto') || req.protocol;
+  return `${proto.split(',')[0]}://${host}/api/spotify/callback`;
+}
+async function spotifyToken(params) {
+  const r = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST', signal: AbortSignal.timeout(10000),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded',
+               Authorization: 'Basic ' + Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64') },
+    body: new URLSearchParams(params).toString(),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(d.error_description || d.error || `Spotify svarade ${r.status}`); e.code = d.error; throw e; }
+  return d;
+}
+async function spotifyAccess() {
+  const A = boardState.spotifyAuth;
+  if (!A || !A.refresh) throw new Error('Spotify är inte kopplat');
+  if (A.access && A.accessUntil > Date.now() + 60000) return A.access;
+  try {
+    const d = await spotifyToken({ grant_type: 'refresh_token', refresh_token: A.refresh });
+    A.access = d.access_token; A.accessUntil = Date.now() + (d.expires_in || 3600) * 1000;
+    if (d.refresh_token) A.refresh = d.refresh_token;          // Spotify kan byta ut den
+    writeJSON(BOARD_FILE, boardState);
+    return A.access;
+  } catch (e) {
+    if (e.code === 'invalid_grant') { A.expired = true; A.refresh = null; A.access = null; writeJSON(BOARD_FILE, boardState); throw new Error('Inloggningen har gått ut — koppla Spotify igen'); }
+    throw e;
+  }
+}
+async function spotifyGet(pathOrUrl) {
+  const url = pathOrUrl.startsWith('https://') ? pathOrUrl : 'https://api.spotify.com/v1' + pathOrUrl;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const r = await fetch(url, { signal: AbortSignal.timeout(15000), headers: { Authorization: 'Bearer ' + await spotifyAccess() } });
+    if (r.status === 429) { await new Promise(ok => setTimeout(ok, Math.min(30, Number(r.headers.get('retry-after')) || 5) * 1000)); continue; }
+    if (r.status === 401 && attempt === 0) { boardState.spotifyAuth.access = null; continue; }
+    if (!r.ok) { const e = new Error(`Spotify ${r.status} på ${url.replace('https://api.spotify.com/v1', '').split('?')[0]}`); e.status = r.status; throw e; }
+    return r.json();
+  }
+  throw new Error('Spotify har för mycket att göra just nu — försöker igen senare');
+}
+async function spotifyAll(path, max) {
+  const out = [];
+  let next = path;
+  while (next && out.length < max) {
+    const d = await spotifyGet(next);
+    out.push(...(d.items || []));
+    next = d.next;
+  }
+  return out.slice(0, max);
+}
+function trackFromApi(t) {
+  // Februari 2026: raderna i en spellista har låten under "item" ("track" är bara true)
+  if (!t || typeof t !== 'object' || t.type === 'episode') return null;
+  const id = /^[A-Za-z0-9]{22}$/.test(String(t.id || '')) ? t.id : null;
+  if (!id) return null;
+  const imgs = ((t.album || {}).images || []);
+  const img = (imgs.find(i => i.width && i.width <= 320) || imgs[imgs.length - 1] || imgs[0] || {}).url || '';
+  return { id, title: String(t.name || '').slice(0, 120), artist: (t.artists || []).map(a => a.name).join(', ').slice(0, 120),
+           cover: img, artistId: (((t.artists || [])[0] || {}).id) || '' };
+}
+function rowTrack(row) {
+  const t = (row && typeof row.item === 'object' && row.item) || (row && typeof row.track === 'object' && row.track) || null;
+  return trackFromApi(t);
+}
+function storeTrack(M, t) {
+  const prev = M.tracks[t.id] || {};
+  M.tracks[t.id] = { ...prev, ...t, cover: t.cover || prev.cover || '', fav: !!prev.fav };
+}
+async function spotifySync(reason) {
+  if (spotifySyncing) return spotifySyncing;
+  spotifySyncing = (async () => {
+    const A = boardState.spotifyAuth;
+    const M = musicLib();
+    const me = await spotifyGet('/me');
+    A.user = { id: me.id, name: me.display_name || me.id };
+    // 1) Spellistorna
+    const lists = await spotifyAll('/me/playlists?limit=50', 200);
+    const seen = new Set();
+    const notes = [];
+    for (const p of lists) {
+      if (!p || !SPOTIFY_ID.test(String(p.id || ''))) continue;
+      const owned = (p.owner || {}).id === me.id || !!p.collaborative;
+      seen.add(p.id);
+      const old = M.playlists[p.id] || {};
+      if (!M.playlists[p.id] && Object.keys(M.playlists).length >= MUSIC_MAX_PLAYLISTS + 60) continue;
+      const cover = ((p.images || [])[0] || {}).url || old.cover || '';
+      const base = { ...old, id: p.id, title: String(p.name || 'Spellista').slice(0, 120), cover, source: 'spotify', owned,
+                     fav: !!old.fav, addedAt: old.addedAt || Date.now(), artistImages: old.artistImages || [], trackIds: old.trackIds || [] };
+      if (owned) {
+        if (old.snapshot === p.snapshot_id && old.trackIds && old.trackIds.length && Date.now() - (old.indexedAt || 0) < 7 * 86400e3) { M.playlists[p.id] = base; continue; }
+        let rows;
+        try { rows = await spotifyAll(`/playlists/${p.id}/items?limit=100`, PLAYLIST_TRACK_MAX); }
+        catch (e) { if (e.status === 404) rows = await spotifyAll(`/playlists/${p.id}/tracks?limit=100`, PLAYLIST_TRACK_MAX); else throw e; }
+        const ids = [];
+        for (const row of rows) { const t = rowTrack(row); if (t && !ids.includes(t.id)) { storeTrack(M, t); ids.push(t.id); } }
+        M.playlists[p.id] = { ...base, trackIds: ids, snapshot: p.snapshot_id, indexedAt: Date.now(), error: ids.length ? undefined : 'Tom spellista' };
+      } else {
+        M.playlists[p.id] = base;
+        if (!old.trackIds || !old.trackIds.length) {
+          try { await indexPlaylist(p.id); M.playlists[p.id].source = 'spotify'; M.playlists[p.id].owned = false; }
+          catch (e) { M.playlists[p.id].error = 'Låtarna kunde inte läsas (inte offentlig)'; notes.push(p.name); }
+        }
+      }
+    }
+    // Spellistor hon inte har kvar i Spotify tas bort — bara de som kom härifrån
+    for (const [id, pl] of Object.entries(M.playlists)) if (pl.source === 'spotify' && !seen.has(id)) delete M.playlists[id];
+    // Tomma (lästes inte) syns inte i biblioteket
+    // 2) Gillade låtar
+    const liked = await spotifyAll('/me/tracks?limit=50', LIKED_MAX);
+    const likedIds = [];
+    for (const row of liked) { const t = rowTrack(row); if (t && !likedIds.includes(t.id)) { storeTrack(M, t); likedIds.push(t.id); } }
+    M.liked = { title: 'Gillade låtar', trackIds: likedIds, syncedAt: Date.now() };
+    // 3) Mest spelat (om Spotify fortfarande ger det till appar i Development mode)
+    try {
+      const top = await spotifyGet('/me/top/tracks?limit=30&time_range=short_term');
+      M.top = (top.items || []).map(trackFromApi).filter(Boolean).map(t => { storeTrack(M, t); return t.id; });
+    } catch (e) { M.top = null; A.topError = e.message; }
+    dropUnusedTracks();
+    A.lastSync = Date.now(); A.error = null; A.notReadable = notes;
+    writeJSON(BOARD_FILE, boardState);
+    console.log(`[spotify] Synkat (${reason}): ${seen.size} spellistor, ${likedIds.length} gillade låtar`);
+    return { playlists: seen.size, liked: likedIds.length };
+  })();
+  try { return await spotifySyncing; }
+  catch (e) { if (boardState.spotifyAuth) { boardState.spotifyAuth.error = e.message; writeJSON(BOARD_FILE, boardState); } console.log('[spotify] Synk misslyckades:', e.message); throw e; }
+  finally { spotifySyncing = null; }
+}
+function spotifyStatus() {
+  const A = boardState.spotifyAuth || {};
+  const connected = !!A.refresh;
+  return { configured: !!(SPOTIFY_CLIENT_ID && SPOTIFY_CLIENT_SECRET), connected, expired: !!A.expired,
+           user: A.user ? A.user.name : null, lastSync: A.lastSync || null, error: A.error || null,
+           loginUntil: A.connectedAt ? A.connectedAt + SPOTIFY_LOGIN_DAYS * 86400e3 : null,
+           liked: ((musicLib().liked || {}).trackIds || []).length, notReadable: A.notReadable || [], syncing: !!spotifySyncing };
+}
+app.get('/api/board/spotify', (req, res) => res.json(spotifyStatus()));
+app.post('/api/board/spotify/login', requirePin, (req, res) => {
+  if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) return res.status(400).json({ error: 'SPOTIFY_CLIENT_ID/SECRET saknas på servern' });
+  const state = crypto.randomBytes(16).toString('hex');
+  for (const [k, t] of spotifyStates) if (Date.now() - t > 15 * 60000) spotifyStates.delete(k);
+  spotifyStates.set(state, Date.now());
+  const q = new URLSearchParams({ client_id: SPOTIFY_CLIENT_ID, response_type: 'code', redirect_uri: spotifyRedirect(req),
+                                  scope: SPOTIFY_SCOPES, state, show_dialog: 'true' });
+  res.json({ url: 'https://accounts.spotify.com/authorize?' + q });
+});
+app.get('/api/spotify/callback', async (req, res) => {
+  const back = msg => res.redirect('/tavla?spotify=' + encodeURIComponent(msg));
+  const state = String(req.query.state || '');
+  if (!spotifyStates.has(state)) return back('fel:Inloggningen var för gammal — försök igen');
+  spotifyStates.delete(state);
+  if (req.query.error) return back('fel:' + (req.query.error === 'access_denied' ? 'Du avbröt inloggningen' : String(req.query.error)));
+  try {
+    const d = await spotifyToken({ grant_type: 'authorization_code', code: String(req.query.code || ''), redirect_uri: spotifyRedirect(req) });
+    boardState.spotifyAuth = { refresh: d.refresh_token, access: d.access_token, accessUntil: Date.now() + (d.expires_in || 3600) * 1000,
+                               connectedAt: Date.now(), scope: d.scope || '' };
+    writeJSON(BOARD_FILE, boardState);
+    spotifySync('ny koppling').catch(() => {});
+    back('ok');
+  } catch (e) { back('fel:' + e.message); }
+});
+app.post('/api/board/spotify/sync', requirePin, async (req, res) => {
+  try { res.json({ ok: true, ...(await spotifySync('appen')), status: spotifyStatus() }); }
+  catch (e) { res.status(502).json({ error: e.message, status: spotifyStatus() }); }
+});
+app.post('/api/board/spotify/disconnect', requirePin, (req, res) => {
+  const M = musicLib();
+  for (const [id, pl] of Object.entries(M.playlists)) if (pl.source === 'spotify') delete M.playlists[id];
+  M.liked = null; M.top = null;
+  dropUnusedTracks();
+  delete boardState.spotifyAuth;
+  writeJSON(BOARD_FILE, boardState);
+  res.json({ ok: true, status: spotifyStatus() });
+});
+let spotifyReminded = 0;
+setInterval(() => {
+  const A = boardState.spotifyAuth;
+  if (!A || !A.refresh) return;
+  if (Date.now() - (A.lastSync || 0) > SPOTIFY_SYNC_MS) spotifySync('var 6:e timme').catch(() => {});
+  const left = A.connectedAt + SPOTIFY_LOGIN_DAYS * 86400e3 - Date.now();
+  if (left < 7 * 86400e3 && Date.now() - spotifyReminded > 2 * 86400e3 && typeof pushToAll === 'function') {
+    spotifyReminded = Date.now();
+    pushToAll('🎵 Koppla Spotify igen', `Tavlans koppling till Spotify går ut om ${Math.max(0, Math.ceil(left / 86400e3))} dagar. Inställningar → Musik & ljud → Koppla Spotify.`, 'spotify').catch(() => {});
+  }
+}, 10 * 60 * 1000);
 // ── RADIO (Musik-fliken, 2026-10-17) ────────────────────────────
 // Kanallistan kommer från Radio Browser (öppen, gemenskapsdriven katalog
 // med tiotusentals stationer: https://www.radio-browser.info) och

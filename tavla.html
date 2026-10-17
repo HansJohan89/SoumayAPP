@@ -366,6 +366,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
       <div class="card pi-block" data-title="Sensorbyte" data-keys="sensorReminder,sensorDays" data-extra="sensor"></div>
     </section>
     <section class="set-page" data-page="musik">
+      <div class="card" id="spotifyCard"><div class="card-label">Spotify</div><div id="spotifyBox" class="hint">Laddar…</div></div>
       <div class="card pi-block" data-title="Volym" data-keys="maxVolume,volumeStep"></div>
       <div class="card pi-block" data-title="Sov-timer 🌙" data-keys="sleepMinutes,sleepFadeMinutes" data-extra="godnatt"></div>
       <div class="card pi-block" data-title="Reservspellista" data-keys="fallbackPlaylist"></div>
@@ -1516,8 +1517,11 @@ function renderMusicPick(){
     box.innerHTML = soundPickHtml({ sound: editKind, radio: editRadio }, 'openMusicPicker()');
     return;
   }
-  if (editKind === 'news') {
-    inner = `<div class="menu-ico">📻</div><div class="mp-txt"><div class="mp-title">Bara nyheter</div>
+  if (editKind === 'liked') {
+    inner = `<div class="menu-ico">💚</div><div class="mp-txt"><div class="mp-title">Gillade låtar</div>
+      <div class="mp-sub">${(musicLib.liked || { trackIds: [] }).trackIds.length} låtar från Spotify · shuffle</div></div>`;
+  } else if (editKind === 'news') {
+    inner = `<div class="menu-ico">📰</div><div class="mp-txt"><div class="mp-title">Bara nyheter</div>
       <div class="mp-sub">Ekot senaste nytt (1–3 min), sedan tyst</div></div>`;
   } else if (editKind === 'resume') {
     inner = `<div class="menu-ico">⏯</div><div class="mp-txt"><div class="mp-title">Fortsätt där jag slutade</div>
@@ -1586,6 +1590,7 @@ function renderMusicList(){
       menuRow("pickNews()", '📰', 'Bara nyheter', 'Ekot senaste nytt i stället för musik', editKind === 'news', false) +
       menuRow("pickRadio()", '📻', 'Radio', editKind === 'radio' && editRadio ? editRadio.name : 'välj en kanal', editKind === 'radio') +
       menuRow("pickSignal()", '🔔', 'Signal: Morgonljus', 'mjuk marimba som stiger', editKind === 'signal', false) +
+      (musicLib.liked && musicLib.liked.trackIds.length ? menuRow("pickLiked()", '💚', 'Gillade låtar', `${musicLib.liked.trackIds.length} låtar från Spotify · shuffle`, editKind === 'liked', false) : '') +
       menuRow("musicGo('fav')", '♥', 'Favoriter', `${favP} spellistor · ${favT} låtar`) +
       menuRow("musicGo('playlists')", '🔀', 'Spellistor', `${musicLib.playlists.length} st · spelas i shuffle`, editKind === 'playlist') +
       menuRow("musicGo('tracks')", '🎵', 'Låtar', `${allTrackIds().length} st från spellistorna`, editKind === 'track');
@@ -1609,9 +1614,9 @@ function renderMusicList(){
     }
     list.innerHTML = items.map(p => `<div class="music-row ${editKind === 'playlist' && p.id === sel ? 'sel' : ''}" onclick="pickMusic('playlist','${p.id}')">
         ${playlistArt(p)}<div class="mp-txt"><div class="mp-title">${esc(p.title)}</div>
-        <div class="mp-sub">${p.trackIds.length} låtar${p.error ? ' · ⚠️ kunde inte läsas om' : ''}</div></div>
+        <div class="mp-sub">${p.source === 'spotify' ? '🟢 Spotify · ' : ''}${p.trackIds.length ? p.trackIds.length + ' låtar' : 'låtarna syns inte (spelas ändå)'}${p.error && p.source !== 'spotify' ? ' · ⚠️ kunde inte läsas om' : ''}</div></div>
         <button class="heart ${p.fav ? 'on' : ''}" onclick="event.stopPropagation();toggleFav('playlist','${p.id}')">${p.fav ? '♥' : '♡'}</button>
-        ${favOnly ? '' : `<button class="mrow-del" title="Ta bort" onclick="event.stopPropagation();removePlaylist('${p.id}')">✕</button>`}
+        ${favOnly || p.source === 'spotify' ? '' : `<button class="mrow-del" title="Ta bort" onclick="event.stopPropagation();removePlaylist('${p.id}')">✕</button>`}
       </div>`).join('');
     return;
   }
@@ -1633,6 +1638,7 @@ function renderMusicList(){
 function pickResume(){ editKind = 'resume'; editMusic = null; closeMusicPicker(); }
 function pickNews(){ editKind = 'news'; editMusic = null; closeMusicPicker(); }
 function pickSignal(){ editKind = 'signal'; editMusic = null; closeMusicPicker(); }
+function pickLiked(){ editKind = 'liked'; editMusic = { kind: 'liked' }; closeMusicPicker(); }
 function pickRadio(){
   closeMusicPicker();
   openRadioSheet(st => { editKind = 'radio'; editMusic = null; editRadio = st; renderMusicPick(); });
@@ -1717,7 +1723,7 @@ function alarmFromEditor(){
     date: editDays.length ? null : nextOnceDate(time || '07:00'),
     label: document.getElementById('alarmLabel').value.trim(),
     url: kind === 'link' && editing ? (editing.url || '') : '',
-    music: (kind === 'playlist' || kind === 'track') && editMusic && editMusic.kind === kind ? editMusic : null,
+    music: (kind === 'playlist' || kind === 'track' || kind === 'liked') && editMusic && editMusic.kind === kind ? editMusic : null,
     volume: Number(document.getElementById('alarmVolume').value),
     rampMinutes: Number(document.getElementById('alarmRamp').value),
     autoStopMinutes: Number(document.getElementById('alarmAutoStop').value),
@@ -1913,6 +1919,7 @@ function openSetPage(id, key){
   if (id === 'kalender') renderCalendarState();
   if (id === 'status') renderStatusBox();
   if (id === 'musik' && !listen) loadListen().then(() => renderPiSettings());
+  if (id === 'musik') renderSpotifyCard();
   window.scrollTo(0, 0);
   if (key) setTimeout(() => {
     const el = document.getElementById('set-' + key);
@@ -1929,6 +1936,57 @@ function closeSetPage(){
   try { sessionStorage.removeItem('setPage'); } catch(e) {}
 }
 
+
+// ── Spotify-kopplingen (Inställningar -> Musik & ljud) ──
+let spotifySt = null;
+async function renderSpotifyCard(){
+  const box = document.getElementById('spotifyBox');
+  if (!box) return;
+  try { spotifySt = await (await fetch('/api/board/spotify')).json(); } catch(e) { return; }
+  const S = spotifySt;
+  if (!S.configured) { box.innerHTML = 'Spotify-appen är inte inställd på servern än.'; return; }
+  if (!S.connected) {
+    box.innerHTML = `<div style="color:var(--ink);font-size:13px;margin-bottom:10px;">${S.expired ? '⚠️ Inloggningen har gått ut. ' : ''}Koppla hennes Spotify så hämtas spellistorna och Gillade låtar automatiskt var 6:e timme — även privata spellistor.</div>
+      <button class="btn btn-primary" style="width:100%;" onclick="spotifyLogin()">🟢 Koppla Spotify</button>`;
+    return;
+  }
+  const f = ms => { const d = new Date(ms); return `${d.getDate()}/${d.getMonth() + 1} kl ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+  const left = S.loginUntil ? Math.ceil((S.loginUntil - Date.now()) / 86400000) : null;
+  box.innerHTML = `<div class="status-line"><span>Konto</span><b>✅ ${esc(S.user || 'Kopplat')}</b></div>
+    <div class="status-line"><span>Senast hämtat</span><b>${S.syncing ? 'hämtar nu…' : S.lastSync ? f(S.lastSync) : 'hämtar…'}</b></div>
+    <div class="status-line"><span>Gillade låtar</span><b>${S.liked}</b></div>
+    ${left !== null ? `<div class="status-line"><span>Inloggningen gäller</span><b style="color:${left < 14 ? 'var(--pulse-red)' : 'inherit'}">${left} dagar till</b></div>` : ''}
+    ${S.error ? `<div class="set-error">⚠️ ${esc(S.error)}</div>` : ''}
+    ${(S.notReadable || []).length ? `<div class="set-help">Låtlistan syns inte för: ${esc(S.notReadable.join(', '))} (andras privata listor — de går ändå att spela).</div>` : ''}
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary btn-sm" onclick="spotifySync()">↻ Hämta nu</button>
+      ${left !== null && left < 30 ? '<button class="btn btn-ghost btn-sm" onclick="spotifyLogin()">Logga in igen</button>' : ''}
+      <button class="btn btn-ghost btn-sm" onclick="spotifyDisconnect()">Koppla bort</button></div>`;
+}
+async function spotifyLogin(){
+  try { const d = await api('POST', '/api/board/spotify/login'); location.href = d.url; }
+  catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+}
+async function spotifySync(){
+  toast('Hämtar från Spotify…');
+  try { const d = await api('POST', '/api/board/spotify/sync'); toast(`Klart ✓ ${d.playlists} spellistor, ${d.liked} gillade låtar`); loadMusic(true); }
+  catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+  renderSpotifyCard();
+}
+async function spotifyDisconnect(){
+  if (!confirm('Koppla bort Spotify? Spellistorna som hämtats därifrån tas bort ur biblioteket (alarm som använder dem behöver väljas om).')) return;
+  try { await api('POST', '/api/board/spotify/disconnect'); toast('Bortkopplat'); loadMusic(true); } catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+  renderSpotifyCard();
+}
+(function spotifyReturn(){                 // tillbaka från Spotifys inloggning
+  const m = /[?&]spotify=([^&]*)/.exec(location.search);
+  if (!m) return;
+  const v = decodeURIComponent(m[1]);
+  history.replaceState(null, '', location.pathname);
+  try { sessionStorage.setItem('tavlaTab', 'settings'); sessionStorage.setItem('setPage', 'musik'); } catch(e) {}
+  setTimeout(() => toast(v === 'ok' ? 'Spotify är kopplat ✓ — hämtar spellistorna…' : v.replace(/^fel:/, 'Spotify: ')), 600);
+  setTimeout(renderSpotifyCard, 6000);
+})();
 // ── Kalender (iCal) ──
 function renderCalendarState(){
   const on = !!(tavlaState || {}).calendarSet;
