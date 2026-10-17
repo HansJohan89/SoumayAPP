@@ -1612,20 +1612,13 @@ function nextRingDate(time, days){
   }
   return null;
 }
-// Förvalda dagar för ett nytt alarm: ringer det nästa gång en lördag/söndag
-// blir det Helger, annars Vardagar — så att det alltid ringer nästa gång
-function defaultDays(time){ const t = nextRingDate(time, []); return t && (t.getDay() + 6) % 7 >= 5 ? [5, 6] : [0, 1, 2, 3, 4]; }
-let daysTouched = false, tmplUrl = null;
-function alarmTimeChanged(){
-  if (!editing && !daysTouched) { editDays = defaultDays(document.getElementById('alarmTime').value); renderDayChips(); }
-  else updateOnceHint();
-}
+let tmplUrl = null;
+function alarmTimeChanged(){ updateOnceHint(); }
 function toggleDay(i){
-  daysTouched = true;
   editDays = editDays.includes(i) ? editDays.filter(x => x !== i) : [...editDays, i].sort();
   renderDayChips();
 }
-function setAlarmDays(days){ daysTouched = true; editDays = days.slice(); renderDayChips(); }
+function setAlarmDays(days){ editDays = days.slice(); renderDayChips(); }
 function updateOnceHint(){
   const time = document.getElementById('alarmTime').value || '07:00';
   const t = nextRingDate(time, editDays);
@@ -1837,8 +1830,7 @@ function openAlarmEditor(id){
   editing = a ? { ...a } : null;
   document.getElementById('alarmSheetTitle').textContent = a ? 'ÄNDRA ALARM' : 'NYTT ALARM';
   document.getElementById('alarmTime').value = a ? a.time : '07:00';
-  daysTouched = !!a;
-  editDays = a ? (a.days || []).slice() : defaultDays('07:00');
+  editDays = a ? (a.days || []).slice() : [];          // nytt alarm: ringer nästa gång klockan är det valda (dagar är tillval)
   document.getElementById('alarmLabel').value = a ? (a.label || '') : '';
   // Nytt alarm: samma val som förra gången (ljud, volym, mjuk start, stäng av, nyheter)
   const tp = a || lastBoard.lastAlarmChoice || null;
