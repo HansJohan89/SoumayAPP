@@ -29,13 +29,12 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:var(--paper);color:var(--ink);font-family:var(--font-ui);overscroll-behavior:none}
 .header{background:var(--hero-blue);border-bottom:var(--border-thick);box-shadow:0 3px 0 var(--hero-blue-dark);
-  padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px 16px;display:flex;align-items:center;justify-content:space-between;
+  padding:env(safe-area-inset-top,0px) 16px 0 16px;height:calc(44px + env(safe-area-inset-top,0px));display:flex;align-items:center;justify-content:flex-end;
   position:sticky;top:0;z-index:20;}
-.title{font-family:var(--font-burst);font-size:20px;letter-spacing:1px;color:#FFE600;text-shadow:2px 2px 0 var(--ink);}
 .status{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:white;}
 .status-dot{width:10px;height:10px;border-radius:50%;background:var(--ink-muted);flex-shrink:0;}
 .tabbar{display:flex;gap:8px;background:var(--paper-dark);border-bottom:var(--border-thick);padding:10px 16px;
-  position:sticky;top:62px;z-index:19;}
+  position:sticky;top:calc(44px + env(safe-area-inset-top,0px));z-index:19;}
 .tab-btn{flex:1;border:2px solid var(--ink);border-radius:10px;background:var(--white);padding:10px;
   font-weight:700;font-size:13px;font-family:var(--font-ui);cursor:pointer;box-shadow:2px 2px 0 var(--ink);}
 .tab-btn.active{background:var(--hero-blue);color:white;}
@@ -303,6 +302,17 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:white;
   padding:10px 16px;border-radius:10px;font-weight:700;font-size:13px;z-index:2000;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center;}
 .toast.show{opacity:1;}
+
+/* ── Enfärgade ikoner + vit text med skugga på grönt (2026-10-17) ── */
+.ic{width:1.15em;height:1.15em;display:inline-block;vertical-align:-.2em;flex:none;color:inherit;}
+.tab-ico .ic{width:22px;height:22px;}
+.mico .ic,.menu-ico .ic,.ri .ic,.vcov .ic,.pcov .ic,.showgrid .ic{color:var(--hero-blue-dark);}
+.ri .ic{width:26px;height:26px;} .vcov .ic{width:40px;height:40px;} .pcov .ic{width:26px;height:26px;}
+.mico,.menu-ico{background:var(--hero-tint);}
+.pcov{position:relative;} .pcov img{position:absolute;inset:0;}
+.header .status,.tab-btn.active,.btn-primary,.chip.on,.chips2 button.on,.seg3 button.on,.playing-tag,.pill.p,.mp-key.mp-sleep-on
+  {color:#fff;text-shadow:1px 1px 0 var(--ink);}
+.tab-btn.active .ic,.btn-primary .ic,.pill.p .ic,.seg3 button.on .ic{filter:drop-shadow(1px 1px 0 var(--ink));}
 </style>
 </head>
 <body>
@@ -318,10 +328,9 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
  <symbol id="i-heartf" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.4-7.5-10.1A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.7C19.5 15.6 12 20 12 20z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
  <symbol id="i-vol" viewBox="0 0 24 24"><path d="M4 9.5h3.2L12 5.4v13.2l-4.8-4.1H4z" fill="currentColor"/><path d="M15.4 9a4.2 4.2 0 0 1 0 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
  <symbol id="i-volhi" viewBox="0 0 24 24"><path d="M4 9.5h3.2L12 5.4v13.2l-4.8-4.1H4z" fill="currentColor"/><path d="M15.4 9a4.2 4.2 0 0 1 0 6M18 6.6a7.6 7.6 0 0 1 0 10.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
-</defs></svg>
+<symbol id="i-music" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 18V5l11-2v13"/><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="6.5" cy="18" r="2.5"/><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="17.5" cy="16" r="2.5"/></symbol><symbol id="i-radio" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="3" y="8" width="18" height="12" rx="2.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 8l10-5"/><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="15.5" cy="14" r="2.6"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6.5 12.5h4M6.5 15.5h4"/></symbol><symbol id="i-news" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 4h12a2 2 0 0 1 2 2v13a1 1 0 0 0 1 1H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M19 8h1a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M8 8h7M8 12h7M8 16h4"/></symbol><symbol id="i-shuffle" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 6h3.5c2 0 3.2 1 4.3 2.6l2.4 6.8C14.3 17 15.5 18 17.5 18H21"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 18h3.5c1.4 0 2.4-.5 3.2-1.4M14.3 7.4C15.1 6.5 16.1 6 17.5 6H21"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M18.5 3.5 21 6l-2.5 2.5M18.5 15.5 21 18l-2.5 2.5"/></symbol><symbol id="i-mic" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="9" y="3" width="6" height="11" rx="3"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></symbol><symbol id="i-image" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="3" y="4.5" width="18" height="15" rx="2.5"/><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="9" cy="10" r="1.8"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 16l-5-5-8.5 8.5"/></symbol><symbol id="i-alarm" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="13" r="7.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 9.5V13l2.5 2M4 5l3-2.5M20 5l-3-2.5"/></symbol><symbol id="i-bell" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 20.5a2.2 2.2 0 0 0 4 0"/></symbol><symbol id="i-playpause" viewBox="0 0 24 24"><path d="M3.5 6.5v11L11 12z" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15 6.5v11M20 6.5v11"/></symbol><symbol id="i-timer" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="13.5" r="7.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 10v3.5M9.5 2.5h5M18.5 6.5l1.5-1.5"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="10.5" cy="10.5" r="6.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15.5 15.5 21 21"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3.5 11 12 4l8.5 7"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5.5 9.5V20h13V9.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 20v-5.5h4V20"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="12" r="3"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol><symbol id="i-bus" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="4" y="3.5" width="16" height="14" rx="3"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 11h16M8 21v-3.5M16 21v-3.5"/><circle cx="8" cy="14.5" r="1.1" fill="currentColor"/><circle cx="16" cy="14.5" r="1.1" fill="currentColor"/></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3.5 10h17M8 3v4M16 3v4"/></symbol><symbol id="i-snooze" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 7h5L4 13h5M13 4h4l-4 5h4M14 15h6l-6 6h6"/></symbol><symbol id="i-speaker" viewBox="0 0 24 24"><path d="M4 9.5h3.2L12 5.4v13.2l-4.8-4.1H4z" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15.4 9a4.2 4.2 0 0 1 0 6M18 6.6a7.6 7.6 0 0 1 0 10.8"/></symbol><symbol id="i-wifi" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.3" r="1.3" fill="currentColor"/></symbol><symbol id="i-ball" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="12" r="8.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 7.5l4 2.9-1.5 4.7h-5L8 10.4z"/></symbol><symbol id="i-link" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol><symbol id="i-drop" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11z"/></symbol><symbol id="i-steps" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 3.5c1.7 0 2.7 2 2.7 4.5S8.7 13 7 13s-2.7-2.5-2.7-5S5.3 3.5 7 3.5zM5 16h4M17 8c1.7 0 2.7 2 2.7 4.5s-1 5-2.7 5-2.7-2.5-2.7-5S15.3 8 17 8zM15 20.5h4"/></symbol><symbol id="i-pad" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="3" y="5" width="18" height="14" rx="3"/><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="6.5" y="9" width="3" height="3" rx=".7"/><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="10.5" y="9" width="3" height="3" rx=".7"/><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="17" cy="10.5" r="1.8"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="5" y="10.5" width="14" height="10" rx="2.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol><symbol id="i-tools" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M14.5 6.5a4 4 0 0 0 5 5l-9 9a2.1 2.1 0 0 1-3-3l9-9a4 4 0 0 0-2-2z"/></symbol><symbol id="i-starf" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol><symbol id="i-globe" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="12" r="8.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3.5 12h17M12 3.5c2.4 2.4 3.4 5.2 3.4 8.5S14.4 18.1 12 20.5C9.6 18.1 8.6 15.3 8.6 12S9.6 5.9 12 3.5z"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="12" r="8.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M8 12.3l2.7 2.7L16.2 9.5"/></symbol><symbol id="i-warn" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4 21 19.5H3z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 10v4"/><circle cx="12" cy="16.8" r="1.1" fill="currentColor"/></symbol></defs></svg>
 
 <div class="header">
-  <div class="title">🖼️ TAVLAN</div>
   <div class="status">
     <span class="status-dot" id="statusDot"></span>
     <span id="statusText">Laddar…</span>
@@ -329,10 +338,10 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 </div>
 
 <div class="tabbar">
-  <button class="tab-btn active" id="tabBtnView" onclick="showTab('view')"><span class="tab-ico">🖼️</span>Tavlan</button>
-  <button class="tab-btn" id="tabBtnMusic" onclick="showTab('music')"><span class="tab-ico">🎵</span>Musik</button>
-  <button class="tab-btn" id="tabBtnAlarm" onclick="showTab('alarm')"><span class="tab-ico">⏰</span>Alarm</button>
-  <button class="tab-btn" id="tabBtnSettings" onclick="showTab('settings')"><span class="tab-ico">⚙️</span>Inställn.</button>
+  <button class="tab-btn active" id="tabBtnView" onclick="showTab('view')"><span class="tab-ico"><svg class="ic"><use href="#i-image"/></svg></span>Tavlan</button>
+  <button class="tab-btn" id="tabBtnMusic" onclick="showTab('music')"><span class="tab-ico"><svg class="ic"><use href="#i-music"/></svg></span>Musik</button>
+  <button class="tab-btn" id="tabBtnAlarm" onclick="showTab('alarm')"><span class="tab-ico"><svg class="ic"><use href="#i-alarm"/></svg></span>Alarm</button>
+  <button class="tab-btn" id="tabBtnSettings" onclick="showTab('settings')"><span class="tab-ico"><svg class="ic"><use href="#i-gear"/></svg></span>Inställn.</button>
 </div>
 
 <main>
@@ -353,13 +362,13 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 
     <div class="card">
       <div class="card-label">SIMULERAD MACROPAD</div>
-      <div class="hint">Samma knappar och vred som TogKey Pad Plus — fungerar identiskt med den riktiga när den är inkopplad. Medan musik spelar blir en knapp sov-timer 🌙 (välj vilken under Inställningar).</div>
+      <div class="hint">Samma knappar och vred som TogKey Pad Plus — fungerar identiskt med den riktiga när den är inkopplad. Medan musik spelar blir en knapp sov-timer <svg class="ic"><use href="#i-moon"/></svg> (välj vilken under Inställningar).</div>
       <div class="macropad-body">
         <div class="oled-row">
           <div id="macropadOled">Redo</div>
           <div class="knob">
             <button class="mp-knob-btn" onclick="sendMacropadCommand('knob',null,1)">▲</button>
-            <button class="mp-knob-btn" onclick="sendMacropadCommand('spotify_next')" title="Nästa låt">⏭</button>
+            <button class="mp-knob-btn" onclick="sendMacropadCommand('spotify_next')" title="Nästa låt"><svg class="ic"><use href="#i-next"/></svg></button>
             <button class="mp-knob-btn" onclick="sendMacropadCommand('knob',null,-1)">▼</button>
           </div>
         </div>
@@ -376,7 +385,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
     </div>
     <div class="player" id="player">
       <div class="prow">
-        <div class="pcov" id="npArt">🎵</div>
+        <div class="pcov" id="npArt"><svg class="ic"><use href="#i-music"/></svg></div>
         <div class="ptxt"><div class="ptitle" id="npTitle">Inget spelas</div><div class="psub" id="npSub">Välj något till vänster</div></div>
         <button class="picon" id="npLike" onclick="likeNow()" aria-label="Gilla"><svg width="30" height="30"><use href="#i-heart"/></svg></button>
         <button class="picon moonbtn" id="npMoon" onclick="openSleepSheet()" aria-label="Sov-timer"><svg width="26" height="26"><use href="#i-moon"/></svg></button>
@@ -398,7 +407,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 
   <!-- ═══════════════════════ FLIK: ALARM ═══════════════════════ -->
   <div class="tab-panel" id="tab-alarm">
-    <div class="seg3" id="alarmSeg"><button class="on" onclick="alarmSegment('alarm')">⏰ Alarm</button><button onclick="alarmSegment('timer')">⏱ Timer</button></div>
+    <div class="seg3" id="alarmSeg"><button class="on" onclick="alarmSegment('alarm')"><svg class="ic"><use href="#i-alarm"/></svg> Alarm</button><button onclick="alarmSegment('timer')"><svg class="ic"><use href="#i-timer"/></svg> Timer</button></div>
     <div id="timerPanel" style="display:none;">
       <div class="card"><div class="card-label">NY TIMER</div>
         <div class="big-num"><button onclick="timerStep(-1)">−</button><span id="timerMin">20</span><small>min</small><button onclick="timerStep(1)">+</button></div>
@@ -410,7 +419,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
         <button class="btn btn-primary" style="width:100%;padding:13px;font-size:15px;" id="timerStart" onclick="startTimer()">▶ Starta timer</button>
       </div>
       <div class="card" id="timerRunning" style="display:none;"><div class="card-label">PÅGÅR</div><div id="timerList"></div></div>
-      <div class="hint">Timern ringer från tavlan som ett alarm (⏯ stänger av, tryck på vredet = snooza). Ringtiden syns på tavlan bredvid datumet.</div>
+      <div class="hint">Timern ringer från tavlan som ett alarm (<svg class="ic"><use href="#i-playpause"/></svg> stänger av, tryck på vredet = snooza). Ringtiden syns på tavlan bredvid datumet.</div>
     </div>
     <div id="alarmPanel">
     <div class="alarm-status" id="alarmStatus">
@@ -420,7 +429,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
     <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="openAlarmEditor(null)">+ Nytt alarm</button>
     <div class="hint" style="margin-top:14px;">
       Alarmet ringer från tavlan — det går även om appen är stängd.
-      Högtalaren måste vara på. När det ringer: ⏯️ stänger av, tryck på vredet = snooza.
+      Högtalaren måste vara på. När det ringer: <svg class="ic"><use href="#i-playpause"/></svg> stänger av, tryck på vredet = snooza.
       Går det valda ljudet inte att spela ringer det med signalen Morgonljus i stället.
     </div>
     </div>
@@ -429,7 +438,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
   <!-- ═══════════════════════ FLIK: INSTÄLLNINGAR ═══════════════════════ -->
   <div class="tab-panel" id="tab-settings">
     <div id="setHome">
-      <input type="search" class="input-field set-search" id="setSearch" placeholder="🔍 Sök inställning… (t.ex. snooze)" oninput="renderSetHome()">
+      <input type="search" class="input-field set-search" id="setSearch" placeholder="Sök inställning… (t.ex. snooze)" oninput="renderSetHome()">
       <div id="setMenu"></div>
     </div>
     <div id="setPageWrap" style="display:none;">
@@ -442,7 +451,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
     <section class="set-page" data-page="musik">
       <div class="card" id="spotifyCard"><div class="card-label">Spotify</div><div id="spotifyBox" class="hint">Laddar…</div></div>
       <div class="card pi-block" data-title="Volym" data-keys="maxVolume,volumeStep"></div>
-      <div class="card pi-block" data-title="Sov-timer 🌙" data-keys="sleepMinutes,sleepFadeMinutes" data-extra="godnatt"></div>
+      <div class="card pi-block" data-title="Sov-timer" data-keys="sleepMinutes,sleepFadeMinutes" data-extra="godnatt"></div>
       <div class="card pi-block" data-title="Reservspellista" data-keys="fallbackPlaylist"></div>
       <details class="adv"><summary>Avancerat: upp- och nedtoning vid play/paus</summary>
       <div class="card pi-block" data-title="Upp- och nedtoning" data-keys="fadeInSeconds,fadeOutSeconds"></div>
@@ -450,7 +459,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
     </section>
     <section class="set-page" data-page="alarm">
       <div class="card pi-block" data-title="Alarm" data-keys="snoozeMinutes"></div>
-      <div class="hint">Alarmen och timrarna ställer du in under fliken ⏰ Alarm.</div>
+      <div class="hint">Alarmen och timrarna ställer du in under fliken <svg class="ic"><use href="#i-alarm"/></svg> Alarm.</div>
     </section>
     <section class="set-page" data-page="steg">
       <div class="card pi-block" data-title="Steg" data-keys="stepsGoal"></div>
@@ -498,7 +507,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
             <img id="cropImg" style="position:absolute;left:0;top:0;transform-origin:0 0;user-select:none;pointer-events:none;" alt="">
           </div>
           <div style="display:flex;align-items:center;gap:10px;margin-top:14px;">
-            <span style="font-size:15px;">🔍</span>
+            <span style="font-size:15px;"><svg class="ic"><use href="#i-search"/></svg></span>
             <input type="range" id="cropZoom" min="1" max="3" step="0.01" value="1" style="flex:1;">
           </div>
           <div style="display:flex;gap:10px;margin-top:16px;">
@@ -523,13 +532,13 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
     <section class="set-page" data-page="kalender">
       <div class="card"><div class="card-label">Google Kalender</div>
         <div class="hint" id="calState"></div>
-        <div class="set-help" style="font-size:12px;margin-bottom:10px;">Öppna Google Kalender på en dator → ⚙️ Inställningar → välj din kalender → <b>Integrera kalender</b> → kopiera <b>Hemlig adress i iCal-format</b> och klistra in den här. Länken sparas bara på servern.</div>
+        <div class="set-help" style="font-size:12px;margin-bottom:10px;">Öppna Google Kalender på en dator → <svg class="ic"><use href="#i-gear"/></svg> Inställningar → välj din kalender → <b>Integrera kalender</b> → kopiera <b>Hemlig adress i iCal-format</b> och klistra in den här. Länken sparas bara på servern.</div>
         <input type="url" class="input-field" id="calUrl" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics">
         <div style="display:flex;gap:8px;margin-top:10px;"><button class="btn btn-primary btn-sm" onclick="saveCalendar()">Spara</button>
           <button class="btn btn-ghost btn-sm" id="calRemove" onclick="removeCalendar()">Koppla bort</button></div>
       </div>
       <div class="card yellow"><div class="card-label">Lapp på tavlan</div>
-        <div class="hint" style="color:var(--ink);font-size:13px;">Börja titeln med <b>🔔</b> eller <b>!</b> — t.ex. <b>! Tandläkaren</b> — så syns händelsen som en gul lapp på tavlans vyer från morgonen samma dag tills den börjar. Heldagshändelser syns hela dagen. I Kalender-vyn blir raden gul.</div>
+        <div class="hint" style="color:var(--ink);font-size:13px;">Börja titeln med <b>!</b> (eller en klock-emoji) — t.ex. <b>! Tandläkaren</b> — så syns händelsen som en gul lapp på tavlans vyer från morgonen samma dag tills den börjar. Heldagshändelser syns hela dagen. I Kalender-vyn blir raden gul.</div>
       </div>
     </section>
     <section class="set-page" data-page="macropad">
@@ -538,7 +547,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
     </section>
     <section class="set-page" data-page="status">
       <div class="card"><div class="card-label">Tavlan just nu</div><div id="statusBox"></div>
-        <button class="btn btn-ghost" style="width:100%;margin-top:12px;" onclick="testSpeaker()">🔊 Testa högtalaren</button>
+        <button class="btn btn-ghost" style="width:100%;margin-top:12px;" onclick="testSpeaker()"><svg class="ic"><use href="#i-speaker"/></svg> Testa högtalaren</button>
         <div class="hint" style="margin:8px 0 0;">Spelar Morgonljus i 4 sekunder på 30 % — hörs det fungerar högtalaren.</div></div>
     </section>
     <section class="set-page" data-page="pin">
@@ -570,7 +579,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
         <input type="password" id="bleWifiPassword" placeholder="WiFi-lösenord" style="flex:1;padding:8px;">
       </div>
       <button onclick="sendWifiOverBluetooth()" style="width:100%;padding:10px;margin-top:8px;">
-        📡 Anslut till Pi:n och skicka WiFi-uppgifter
+        <svg class="ic"><use href="#i-wifi"/></svg> Anslut till Pi:n och skicka WiFi-uppgifter
       </button>
       <div id="bleWifiStatus" style="margin-top:10px;font-size:14px;color:#444;"></div>
     </div>
@@ -685,7 +694,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 <!-- Godnatt: spellista + längd -->
 <div class="sheet-bg" id="godnattSheet" onclick="if(event.target===this)closeGodnatt()">
   <div class="sheet">
-    <div class="sheet-title">🌙 GODNATT</div>
+    <div class="sheet-title"><svg class="ic"><use href="#i-moon"/></svg> GODNATT</div>
     <div class="hint">Ett tryck på Godnatt startar spellistan och sov-timern.</div>
     <div class="field"><div class="field-label">Sov-timer</div><div class="chips2" id="godnattMin"></div></div>
     <div class="field"><div class="field-label">Spellista</div><div class="music-list" id="godnattList"></div></div>
@@ -1219,7 +1228,7 @@ function renderTavlaGallery(){
       <div style="aspect-ratio:800/480;background:var(--paper-soft);overflow:hidden;">
         <img src="/api/board/image/${img.id}/raw" loading="lazy" alt="${img.name}"
              style="width:100%;height:100%;object-fit:cover;display:block;"
-             onerror="this.parentElement.innerHTML='<div style=&quot;display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;&quot;>🖼️</div>'">
+             onerror="this.parentElement.innerHTML='<div style=&quot;display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;&quot;><svg class=&quot;ic&quot;><use href=&quot;#i-image&quot;/></svg></div>'">
       </div>
       <div style="padding:8px;">
         <div style="font-size:11px;color:var(--ink-muted);margin-bottom:6px;">${addedLabel ? 'Tillagd ' + addedLabel : ''}</div>
@@ -1258,6 +1267,7 @@ function storePin(p){ memPin = p; try { localStorage.setItem('tavlaPin', p); } c
 function forgetPinLocal(){ memPin = ''; try { localStorage.removeItem('tavlaPin'); } catch(e) {} }
 
 let toastTimer = null;
+function ic(n){ return `<svg class="ic"><use href="#i-${n}"/></svg>`; }
 function toast(text){
   const t = document.getElementById('toast');
   t.textContent = text;
@@ -1366,7 +1376,7 @@ async function forgotPin(){
 // ═══════════════════════════════════════════════════
 // MACROPAD-KNAPPAR — samma vyer som den riktiga (ändras under Inställningar)
 // ═══════════════════════════════════════════════════
-const VIEW_ICONS = { home:'🏠', tavla:'🖼️', fotboll:'⚽', lokaltrafik:'🚌', kalender:'📅' };
+const VIEW_ICONS = { home:'<svg class="ic"><use href="#i-home"/></svg>', tavla:'<svg class="ic"><use href="#i-image"/></svg>', fotboll:'<svg class="ic"><use href="#i-ball"/></svg>', lokaltrafik:'<svg class="ic"><use href="#i-bus"/></svg>', kalender:'<svg class="ic"><use href="#i-calendar"/></svg>' };
 const DEFAULT_KEYS = ['home','tavla','fotboll','lokaltrafik','kalender'];
 let keysSig = '';
 function boardValue(board, key, fallback){
@@ -1398,10 +1408,10 @@ function renderKeys(board){
     if (String(i + 1) === sleepBtn && (m.playing || sl.active)) {
       const t = sl.active ? new Date(sl.endsAt) : null;
       const sub = t ? `${pad2(t.getHours())}:${pad2(t.getMinutes())}` : 'Sov';
-      return `<button class="mp-key${t ? ' mp-sleep-on' : ''}" onclick="sendMacropadCommand('show_view','${v}',null,${i + 1})">🌙<br>${sub}</button>`;
+      return `<button class="mp-key${t ? ' mp-sleep-on' : ''}" onclick="sendMacropadCommand('show_view','${v}',null,${i + 1})"><svg class="ic"><use href="#i-moon"/></svg><br>${sub}</button>`;
     }
-    return `<button class="mp-key" onclick="sendMacropadCommand('show_view','${v}',null,${i + 1})">${VIEW_ICONS[v] || '▫️'}<br>${VIEW_NAMES[v] || v}</button>`;
-  }).join('') + `<button class="mp-key" onclick="sendMacropadCommand('spotify_play_pause')">⏯️<br>Play</button>`;
+    return `<button class="mp-key" onclick="sendMacropadCommand('show_view','${v}',null,${i + 1})">${VIEW_ICONS[v] || ''}<br>${VIEW_NAMES[v] || v}</button>`;
+  }).join('') + `<button class="mp-key" onclick="sendMacropadCommand('spotify_play_pause')"><svg class="ic"><use href="#i-playpause"/></svg><br>Play</button>`;
 }
 
 // ═══════════════════════════════════════════════════
@@ -1466,22 +1476,22 @@ function renderAlarmStatus(board){
     return;
   }
   if (st.mode === 'ringing') {
-    box.innerHTML = `<div class="alarm-status-title">${st.timer ? '⏱ TIMERN RINGER' : '⏰ ALARMET RINGER'}</div>
+    box.innerHTML = `<div class="alarm-status-title">${st.timer ? '<svg class="ic"><use href="#i-timer"/></svg> TIMERN RINGER' : '<svg class="ic"><use href="#i-alarm"/></svg> ALARMET RINGER'}</div>
       <div class="alarm-status-sub">${esc(st.label || '')}</div>
       <div class="alarm-status-actions">
-        <button class="btn btn-ghost" onclick="alarmCommand('alarm_snooze')">💤 Snooza ${snooze} min</button>
+        <button class="btn btn-ghost" onclick="alarmCommand('alarm_snooze')"><svg class="ic"><use href="#i-snooze"/></svg> Snooza ${snooze} min</button>
         <button class="btn btn-ghost" onclick="alarmCommand('alarm_stop')">Stäng av</button>
       </div>`;
     return;
   }
   if (st.mode === 'snoozed') {
     const t = new Date(st.snoozeUntil);
-    box.innerHTML = `<div class="alarm-status-title">💤 SNOOZAT</div>
+    box.innerHTML = `<div class="alarm-status-title"><svg class="ic"><use href="#i-snooze"/></svg> SNOOZAT</div>
       <div class="alarm-status-sub">Ringer igen kl ${pad2(t.getHours())}:${pad2(t.getMinutes())}</div>
       <div class="alarm-status-actions"><button class="btn btn-ghost" onclick="alarmCommand('alarm_stop')">Stäng av</button></div>`;
     return;
   }
-  const err = st.error ? `<div class="alarm-status-sub" style="color:var(--pulse-red);">⚠️ ${esc(st.error)}</div>` : '';
+  const err = st.error ? `<div class="alarm-status-sub" style="color:var(--pulse-red);"><svg class="ic"><use href="#i-warn"/></svg> ${esc(st.error)}</div>` : '';
   if (st.next) {
     const t = new Date(st.next.at);
     box.innerHTML = `<div class="alarm-status-title">NÄSTA ALARM</div>
@@ -1504,17 +1514,18 @@ function renderAlarmList(board){
   wrap.innerHTML = alarms.map(a => {
     const past = !(a.days || []).length && a.date && a.date < isoDate(new Date());
     const on = a.enabled && !past;
-    const music = a.sound === 'news' ? '📰 Ekot senaste nytt'
-      : a.sound === 'signal' ? '🔔 Morgonljus'
-      : a.sound === 'radio' ? `📻 ${(a.radio || {}).name || 'Radio'}`
-      : a.music && a.music.kind === 'playlist' ? `🔀 ${a.urlTitle || 'Spellista'}`
-      : a.music && a.music.kind === 'track' ? `🎵 ${a.urlTitle || 'Låt'}`
-      : a.url ? `🎵 ${a.urlTitle || 'Spotify-länk'}` : '🎵 Fortsätter där du slutade';
+    const [mIco, music] = a.sound === 'news' ? ['news', 'Ekot senaste nytt']
+      : a.sound === 'signal' ? ['bell', 'Morgonljus']
+      : a.sound === 'radio' ? ['radio', (a.radio || {}).name || 'Radio']
+      : a.music && a.music.kind === 'playlist' ? ['shuffle', a.urlTitle || 'Spellista']
+      : a.music && a.music.kind === 'track' ? ['music', a.urlTitle || 'Låt']
+      : a.music && a.music.kind === 'liked' ? ['heartf', 'Gillade låtar']
+      : a.url ? ['music', a.urlTitle || 'Spotify-länk'] : ['music', 'Fortsätter där du slutade'];
     return `<div class="alarm-card ${on ? '' : 'off'}" onclick="openAlarmEditor('${a.id}')">
       <div class="alarm-info">
         <div class="alarm-time">${esc(a.time)}</div>
         ${a.label ? `<div class="alarm-label">${esc(a.label)}</div>` : ''}
-        <div class="alarm-meta">${esc(daysText(a))} · ${a.volume} % · ${esc(music)}${a.news && (a.sound || 'music') === 'music' ? ' · 📰 Nyheter' : ''}</div>
+        <div class="alarm-meta">${esc(daysText(a))} · ${a.volume} % · ${ic(mIco)} ${esc(music)}${a.news && (a.sound || 'music') === 'music' ? ` · ${ic('news')} Nyheter` : ''}</div>
         ${skipHtml(a, on)}
       </div>
       <label class="switch" onclick="event.stopPropagation()">
@@ -1528,9 +1539,9 @@ function skipHtml(a, on){
   if (!on || !(a.days || []).length) return '';           // engångsalarm: stäng av det i stället
   const today = isoDate(new Date());
   const skipped = (a.skipDates || []).filter(d => d >= today).sort()[0];
-  if (skipped) return `<button class="skip-link skip-on" onclick="event.stopPropagation();skipAlarm('${a.id}','${skipped}',false)">⏭ Hoppar över ${esc(dayWord(skipped))} · ångra</button>`;
+  if (skipped) return `<button class="skip-link skip-on" onclick="event.stopPropagation();skipAlarm('${a.id}','${skipped}',false)"><svg class="ic"><use href="#i-next"/></svg> Hoppar över ${esc(dayWord(skipped))} · ångra</button>`;
   const nd = nextAlarmDate(a);
-  return nd ? `<button class="skip-link" onclick="event.stopPropagation();skipAlarm('${a.id}','${nd}',true)">⏭ Hoppa över ${esc(dayWord(nd))}</button>` : '';
+  return nd ? `<button class="skip-link" onclick="event.stopPropagation();skipAlarm('${a.id}','${nd}',true)"><svg class="ic"><use href="#i-next"/></svg> Hoppa över ${esc(dayWord(nd))}</button>` : '';
 }
 async function reloadBoard(){
   const res = await fetch('/api/board');
@@ -1607,16 +1618,16 @@ function renderMusicPick(){
     return;
   }
   if (editKind === 'liked') {
-    inner = `<div class="menu-ico">💚</div><div class="mp-txt"><div class="mp-title">Gillade låtar</div>
+    inner = `<div class="menu-ico"><svg class="ic"><use href="#i-heartf"/></svg></div><div class="mp-txt"><div class="mp-title">Gillade låtar</div>
       <div class="mp-sub">${(musicLib.liked || { trackIds: [] }).trackIds.length} låtar från Spotify · shuffle</div></div>`;
   } else if (editKind === 'news') {
-    inner = `<div class="menu-ico">📰</div><div class="mp-txt"><div class="mp-title">Bara nyheter</div>
+    inner = `<div class="menu-ico"><svg class="ic"><use href="#i-news"/></svg></div><div class="mp-txt"><div class="mp-title">Bara nyheter</div>
       <div class="mp-sub">Ekot senaste nytt (1–3 min), sedan tyst</div></div>`;
   } else if (editKind === 'resume') {
-    inner = `<div class="menu-ico">⏯</div><div class="mp-txt"><div class="mp-title">Fortsätt där jag slutade</div>
+    inner = `<div class="menu-ico"><svg class="ic"><use href="#i-playpause"/></svg></div><div class="mp-txt"><div class="mp-title">Fortsätt där jag slutade</div>
       <div class="mp-sub">Det som spelades senast</div></div>`;
   } else if (editKind === 'link') {
-    inner = `<div class="menu-ico">🔗</div><div class="mp-txt"><div class="mp-title">${esc((editing && editing.urlTitle) || 'Spotify-länk')}</div>
+    inner = `<div class="menu-ico"><svg class="ic"><use href="#i-link"/></svg></div><div class="mp-txt"><div class="mp-title">${esc((editing && editing.urlTitle) || 'Spotify-länk')}</div>
       <div class="mp-sub">Sparad länk (från en tidigare version)</div></div>`;
   } else if (editKind === 'playlist') {
     const p = editMusic && musicLib.playlists.find(x => x.id === editMusic.id);
@@ -1675,19 +1686,19 @@ function renderMusicList(){
   const favT = allTrackIds().filter(id => musicLib.tracks[id].fav).length;
   if (v === 'root') {
     list.innerHTML =
-      menuRow("pickResume()", '⏯', 'Fortsätt där jag slutade', 'Det som spelades senast', editKind === 'resume', false) +
-      menuRow("pickNews()", '📰', 'Bara nyheter', 'Ekot senaste nytt i stället för musik', editKind === 'news', false) +
-      menuRow("pickRadio()", '📻', 'Radio', editKind === 'radio' && editRadio ? editRadio.name : 'välj en kanal', editKind === 'radio') +
-      menuRow("pickSignal()", '🔔', 'Signal: Morgonljus', 'mjuk marimba som stiger', editKind === 'signal', false) +
-      (musicLib.liked && musicLib.liked.trackIds.length ? menuRow("pickLiked()", '💚', 'Gillade låtar', `${musicLib.liked.trackIds.length} låtar från Spotify · shuffle`, editKind === 'liked', false) : '') +
+      menuRow("pickResume()", '<svg class="ic"><use href="#i-playpause"/></svg>', 'Fortsätt där jag slutade', 'Det som spelades senast', editKind === 'resume', false) +
+      menuRow("pickNews()", '<svg class="ic"><use href="#i-news"/></svg>', 'Bara nyheter', 'Ekot senaste nytt i stället för musik', editKind === 'news', false) +
+      menuRow("pickRadio()", '<svg class="ic"><use href="#i-radio"/></svg>', 'Radio', editKind === 'radio' && editRadio ? editRadio.name : 'välj en kanal', editKind === 'radio') +
+      menuRow("pickSignal()", '<svg class="ic"><use href="#i-bell"/></svg>', 'Signal: Morgonljus', 'mjuk marimba som stiger', editKind === 'signal', false) +
+      (musicLib.liked && musicLib.liked.trackIds.length ? menuRow("pickLiked()", '<svg class="ic"><use href="#i-heartf"/></svg>', 'Gillade låtar', `${musicLib.liked.trackIds.length} låtar från Spotify · shuffle`, editKind === 'liked', false) : '') +
       menuRow("musicGo('fav')", '♥', 'Favoriter', `${favP} spellistor · ${favT} låtar`) +
-      menuRow("musicGo('playlists')", '🔀', 'Spellistor', `${musicLib.playlists.length} st · spelas i shuffle`, editKind === 'playlist') +
-      menuRow("musicGo('tracks')", '🎵', 'Låtar', `${allTrackIds().length} st från spellistorna`, editKind === 'track');
+      menuRow("musicGo('playlists')", '<svg class="ic"><use href="#i-shuffle"/></svg>', 'Spellistor', `${musicLib.playlists.length} st · spelas i shuffle`, editKind === 'playlist') +
+      menuRow("musicGo('tracks')", '<svg class="ic"><use href="#i-music"/></svg>', 'Låtar', `${allTrackIds().length} st från spellistorna`, editKind === 'track');
     return;
   }
   if (v === 'fav') {
-    list.innerHTML = menuRow("musicGo('fav-playlists')", '🔀', 'Spellistor', `${favP} favoriter`) +
-                     menuRow("musicGo('fav-tracks')", '🎵', 'Låtar', `${favT} favoriter`);
+    list.innerHTML = menuRow("musicGo('fav-playlists')", '<svg class="ic"><use href="#i-shuffle"/></svg>', 'Spellistor', `${favP} favoriter`) +
+                     menuRow("musicGo('fav-tracks')", '<svg class="ic"><use href="#i-music"/></svg>', 'Låtar', `${favT} favoriter`);
     return;
   }
   const q = norm(document.getElementById('musicSearch').value.trim());
@@ -1703,7 +1714,7 @@ function renderMusicList(){
     }
     list.innerHTML = items.map(p => `<div class="music-row ${editKind === 'playlist' && p.id === sel ? 'sel' : ''}" onclick="pickMusic('playlist','${p.id}')">
         ${playlistArt(p)}<div class="mp-txt"><div class="mp-title">${esc(p.title)}</div>
-        <div class="mp-sub">${p.source === 'spotify' ? '🟢 Spotify · ' : ''}${p.trackIds.length ? p.trackIds.length + ' låtar' : 'låtarna syns inte (spelas ändå)'}${p.error && p.source !== 'spotify' ? ' · ⚠️ kunde inte läsas om' : ''}</div></div>
+        <div class="mp-sub">${p.source === 'spotify' ? 'Spotify · ' : ''}${p.trackIds.length ? p.trackIds.length + ' låtar' : 'låtarna syns inte (spelas ändå)'}${p.error && p.source !== 'spotify' ? ' · <svg class="ic"><use href="#i-warn"/></svg> kunde inte läsas om' : ''}</div></div>
         <button class="heart ${p.fav ? 'on' : ''}" onclick="event.stopPropagation();toggleFav('playlist','${p.id}')">${p.fav ? '♥' : '♡'}</button>
         ${favOnly || p.source === 'spotify' ? '' : `<button class="mrow-del" title="Ta bort" onclick="event.stopPropagation();removePlaylist('${p.id}')">✕</button>`}
       </div>`).join('');
@@ -1887,7 +1898,7 @@ function piItemHtml(it, saved, titles, errors){
   const wide = it.type === 'spotify' || it.type === 'str';
   const wideCtrl = wide ? `<input type="url" class="input-field" style="margin-top:8px;" value="${esc(v || '')}"
         placeholder="Klistra in Spotify-länk" onchange="saveSetting('${it.key}', this.value.trim())">
-        ${v && titles[it.key] ? `<div class="set-help">🎵 ${esc(titles[it.key])}</div>` : ''}` : '';
+        ${v && titles[it.key] ? `<div class="set-help"><svg class="ic"><use href="#i-music"/></svg> ${esc(titles[it.key])}</div>` : ''}` : '';
   const range = (it.type === 'int' || it.type === 'float') ? ` · ${fmtNum(it.min)}–${fmtNum(it.max)}` : '';
   return `<div class="set-row" id="set-${it.key}">
     <div class="set-top">
@@ -1929,17 +1940,17 @@ function renderPiSettings(errors){
 }
 function godnattRow(){
   const g = (listen || {}).godnatt || {};
-  return `<div class="set-row"><div class="set-top"><div class="setting-label">🌙 Godnatt (Musik-fliken)</div>
+  return `<div class="set-row"><div class="set-top"><div class="setting-label"><svg class="ic"><use href="#i-moon"/></svg> Godnatt (Musik-fliken)</div>
     <div class="set-ctrl"><button class="btn btn-ghost btn-sm" onclick="openGodnatt()">Ändra</button></div></div>
     <div class="set-help">${g.playlist ? `${esc(g.playlist.title)} · sov-timer ${g.minutes} min` : 'Ingen spellista vald än'}</div></div>`;
 }
 
 // ── Menyn: startsidan för Inställningar ──
 const SET_PAGES = [
-  ['VARDAG', [['blod', '🩸', '#ffe1e1', 'Blodsocker & sensor'], ['musik', '🎵', 'var(--hero-tint)', 'Musik & ljud'], ['alarm', '⏰', '#fff3c4', 'Alarm'], ['steg', '👟', '#e4f7ea', 'Steg']]],
-  ['TAVLANS SKÄRM', [['hem', '🏠', '#f1e8ff', 'Hemskärmen'], ['bilder', '🖼️', '#ffeede', 'Bilder & album'], ['buss', '🚌', 'var(--hero-tint)', 'Lokaltrafik'],
-                     ['kalender', '📅', '#fff3c4', 'Kalender'], ['macropad', '🎛️', '#eee', 'Macropad']]],
-  ['TAVLAN & SÄKERHET', [['status', '✅', '#e4f7ea', 'Tavlans status'], ['pin', '🔒', '#fff', 'PIN-kod'], ['avancerat', '🛠️', '#fff', 'Avancerat']]],
+  ['VARDAG', [['blod', '<svg class="ic"><use href="#i-drop"/></svg>', 'var(--hero-tint)', 'Blodsocker & sensor'], ['musik', '<svg class="ic"><use href="#i-music"/></svg>', 'var(--hero-tint)', 'Musik & ljud'], ['alarm', '<svg class="ic"><use href="#i-alarm"/></svg>', 'var(--hero-tint)', 'Alarm'], ['steg', '<svg class="ic"><use href="#i-steps"/></svg>', 'var(--hero-tint)', 'Steg']]],
+  ['TAVLANS SKÄRM', [['hem', '<svg class="ic"><use href="#i-home"/></svg>', 'var(--hero-tint)', 'Hemskärmen'], ['bilder', '<svg class="ic"><use href="#i-image"/></svg>', 'var(--hero-tint)', 'Bilder & album'], ['buss', '<svg class="ic"><use href="#i-bus"/></svg>', 'var(--hero-tint)', 'Lokaltrafik'],
+                     ['kalender', '<svg class="ic"><use href="#i-calendar"/></svg>', 'var(--hero-tint)', 'Kalender'], ['macropad', '<svg class="ic"><use href="#i-pad"/></svg>', 'var(--hero-tint)', 'Macropad']]],
+  ['TAVLAN & SÄKERHET', [['status', '<svg class="ic"><use href="#i-check"/></svg>', 'var(--hero-tint)', 'Tavlans status'], ['pin', '<svg class="ic"><use href="#i-lock"/></svg>', 'var(--hero-tint)', 'PIN-kod'], ['avancerat', '<svg class="ic"><use href="#i-tools"/></svg>', 'var(--hero-tint)', 'Avancerat']]],
 ];
 const PAGE_TITLE = Object.fromEntries(SET_PAGES.flatMap(([, rows]) => rows.map(r => [r[0], r[3]])));
 const SET_EXTRA = {   // fler sökord per sida (utöver inställningarnas namn)
@@ -1965,7 +1976,7 @@ function pageSummary(id){
     case 'hem': return [st.showGlucose && 'Blodsocker', st.showWeather && 'väder', st.showBus && 'buss'].filter(Boolean).join(' · ') || 'Inget valt';
     case 'bilder': { const n = (st.googlePhotosAlbumUrls || []).length; return `${n} album · ${(st.images || []).length} bilder · byter var ${sv('tavlaRotateMinutes', 30)}:e min`; }
     case 'buss': { const b = st.busDestinations || []; return b.length ? `${b.length} ${b.length === 1 ? 'rutt' : 'rutter'} · ${b.map(x => x.label).filter(Boolean).join(', ')}` : 'Inga rutter'; }
-    case 'kalender': return st.calendarSet ? 'Kopplad · 🔔 eller ! först i titeln = lapp' : 'Inte kopplad';
+    case 'kalender': return st.calendarSet ? 'Kopplad · ! först i titeln = lapp' : 'Inte kopplad';
     case 'macropad': return sv('sleepButton', '3') === 'off' ? 'Knapparna 1–5' : `Knapp ${sv('sleepButton', '3')} = sov-timer när musik spelar`;
     case 'status': return statusSummary();
     case 'pin': return 'Byt · lås telefonen';
@@ -1975,9 +1986,9 @@ function pageSummary(id){
 }
 function statusSummary(){
   const b = lastBoard || {};
-  if (!(b.lastPiSeenAt && Date.now() - b.lastPiSeenAt < 15000)) return '⚠️ Tavlan svarar inte';
+  if (!(b.lastPiSeenAt && Date.now() - b.lastPiSeenAt < 15000)) return 'Tavlan svarar inte';
   const sys = ((b.piStatus || {}).system) || {};
-  return sys.speaker === false ? '⚠️ Högtalaren är inte ansluten' : 'Allt fungerar';
+  return sys.speaker === false ? 'Högtalaren är inte ansluten' : 'Allt fungerar';
 }
 function renderSetHome(){
   const q = norm((document.getElementById('setSearch') || {}).value || '').trim();
@@ -2035,17 +2046,17 @@ async function renderSpotifyCard(){
   const S = spotifySt;
   if (!S.configured) { box.innerHTML = 'Spotify-appen är inte inställd på servern än.'; return; }
   if (!S.connected) {
-    box.innerHTML = `<div style="color:var(--ink);font-size:13px;margin-bottom:10px;">${S.expired ? '⚠️ Inloggningen har gått ut. ' : ''}Koppla hennes Spotify så hämtas spellistorna och Gillade låtar automatiskt var 6:e timme — även privata spellistor.</div>
-      <button class="btn btn-primary" style="width:100%;" onclick="spotifyLogin()">🟢 Koppla Spotify</button>`;
+    box.innerHTML = `<div style="color:var(--ink);font-size:13px;margin-bottom:10px;">${S.expired ? '<svg class="ic"><use href="#i-warn"/></svg> Inloggningen har gått ut. ' : ''}Koppla hennes Spotify så hämtas spellistorna och Gillade låtar automatiskt var 6:e timme — även privata spellistor.</div>
+      <button class="btn btn-primary" style="width:100%;" onclick="spotifyLogin()">Koppla Spotify</button>`;
     return;
   }
   const f = ms => { const d = new Date(ms); return `${d.getDate()}/${d.getMonth() + 1} kl ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
   const left = S.loginUntil ? Math.ceil((S.loginUntil - Date.now()) / 86400000) : null;
-  box.innerHTML = `<div class="status-line"><span>Konto</span><b>✅ ${esc(S.user || 'Kopplat')}</b></div>
+  box.innerHTML = `<div class="status-line"><span>Konto</span><b><svg class="ic"><use href="#i-check"/></svg> ${esc(S.user || 'Kopplat')}</b></div>
     <div class="status-line"><span>Senast hämtat</span><b>${S.syncing ? 'hämtar nu…' : S.lastSync ? f(S.lastSync) : 'hämtar…'}</b></div>
     <div class="status-line"><span>Gillade låtar</span><b>${S.liked}</b></div>
     ${left !== null ? `<div class="status-line"><span>Inloggningen gäller</span><b style="color:${left < 14 ? 'var(--pulse-red)' : 'inherit'}">${left} dagar till</b></div>` : ''}
-    ${S.error ? `<div class="set-error">⚠️ ${esc(S.error)}</div>` : ''}
+    ${S.error ? `<div class="set-error"><svg class="ic"><use href="#i-warn"/></svg> ${esc(S.error)}</div>` : ''}
     ${(S.notReadable || []).length ? `<div class="set-help">Låtlistan syns inte för: ${esc(S.notReadable.join(', '))} (andras privata listor — de går ändå att spela).</div>` : ''}
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
       <button class="btn btn-primary btn-sm" onclick="spotifySync()">↻ Hämta nu</button>
@@ -2079,7 +2090,7 @@ async function spotifyDisconnect(){
 // ── Kalender (iCal) ──
 function renderCalendarState(){
   const on = !!(tavlaState || {}).calendarSet;
-  document.getElementById('calState').innerHTML = on ? '✅ <b>Kopplad.</b> Klistra in en ny länk för att byta kalender.' : 'Inte kopplad än.';
+  document.getElementById('calState').innerHTML = on ? '<svg class="ic"><use href="#i-check"/></svg> <b>Kopplad.</b> Klistra in en ny länk för att byta kalender.' : 'Inte kopplad än.';
   document.getElementById('calRemove').style.display = on ? '' : 'none';
 }
 async function saveCalendar(){
@@ -2105,12 +2116,12 @@ function renderStatusBox(){
   const seen = b.lastPiSeenAt && Date.now() - b.lastPiSeenAt < 15000;
   const line = (k, v, ok) => `<div class="status-line"><span>${k}</span><b style="color:${ok === false ? 'var(--pulse-red)' : 'inherit'}">${v}</b></div>`;
   const nx = al.next ? new Date(al.next.at) : null;
-  box.innerHTML = line('Tavlan', seen ? '✅ Ansluten' : (b.lastPiSeenAt ? `⚠️ Senast ${formatAge(Date.now() - b.lastPiSeenAt)}` : '⚠️ Har aldrig anslutit'), !!seen)
-    + line('Högtalaren', sys.speaker === undefined ? '–' : sys.speaker ? '✅ Ansluten' : '⚠️ Inte ansluten', sys.speaker !== false)
-    + line('Spelar', m.radio ? `📻 ${esc(m.radio.name)}` : m.news ? '📰 Nyheter' : m.spotify === 'playing' ? '🎵 Spotify' : 'Inget')
+  box.innerHTML = line('Tavlan', seen ? '<svg class="ic"><use href="#i-check"/></svg> Ansluten' : (b.lastPiSeenAt ? `<svg class="ic"><use href="#i-warn"/></svg> Senast ${formatAge(Date.now() - b.lastPiSeenAt)}` : '<svg class="ic"><use href="#i-warn"/></svg> Har aldrig anslutit'), !!seen)
+    + line('Högtalaren', sys.speaker === undefined ? '–' : sys.speaker ? '<svg class="ic"><use href="#i-check"/></svg> Ansluten' : '<svg class="ic"><use href="#i-warn"/></svg> Inte ansluten', sys.speaker !== false)
+    + line('Spelar', m.radio ? `<svg class="ic"><use href="#i-radio"/></svg> ${esc(m.radio.name)}` : m.news ? '<svg class="ic"><use href="#i-news"/></svg> Nyheter' : m.spotify === 'playing' ? '<svg class="ic"><use href="#i-music"/></svg> Spotify' : 'Inget')
     + line('Nästa alarm', nx ? `${dayWord(isoDate(nx))} ${pad2(nx.getHours())}:${pad2(nx.getMinutes())}` : 'Inget')
-    + line('Kalender', (tavlaState || {}).calendarSet ? '✅ Kopplad' : 'Inte kopplad')
-    + (al.error ? `<div class="set-error" style="margin-top:8px;">⚠️ ${esc(al.error)}</div>` : '');
+    + line('Kalender', (tavlaState || {}).calendarSet ? '<svg class="ic"><use href="#i-check"/></svg> Kopplad' : 'Inte kopplad')
+    + (al.error ? `<div class="set-error" style="margin-top:8px;"><svg class="ic"><use href="#i-warn"/></svg> ${esc(al.error)}</div>` : '');
 }
 async function testSpeaker(){ sendMacropadCommand('sound_test'); toast('Tavlan spelar en ton om några sekunder…'); }
 
@@ -2181,7 +2192,7 @@ function rememberStations(list){ (list || []).forEach(st => { if (st && st.id) s
 function initials(name){
   const w = String(name || '').replace(/[^\p{L}\p{N} ]/gu, '').split(' ').filter(Boolean);
   const t = w.length === 1 ? w[0].slice(0, 3) : w.slice(0, 2).map(x => x[0]).join('');   // "P1", "SWR", "BW"
-  return esc(t.toUpperCase() || '📻');
+  return t ? esc(t.toUpperCase()) : '';
 }
 function stationLogo(st){
   return `<div class="rlogo">${st && st.favicon ? `<img src="${esc(st.favicon)}" alt="" loading="lazy" onerror="this.replaceWith(document.createTextNode('${initials(st.name)}'))">` : initials(st && st.name)}</div>`;
@@ -2205,25 +2216,25 @@ function setArt(el, img, icon){
   const key = img || icon;
   if (el.dataset.k === key) return;
   el.dataset.k = key;
-  el.innerHTML = img ? `<img src="${esc(img)}" alt="" onerror="this.parentNode.textContent='${icon}'">` : icon;
+  el.innerHTML = ic(icon) + (img ? `<img src="${esc(img)}" alt="" onerror="this.remove()">` : '');
 }
 function renderMusic(board){
   const m = musicState(board);
   const kind = npKind(m);
   const art = document.getElementById('npArt'), title = document.getElementById('npTitle'), sub = document.getElementById('npSub');
-  let img = '', icon = '🎵';
+  let img = '', icon = 'music';
   npPos = null;
   if (kind === 'radio') {
     const st = stationById[m.radio.id] || m.radio;
-    title.textContent = m.radio.name || 'Radio'; sub.textContent = 'Radio · direkt'; img = st.favicon || ''; icon = '📻';
+    title.textContent = m.radio.name || 'Radio'; sub.textContent = 'Radio · direkt'; img = st.favicon || ''; icon = 'radio';
   } else if (kind === 'podfeed') {
-    title.textContent = m.podcast.name || 'Avsnitt'; sub.textContent = m.podcast.show || 'Podd'; img = m.podcast.cover || ''; icon = '🎙️';
+    title.textContent = m.podcast.name || 'Avsnitt'; sub.textContent = m.podcast.show || 'Podd'; img = m.podcast.cover || ''; icon = 'mic';
     if (m.podcast.duration) npPos = { ms: (m.podcast.pos || 0) * 1000, at: board.piStatusAt, dur: m.podcast.duration * 1000, playing: true };
   } else if (kind === 'news') {
-    title.textContent = 'Nyheter'; sub.textContent = 'Ekot senaste nytt'; icon = '📰';
+    title.textContent = 'Nyheter'; sub.textContent = 'Ekot senaste nytt'; icon = 'news';
   } else if (kind === 'music' || kind === 'podspot') {
     title.textContent = m.now.name; sub.textContent = (m.now.artists || '') + (m.spotify === 'playing' ? '' : ' · pausad');
-    img = m.now.cover || trackCover(m.now.uri); icon = kind === 'podspot' ? '🎙️' : '🎵';
+    img = m.now.cover || trackCover(m.now.uri); icon = kind === 'podspot' ? 'mic' : 'music';
     if (m.now.duration && typeof m.now.pos === 'number') npPos = { ms: m.now.pos, at: board.piStatusAt, dur: m.now.duration, playing: m.spotify === 'playing' };
   } else { title.textContent = 'Inget spelas'; sub.textContent = 'Välj något till vänster'; }
   setArt(art, img, icon);
@@ -2273,7 +2284,7 @@ async function likeNow(){
     const r = await (await fetch('/api/board/player', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'like', uri, on }) })).json();
     if (r.error) throw new Error(r.error);
     if (uri.startsWith('spotify:track:')) { await loadMusic(true); } else likedLocal[uri] = on;
-    toast(on ? (kind === 'music' ? 'Sparad i Gillade låtar 💚' : 'Sparat i Spotify 💚') : 'Borttagen');
+    toast(on ? (kind === 'music' ? 'Sparad i Gillade låtar' : 'Sparat i Spotify') : 'Borttagen');
     renderMusic(lastBoard);
   } catch(e) { toast(e.message); }
 }
@@ -2335,7 +2346,7 @@ function pickSleep(n){
   if (n && !(m.playing || m.news)) return toast('Starta något först — timern gäller det som spelas');
   sleepChoice = n || null;
   sendMacropadCommand('sleep_set', null, null, null, { minutes: n });
-  toast(n === -1 ? 'Stannar när det här är slut 🌙' : n ? `Sov-timer ${n < 60 ? n + ' min' : n === 60 ? '1 timme' : '1,5 timme'} 🌙` : 'Sov-timern av');
+  toast(n === -1 ? 'Stannar när det här är slut' : n ? `Sov-timer ${n < 60 ? n + ' min' : n === 60 ? '1 timme' : '1,5 timme'}` : 'Sov-timern av');
   setTimeout(refreshStatus, 2500);
 }
 
@@ -2349,8 +2360,8 @@ function railPlaylists(){
 function renderRail(){
   const liked = musicLib.liked && musicLib.liked.trackIds.length;
   const newN = (pods && pods.newCount) || 0;
-  const items = [['start', '🏠', '#fff', 'Start'], ...(liked ? [['liked', '💚', '#2DD881', 'Gillade låtar']] : []),
-                 ['radio', '📻', '#FFE600', 'Radio'], ['pods', '🎙️', '#c9b6ff', 'Poddar'], ['news', '📰', '#fff', 'Nyheter']];
+  const items = [['start', '<svg class="ic"><use href="#i-home"/></svg>', 'var(--hero-tint)', 'Start'], ...(liked ? [['liked', '<svg class="ic"><use href="#i-heartf"/></svg>', 'var(--hero-tint)', 'Gillade låtar']] : []),
+                 ['radio', '<svg class="ic"><use href="#i-radio"/></svg>', 'var(--hero-tint)', 'Radio'], ['pods', '<svg class="ic"><use href="#i-mic"/></svg>', 'var(--hero-tint)', 'Poddar'], ['news', '<svg class="ic"><use href="#i-news"/></svg>', 'var(--hero-tint)', 'Nyheter']];
   const pls = railPlaylists();
   const sig = mView + '|' + items.map(i => i[0]).join() + '|' + newN + '|' + pls.map(p => p.id + plCover(p)).join();
   if (sig === railSig) return;
@@ -2358,7 +2369,7 @@ function renderRail(){
   document.getElementById('mRail').innerHTML = items.map(([id, ico, bg, t]) =>
     `<button class="ri ${mView === id ? 'sel' : ''}" style="background:${bg}" title="${t}" onclick="openMusicView('${id}')">${ico}${id === 'pods' && newN ? `<span class="badge">${newN}</span>` : ''}</button>`).join('')
     + (pls.length ? '<div class="rsep"></div>' : '')
-    + pls.map(p => `<button class="ri ${mView === 'pl:' + p.id ? 'sel' : ''}" title="${esc(p.title)}" onclick="openMusicView('pl:${p.id}')">${plCover(p) ? `<img src="${esc(plCover(p))}" alt="" loading="lazy">` : '🔀'}</button>`).join('');
+    + pls.map(p => `<button class="ri ${mView === 'pl:' + p.id ? 'sel' : ''}" title="${esc(p.title)}" onclick="openMusicView('pl:${p.id}')">${plCover(p) ? `<img src="${esc(plCover(p))}" alt="" loading="lazy">` : '<svg class="ic"><use href="#i-shuffle"/></svg>'}</button>`).join('');
 }
 function openMusicView(v){
   mView = v;
@@ -2373,29 +2384,29 @@ async function renderMusicView(){
     main.innerHTML = `<div class="vsec" style="margin-top:0">SPELA NU</div><div class="tiles" id="playNowTiles"></div>`;
     renderPlayNow();
   } else if (v === 'radio') {
-    main.innerHTML = `<div class="vhead"><div class="vcov" style="background:#FFE600">📻</div><div><div class="vtitle">Radio</div><div class="vsub">Favoriter, utvalda, populärt och sök</div></div></div><div id="radioBox"></div>`;
+    main.innerHTML = `<div class="vhead"><div class="vcov"><svg class="ic"><use href="#i-radio"/></svg></div><div><div class="vtitle">Radio</div><div class="vsub">Favoriter, utvalda, populärt och sök</div></div></div><div id="radioBox"></div>`;
     renderRadio('radioBox');
   } else if (v === 'news') {
-    main.innerHTML = `<div class="vhead"><div class="vcov">📰</div><div><div class="vtitle">Nyheter</div><div class="vsub">Ekot senaste nytt · Sveriges Radio · 1–3 min</div></div></div>
+    main.innerHTML = `<div class="vhead"><div class="vcov"><svg class="ic"><use href="#i-news"/></svg></div><div><div class="vtitle">Nyheter</div><div class="vsub">Ekot senaste nytt · Sveriges Radio · 1–3 min</div></div></div>
       <div class="vbtns"><button class="pill p" onclick="playNews()">▶ Spela senaste</button></div>`;
   } else if (v === 'liked') {
-    main.innerHTML = trackListHtml('💚', '#2DD881', 'Gillade låtar', `${musicLib.liked.trackIds.length} låtar · från Spotify`, musicLib.liked.trackIds, 'liked', true);
+    main.innerHTML = trackListHtml('<svg class="ic"><use href="#i-heartf"/></svg>', 'var(--hero-tint)', 'Gillade låtar', `${musicLib.liked.trackIds.length} låtar · från Spotify`, musicLib.liked.trackIds, 'liked', true);
     markPlayingTrack(((musicState(lastBoard).now) || {}).uri);
   } else if (v.startsWith('pl:')) {
     const p = (musicLib.playlists || []).find(x => x.id === v.slice(3));
     if (!p) { mView = 'start'; return renderMusicView(); }
     const sub = `${p.source === 'spotify' ? (p.owned ? 'Hennes spellista' : 'Följd spellista') : 'Spellista'} · ${p.trackIds.length ? p.trackIds.length + ' låtar' : 'låtarna syns inte'}`;
-    main.innerHTML = trackListHtml(plCover(p) ? `<img src="${esc(plCover(p))}" alt="">` : '🔀', '', p.title, sub, p.trackIds, p.id, false, p);
+    main.innerHTML = trackListHtml(plCover(p) ? `<img src="${esc(plCover(p))}" alt="">` : '<svg class="ic"><use href="#i-shuffle"/></svg>', '', p.title, sub, p.trackIds, p.id, false, p);
     markPlayingTrack(((musicState(lastBoard).now) || {}).uri);
   } else if (v === 'pods') {
     main.innerHTML = '<div class="music-empty">Hämtar poddar…</div>';
     await loadPods();
     if (mView !== 'pods') return;
-    if (!pods.connected) { main.innerHTML = `<div class="vhead"><div class="vcov" style="background:#c9b6ff">🎙️</div><div><div class="vtitle">Poddar</div><div class="vsub">Poddarna hon följer i Spotify</div></div></div>
+    if (!pods.connected) { main.innerHTML = `<div class="vhead"><div class="vcov"><svg class="ic"><use href="#i-mic"/></svg></div><div><div class="vtitle">Poddar</div><div class="vsub">Poddarna hon följer i Spotify</div></div></div>
       <div class="hint" style="color:var(--ink);font-size:13px;">Koppla Spotify så dyker hennes poddar och nya avsnitt upp här.</div><button class="pill p" onclick="showTab('settings');openSetPage('musik')">Koppla Spotify</button>`; return; }
     main.innerHTML = `<div class="vsec" style="margin-top:0">NYA AVSNITT</div>${pods.recent.length ? pods.recent.map(e => epRow(e, true)).join('') : '<div class="music-empty">Inga olyssnade avsnitt</div>'}
       <div class="vsec" style="margin-top:14px">MINA PODDAR</div>
-      <div class="showgrid">${pods.shows.map(sh => `<button title="${esc(sh.name)}" onclick="openMusicView('pod:${sh.id}')">${sh.cover ? `<img src="${esc(sh.cover)}" alt="" loading="lazy">` : '🎙️'}${sh.newCount ? `<b>${sh.newCount}</b>` : ''}</button>`).join('')}</div>`;
+      <div class="showgrid">${pods.shows.map(sh => `<button title="${esc(sh.name)}" onclick="openMusicView('pod:${sh.id}')">${sh.cover ? `<img src="${esc(sh.cover)}" alt="" loading="lazy">` : '<svg class="ic"><use href="#i-mic"/></svg>'}${sh.newCount ? `<b>${sh.newCount}</b>` : ''}</button>`).join('')}</div>`;
   } else if (v.startsWith('pod:')) {
     main.innerHTML = '<div class="music-empty">Hämtar…</div>';
     try { podShow = await (await fetch('/api/board/podcasts/' + v.slice(4))).json(); } catch(e) { podShow = null; }
@@ -2403,7 +2414,7 @@ async function renderMusicView(){
     if (!podShow || podShow.error) { main.innerHTML = '<div class="music-empty">Podden finns inte längre</div>'; return; }
     const sh = podShow.show, eps = podShow.episodes;
     const nNew = eps.filter(e => e.isNew).length, cont = eps.find(e => e.resumeMs && !e.fullyPlayed);
-    main.innerHTML = `<div class="vhead"><div class="vcov">${sh.cover ? `<img src="${esc(sh.cover)}" alt="">` : '🎙️'}</div><div><div class="vtitle">${esc(sh.name)}</div><div class="vsub">Podd${nNew ? ` · ${nNew} ${nNew === 1 ? 'nytt avsnitt' : 'nya avsnitt'}` : ''}</div></div></div>
+    main.innerHTML = `<div class="vhead"><div class="vcov">${sh.cover ? `<img src="${esc(sh.cover)}" alt="">` : '<svg class="ic"><use href="#i-mic"/></svg>'}</div><div><div class="vtitle">${esc(sh.name)}</div><div class="vsub">Podd${nNew ? ` · ${nNew} ${nNew === 1 ? 'nytt avsnitt' : 'nya avsnitt'}` : ''}</div></div></div>
       <div class="vbtns">${eps[0] ? `<button class="pill p" onclick="playEp('${eps[0].id}')">▶ Senaste</button>` : ''}${cont ? `<button class="pill" onclick="playEp('${cont.id}')">Fortsätt där jag var</button>` : ''}</div>
       ${eps.map(e => epRow(e, false)).join('')}`;
   }
@@ -2415,7 +2426,7 @@ function trackListHtml(cov, bg, title, sub, ids, key, isLiked, pl){
       <div class="ttxt"><div class="tname">${esc(t.title)}</div><div class="tart">${esc(t.artist)}</div></div></div>`;
   }).join('');
   return `<div class="vhead"><div class="vcov" ${bg ? `style="background:${bg}"` : ''}>${cov}</div><div><div class="vtitle">${esc(title)}</div><div class="vsub">${esc(sub)}</div></div></div>
-    <div class="vbtns"><button class="pill p" onclick="playList('${key}', true)">🔀 Spela</button>${isLiked ? '' : `<button class="pill" onclick="playList('${key}', false)">▶ I ordning</button>
+    <div class="vbtns"><button class="pill p" onclick="playList('${key}', true)"><svg class="ic"><use href="#i-shuffle"/></svg> Spela</button>${isLiked ? '' : `<button class="pill" onclick="playList('${key}', false)">▶ I ordning</button>
       <button class="pill" onclick="toggleFav('playlist','${key}').then(() => { railSig=''; renderRail(); renderMusicView(); })">${pl && pl.fav ? '♥' : '♡'}</button>`}</div>
     ${isLiked && ids.length > 20 ? `<input type="search" class="input-field" style="margin-bottom:6px;" placeholder="Sök bland gillade…" oninput="filterTracks(this.value)">` : ''}
     <div id="trackRows">${rows || '<div class="music-empty">Låtlistan syns inte för den här spellistan — den går ändå att spela.</div>'}</div>`;
@@ -2470,15 +2481,15 @@ async function loadListen(){
 function renderPlayNow(){
   const L = listen || {};
   const tiles = [];
-  if (L.topPlaylist) tiles.push(`<button class="tile" onclick="playPlaylist('${esc(L.topPlaylist.id)}')"><span class="tt">🔀 ${esc(L.topPlaylist.title)}</span>
+  if (L.topPlaylist) tiles.push(`<button class="tile" onclick="playPlaylist('${esc(L.topPlaylist.id)}')"><span class="tt"><svg class="ic"><use href="#i-shuffle"/></svg> ${esc(L.topPlaylist.title)}</span>
     <small>${L.topPlaylistCounted ? 'spellistan du spelar oftast' : 'ur musikbiblioteket'}</small></button>`);
-  else tiles.push(`<button class="tile" onclick="openMusicLibrary()"><span class="tt">🔀 Spellista</span><small>lägg till i musikbiblioteket</small></button>`);
-  if (L.topRadio) tiles.push(`<button class="tile" onclick="playStation('${esc(L.topRadio.id)}')"><span class="tt">📻 ${esc(L.topRadio.name)}</span>
+  else tiles.push(`<button class="tile" onclick="openMusicLibrary()"><span class="tt"><svg class="ic"><use href="#i-shuffle"/></svg> Spellista</span><small>lägg till i musikbiblioteket</small></button>`);
+  if (L.topRadio) tiles.push(`<button class="tile" onclick="playStation('${esc(L.topRadio.id)}')"><span class="tt"><svg class="ic"><use href="#i-radio"/></svg> ${esc(L.topRadio.name)}</span>
     <small>${L.topRadioCounted ? 'kanalen du lyssnar mest på' : 'din favoritkanal'}</small></button>`);
-  else tiles.push(`<button class="tile" onclick="openMusicView('radio')"><span class="tt">📻 Radio</span><small>välj en kanal</small></button>`);
-  tiles.push(`<button class="tile" onclick="playNews()"><span class="tt">📰 Nyheter</span><small>Ekot senaste nytt</small></button>`);
+  else tiles.push(`<button class="tile" onclick="openMusicView('radio')"><span class="tt"><svg class="ic"><use href="#i-radio"/></svg> Radio</span><small>välj en kanal</small></button>`);
+  tiles.push(`<button class="tile" onclick="playNews()"><span class="tt"><svg class="ic"><use href="#i-news"/></svg> Nyheter</span><small>Ekot senaste nytt</small></button>`);
   const g = L.godnatt || {};
-  tiles.push(`<button class="tile" onclick="playGodnatt()"><span class="tt">🌙 Godnatt</span>
+  tiles.push(`<button class="tile" onclick="playGodnatt()"><span class="tt"><svg class="ic"><use href="#i-moon"/></svg> Godnatt</span>
     <small>${g.playlist ? `${esc(g.playlist.title)} · ${g.minutes} min` : 'välj spellista'} · <u onclick="event.stopPropagation();openGodnatt()">ändra</u></small></button>`);
   const el = document.getElementById('playNowTiles');
   if (el) el.innerHTML = tiles.join('');
@@ -2492,7 +2503,7 @@ function playGodnatt(){
   const g = (listen || {}).godnatt || {};
   if (!g.playlist) return openGodnatt();
   sendMacropadCommand('godnatt', null, null, null, { url: `https://open.spotify.com/playlist/${g.playlist.id}`, minutes: g.minutes });
-  toast(`Godnatt 🌙 — ${g.minutes} min`); setTimeout(refreshStatus, 6000);
+  toast(`Godnatt · ${g.minutes} min`); setTimeout(refreshStatus, 6000);
 }
 function openMusicLibrary(){ editKind = editKind || 'resume'; openMusicPicker(); }
 
@@ -2532,7 +2543,7 @@ async function renderRadio(boxId){
   const favs = (listen && listen.favs) || ((lastBoard || {}).radioFavs) || [];
   rememberStations(favs);
   if (!favs.length && ui.tab === 'fav' && !ui.touched) ui.tab = 'curated';
-  const tabs = [['fav', '⭐ Favoriter'], ['curated', 'Utvalda'], ['top', 'Populärt'], ['search', '🔍 Sök']];
+  const tabs = [['fav', 'Favoriter'], ['curated', 'Utvalda'], ['top', 'Populärt'], ['search', '<svg class="ic"><use href="#i-search"/></svg> Sök']];
   let head = `<div class="seg3">${tabs.map(([k, l]) => `<button class="${ui.tab === k ? 'on' : ''}" onclick="radioTab('${boxId}','${k}')">${l}</button>`).join('')}</div>`;
   let body = '';
   if (ui.tab === 'fav') {
@@ -2548,7 +2559,7 @@ async function renderRadio(boxId){
       body = curated.map(g => g.stations.length ? `<div class="music-group" style="margin:10px 0 2px;">${esc(g.group.toUpperCase())}</div>` + g.stations.map(st => stationRow(st, boxId)).join('') : '').join('');
     }
   } else if (ui.tab === 'top') {
-    head += `<div class="chips2" style="margin-bottom:8px;">${[['DE', '🇩🇪 Tyskland'], ['SE', '🇸🇪 Sverige'], ['', '🌍 Världen']].map(([c, l]) =>
+    head += `<div class="chips2" style="margin-bottom:8px;">${[['DE', 'Tyskland'], ['SE', 'Sverige'], ['', 'Världen']].map(([c, l]) =>
       `<button class="${ui.cc === c ? 'on' : ''}" onclick="radioUI['${boxId}'].cc='${c}';renderRadio('${boxId}')">${l}</button>`).join('')}</div>`;
     const list = topCache[ui.cc];
     if (!list) {
@@ -2603,7 +2614,7 @@ function stationTap(id, boxId){
 function playStation(id){
   const st = stationById[id]; if (!st) return;
   sendMacropadCommand('radio_play', null, null, null, { id: st.id, name: st.name, url: st.url });
-  toast(`📻 ${st.name}…`); setTimeout(refreshStatus, 4000);
+  toast(`${st.name}…`); setTimeout(refreshStatus, 4000);
 }
 async function toggleFavStation(id){
   const st = stationById[id]; if (!st) return;
@@ -2652,8 +2663,8 @@ function timerStep(d){
   timerMinutes = steps[Math.max(0, Math.min(steps.length - 1, i + d))];
   renderTimerEditor();
 }
-const SOUND_TXT = { signal: ['🔔', 'Signal: Morgonljus', 'mjuk marimba som stiger'], music: ['⏯', 'Musik', 'fortsätt det som spelades senast'],
-                    news: ['📰', 'Nyheter', 'Ekot senaste nytt'], radio: ['📻', 'Radio', ''] };
+const SOUND_TXT = { signal: ['<svg class="ic"><use href="#i-bell"/></svg>', 'Signal: Morgonljus', 'mjuk marimba som stiger'], music: ['<svg class="ic"><use href="#i-playpause"/></svg>', 'Musik', 'fortsätt det som spelades senast'],
+                    news: ['<svg class="ic"><use href="#i-news"/></svg>', 'Nyheter', 'Ekot senaste nytt'], radio: ['<svg class="ic"><use href="#i-radio"/></svg>', 'Radio', ''] };
 function soundPickHtml(sel, onclick){
   const t = SOUND_TXT[sel.sound] || SOUND_TXT.signal;
   const title = sel.sound === 'radio' && sel.radio ? sel.radio.name : t[1];
@@ -2698,7 +2709,7 @@ function renderTimers(board){
   document.getElementById('timerList').innerHTML = list.map(t => {
     const left = Math.max(0, Math.round((t.endsAt - Date.now()) / 1000));
     const end = new Date(t.endsAt);
-    return `<div class="timer-row"><span style="font-size:24px">⏱</span><div style="flex:1;min-width:0;">
+    return `<div class="timer-row"><span style="font-size:24px"><svg class="ic"><use href="#i-timer"/></svg></span><div style="flex:1;min-width:0;">
       <div class="timer-left" data-ends="${t.endsAt}">${left ? `${Math.floor(left / 60)}:${pad2(left % 60)}` : 'Ringer'}</div>
       <div class="ms">${esc(t.label || 'Timer')} · ringer ${pad2(end.getHours())}:${pad2(end.getMinutes())}</div></div>
       <button class="btn btn-ghost btn-sm" onclick="extendTimer('${t.id}')">+5 min</button>
