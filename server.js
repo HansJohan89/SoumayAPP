@@ -2226,7 +2226,7 @@ async function feedAudio(ep) {
   if (!hit) throw new Error('Hittade inte avsnittet i poddens flöde');
   return hit.url;
 }
-async function playEpisode(id, fromStart) {
+async function playEpisode(id, fromStart, sleepMin) {
   const M = podLib();
   const ep = M.episodes[id] ? epState(M.episodes[id]) : null;
   if (!ep) throw new Error('Avsnittet finns inte');
@@ -2240,7 +2240,10 @@ async function playEpisode(id, fromStart) {
     await spotifySend('PUT', `/me/player/play?device_id=${encodeURIComponent(dev.id)}`, { uris: [`spotify:episode:${id}`], position_ms: startMs });
     await new Promise(ok => setTimeout(ok, 5000));
     const p = await spotifyGet('/me/player?additional_types=episode');
-    if (p && p.item && p.item.id === id && p.device && p.device.id === dev.id) return { via: 'spotify' };
+    if (p && p.item && p.item.id === id && p.device && p.device.id === dev.id) {
+      if (sleepMin) pendingCommand = { action: 'sleep_set', ts: Date.now(), params: { minutes: sleepMin } };
+      return { via: 'spotify' };
+    }
     why = 'Spotify på tavlan startade inte avsnittet';
   } catch (e) { why = e.message; }
   // 2) Poddens öppna flöde, ljudfilen spelas av tavlan
@@ -2248,7 +2251,7 @@ async function playEpisode(id, fromStart) {
   const audioUrl = await feedAudio(ep);
   pendingCommand = { action: 'podcast_play', view: null, destination: null, direction: null, button: null, ts: Date.now(),
                      params: { id: `spotify:episode:${id}`, name: ep.name, show: show.name || '', url: audioUrl, start: startMs / 1000,
-                               duration: ep.durationMs / 1000, cover: ep.cover || show.cover || '' } };
+                               duration: ep.durationMs / 1000, cover: ep.cover || show.cover || '', ...(sleepMin ? { sleep: sleepMin } : {}) } };
   return { via: 'feed', why };
 }
 app.post('/api/board/player', async (req, res) => {
@@ -2462,16 +2465,32 @@ app.get('/api/board/listen', (req, res) => {
     topPlaylist: pl(tp ? tp[0] : fallbackPl && fallbackPl.id), topPlaylistCounted: !!tp,
     topRadio: tr ? tr[1].station : (boardState.radioFavs[0] || null), topRadioCounted: !!tr,
     favs: boardState.radioFavs,
-    godnatt: { playlist: pl(g.playlistId), minutes: g.minutes || 30 },
+    godnatt: { kind: g.kind === 'podcast' ? 'podcast' : 'playlist', playlist: pl(g.playlistId), minutes: g.minutes || 30,
+               show: g.showId && (M.shows || {})[g.showId] ? { id: g.showId, name: M.shows[g.showId].name, cover: M.shows[g.showId].cover || '' } : null },
   });
 });
 // Godnatt: spellistan och längden väljer hon själv
 app.post('/api/board/godnatt', requirePin, (req, res) => {
-  const id = String(req.body.playlistId || '');
-  if (id && !musicLib().playlists[id]) return res.status(400).json({ error: 'Spellistan finns inte i biblioteket' });
-  boardState.godnatt = { playlistId: id || null, minutes: intIn(req.body.minutes, 5, 120, 30) };
+  const kind = req.body.kind === 'podcast' ? 'podcast' : 'playlist';
+  const id = String(req.body.playlistId || ''), showId = String(req.body.showId || '');
+  if (kind === 'playlist' && id && !musicLib().playlists[id]) return res.status(400).json({ error: 'Spellistan finns inte i biblioteket' });
+  if (kind === 'podcast' && !(podLib().shows || {})[showId]) return res.status(400).json({ error: 'Podden finns inte' });
+  const g = boardState.godnatt || {};
+  // -1 = spela hela avsnittet (bara för podd)
+  const minutes = Number(req.body.minutes) === -1 ? (kind === 'podcast' ? -1 : 30) : intIn(req.body.minutes, 5, 120, 30);
+  boardState.godnatt = { kind, playlistId: kind === 'playlist' ? (id || null) : (g.playlistId || null),
+                         showId: kind === 'podcast' ? showId : (g.showId || null), minutes };
   writeJSON(BOARD_FILE, boardState);
   res.json({ ok: true, godnatt: boardState.godnatt });
+});
+// Godnatt med podd: senaste avsnittet (fortsätter där hon var) + sov-timer
+app.post('/api/board/godnatt/start', async (req, res) => {
+  const g = boardState.godnatt || {};
+  if (g.kind !== 'podcast') return res.status(400).json({ error: 'Godnatt är inte en podd' });
+  const eps = Object.values(podLib().episodes || {}).filter(e => e.show === g.showId).sort((a, b) => b.date.localeCompare(a.date));
+  if (!eps.length) return res.status(404).json({ error: 'Hittar inga avsnitt i podden' });
+  try { res.json({ ok: true, episode: eps[0].name, ...(await playEpisode(eps[0].id, false, g.minutes || 30)) }); }
+  catch (e) { res.status(502).json({ error: e.message }); }
 });
 
 // ── Kalender via Googles hemliga iCal-adress ──

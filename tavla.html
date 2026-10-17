@@ -716,9 +716,10 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 <div class="sheet-bg" id="godnattSheet" onclick="if(event.target===this)closeGodnatt()">
   <div class="sheet">
     <div class="sheet-title"><svg class="ic"><use href="#i-moon"/></svg> GODNATT</div>
-    <div class="hint">Ett tryck på Godnatt startar spellistan och sov-timern.</div>
+    <div class="hint" id="godnattHint">Ett tryck på Godnatt startar spellistan och sov-timern.</div>
+    <div class="seg3" id="godnattKind" style="margin-bottom:12px;"></div>
     <div class="field"><div class="field-label">Sov-timer</div><div class="chips2" id="godnattMin"></div></div>
-    <div class="field"><div class="field-label">Spellista</div><div class="music-list" id="godnattList"></div></div>
+    <div class="field"><div class="field-label" id="godnattListLabel">Spellista</div><div class="music-list" id="godnattList"></div></div>
     <div class="sheet-actions"><button class="btn btn-ghost" onclick="closeGodnatt()">Avbryt</button><button class="btn btn-primary" onclick="saveGodnatt()">Spara</button></div>
   </div>
 </div>
@@ -1963,7 +1964,7 @@ function godnattRow(){
   const g = (listen || {}).godnatt || {};
   return `<div class="set-row"><div class="set-top"><div class="setting-label"><svg class="ic"><use href="#i-moon"/></svg> Godnatt (Musik-fliken)</div>
     <div class="set-ctrl"><button class="btn btn-ghost btn-sm" onclick="openGodnatt()">Ändra</button></div></div>
-    <div class="set-help">${g.playlist ? `${esc(g.playlist.title)} · sov-timer ${g.minutes} min` : 'Ingen spellista vald än'}</div></div>`;
+    <div class="set-help">${esc(godnattText(g)) || 'Ingen spellista vald än'}</div></div>`;
 }
 
 // ── Menyn: startsidan för Inställningar ──
@@ -2512,7 +2513,7 @@ function renderPlayNow(){
   tiles.push(st ? q(`playStation('${esc(st.id)}')`, st.name, img(st.favicon, 'radio')) : q(`openMusicView('radio')`, 'Radio', I_('radio')));
   tiles.push(q('playNews()', 'Nyheter', I_('news')));
   const g = L.godnatt || {};
-  tiles.push(q('playGodnatt()', g.playlist ? `Godnatt · ${g.playlist.title} · ${g.minutes} min` : 'Godnatt', I_('moon'),
+  tiles.push(q('playGodnatt()', godnattText(g) ? `Godnatt · ${godnattText(g)}` : 'Godnatt', I_('moon'),
                `<u class="qedit" onclick="openGodnatt()">ändra</u>`));
   const el = document.getElementById('playNowTiles');
   if (el) el.innerHTML = tiles.join('');
@@ -2551,8 +2552,22 @@ function playPlaylist(id){
   toast('Startar spellistan…'); setTimeout(refreshStatus, 4000);
 }
 function playNews(){ sendMacropadCommand('news_now'); toast('Nyheterna startar…'); setTimeout(refreshStatus, 4000); }
-function playGodnatt(){
+function godnattMinTxt(m){ return m === -1 ? 'hela avsnittet' : `${m} min`; }
+function godnattText(g){
+  if (g.kind === 'podcast') return g.show ? `Senaste avsnittet av ${g.show.name} · ${godnattMinTxt(g.minutes)}` : '';
+  return g.playlist ? `${g.playlist.title} · sov-timer ${g.minutes} min` : '';
+}
+async function playGodnatt(){
   const g = (listen || {}).godnatt || {};
+  if (g.kind === 'podcast') {
+    if (!g.show) return openGodnatt();
+    toast('Godnatt · startar senaste avsnittet…');
+    try { const r = await api('POST', '/api/board/godnatt/start');
+          toast(`Godnatt · ${r.episode} · ${godnattMinTxt(g.minutes)}`); }
+    catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+    setTimeout(() => { refreshStatus(); loadPods(); }, 3000);
+    return;
+  }
   if (!g.playlist) return openGodnatt();
   sendMacropadCommand('godnatt', null, null, null, { url: `https://open.spotify.com/playlist/${g.playlist.id}`, minutes: g.minutes });
   toast(`Godnatt · ${g.minutes} min`); setTimeout(refreshStatus, 6000);
@@ -2560,18 +2575,34 @@ function playGodnatt(){
 function openMusicLibrary(){ editKind = editKind || 'resume'; openMusicPicker(); }
 
 // ── Godnatt-inställningen ──
-let godnattSel = null, godnattMin = 30;
+let godnattSel = null, godnattShow = null, godnattKind = 'playlist', godnattMin = 30;
 async function openGodnatt(){
   const g = (listen || {}).godnatt || {};
-  godnattSel = g.playlist ? g.playlist.id : null; godnattMin = g.minutes || 30;
-  await loadMusic(true);
+  godnattKind = g.kind === 'podcast' ? 'podcast' : 'playlist';
+  godnattSel = g.playlist ? g.playlist.id : null; godnattShow = g.show ? g.show.id : null; godnattMin = g.minutes || 30;
+  await Promise.all([loadMusic(true), loadPods()]);
   renderGodnatt();
   document.getElementById('godnattSheet').classList.add('open');
 }
 function closeGodnatt(){ document.getElementById('godnattSheet').classList.remove('open'); }
 function renderGodnatt(){
-  document.getElementById('godnattMin').innerHTML = [15, 20, 30, 45, 60, 90].map(n =>
-    `<button class="${n === godnattMin ? 'on' : ''}" onclick="godnattMin=${n};renderGodnatt()">${n} min</button>`).join('');
+  const pod = godnattKind === 'podcast';
+  if (!pod && godnattMin === -1) godnattMin = 30;
+  document.getElementById('godnattKind').innerHTML = [['playlist', 'Spellista'], ['podcast', 'Podd']].map(([k, l]) =>
+    `<button class="${godnattKind === k ? 'on' : ''}" onclick="godnattKind='${k}';renderGodnatt()">${l}</button>`).join('');
+  document.getElementById('godnattHint').textContent = pod ? 'Ett tryck på Godnatt startar det senaste avsnittet av podden (där du slutade, om du börjat) och sov-timern.'
+                                                           : 'Ett tryck på Godnatt startar spellistan och sov-timern.';
+  document.getElementById('godnattMin').innerHTML = [15, 20, 30, 45, 60, 90, ...(pod ? [-1] : [])].map(n =>
+    `<button class="${n === godnattMin ? 'on' : ''}" onclick="godnattMin=${n};renderGodnatt()">${n === -1 ? 'Spela hela' : n + ' min'}</button>`).join('');
+  document.getElementById('godnattListLabel').textContent = pod ? 'Podd' : 'Spellista';
+  if (pod) {
+    const shows = pods && pods.connected ? pods.shows : [];
+    document.getElementById('godnattList').innerHTML = shows.length ? shows.map(sh =>
+      `<div class="music-row ${sh.id === godnattShow ? 'sel' : ''}" onclick="godnattShow='${esc(sh.id)}';renderGodnatt()"><div class="menu-ico" style="overflow:hidden;position:relative">${sh.cover ? `<img src="${esc(sh.cover)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.remove()">` : ''}${ic('mic')}</div>
+        <div class="mp-txt"><div class="mp-title">${esc(sh.name)}</div><div class="mp-sub">senaste avsnittet</div></div></div>`).join('')
+      : '<div class="music-empty">Inga poddar än — koppla Spotify under Inställningar → Musik & ljud.</div>';
+    return;
+  }
   const pls = musicLib.playlists || [];
   document.getElementById('godnattList').innerHTML = pls.length ? pls.map(p =>
     `<div class="music-row ${p.id === godnattSel ? 'sel' : ''}" onclick="godnattSel='${esc(p.id)}';renderGodnatt()">${playlistArt(p)}
@@ -2579,8 +2610,10 @@ function renderGodnatt(){
     : '<div class="music-empty">Inga spellistor i musikbiblioteket än — lägg till under Alarm → Spela.</div>';
 }
 async function saveGodnatt(){
-  if (!godnattSel) return toast('Välj en spellista');
-  try { await api('POST', '/api/board/godnatt', { playlistId: godnattSel, minutes: godnattMin }); closeGodnatt(); toast('Godnatt sparad ✓'); loadListen(); }
+  const pod = godnattKind === 'podcast';
+  if (pod ? !godnattShow : !godnattSel) return toast(pod ? 'Välj en podd' : 'Välj en spellista');
+  try { await api('POST', '/api/board/godnatt', { kind: godnattKind, playlistId: godnattSel, showId: godnattShow, minutes: godnattMin });
+        closeGodnatt(); toast('Godnatt sparad ✓'); loadListen(); }
   catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
 }
 
