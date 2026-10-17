@@ -237,7 +237,8 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 .mrail{width:76px;flex:none;border-right:3px solid var(--ink);background:var(--paper-dark);padding:12px 0 16px;display:flex;flex-direction:column;align-items:center;gap:12px;overflow-y:auto;}
 .ri{width:54px;height:54px;border:2px solid var(--ink);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:2px 2px 0 var(--ink);position:relative;flex:none;cursor:pointer;background:var(--white);overflow:visible;padding:0;}
 .ri img{width:100%;height:100%;object-fit:cover;border-radius:10px;display:block;}
-.ri.sel{outline:3px solid var(--hero-blue);outline-offset:2px;}
+.ri.sel{outline:3px solid var(--hero-blue);outline-offset:2px;background:var(--hero-blue) !important;}
+.ri.sel .ic{color:#fff;filter:drop-shadow(1px 1px 0 var(--ink));}
 .ri .badge{position:absolute;top:-7px;right:-7px;background:var(--pulse-red);color:#fff;border:2px solid var(--ink);border-radius:10px;font-size:10px;font-weight:800;padding:0 5px;line-height:16px;font-family:var(--font-ui);}
 .rsep{width:44px;border-top:2px dashed #9a8f7a;margin:2px 0;flex:none;}
 .mmain{flex:1;overflow-y:auto;padding:14px 14px 20px;min-width:0;}
@@ -281,7 +282,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 .picon.liked{color:var(--hero-blue);}
 .picon:disabled{opacity:.25;}
 .moonbtn{width:42px;height:42px;border-radius:50%;}
-.moonbtn.on{background:#FFE600;border:2.5px solid var(--ink);}
+.moonbtn.on{background:var(--ink);color:#FFE600;}
 .scrub{margin:10px 0 0;}
 .sbar{height:5px;border-radius:3px;background:#d8d0bf;position:relative;cursor:pointer;}
 .sbar::before{content:'';position:absolute;left:0;right:0;top:-10px;bottom:-10px;}
@@ -317,6 +318,11 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 .tab-btn.active .ic,.btn-primary .ic,.pill.p .ic,.seg3 button.on .ic{filter:drop-shadow(1px 1px 0 var(--ink));}
 
 /* ── Musik/Start: bara ikoner (2026-10-17) ── */
+.rec{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--paper-soft);cursor:pointer;}
+.rec .ecov{width:58px;height:58px;position:relative;display:flex;align-items:center;justify-content:center;color:var(--hero-blue-dark);}
+.rec .ecov img{position:absolute;inset:0;z-index:1;}
+.rec .ecov .ic{width:26px;height:26px;}
+.rdesc{font-size:12px;color:var(--ink);opacity:.8;margin-top:3px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .qgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:8px;}
 .qc{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;}
 .qt{width:100%;aspect-ratio:1;border:2px solid var(--ink);border-radius:8px;background:var(--hero-tint);box-shadow:2px 2px 0 var(--ink);
@@ -2397,7 +2403,7 @@ async function renderMusicView(){
   const main = document.getElementById('mMain'), v = mView;
   if (v === 'start') {
     main.innerHTML = `<div class="vsec" style="margin-top:0">SPELA NU</div><div class="qgrid" id="playNowTiles"></div>
-      <div id="homePls"></div><div id="homePods"></div>`;
+      <div id="homeEps"></div><div id="homeMix"></div>`;
     renderPlayNow(); renderHomePods();
     loadPods().then(() => { if (mView === 'start') renderHomePods(); });
   } else if (v === 'radio') {
@@ -2510,9 +2516,7 @@ function renderPlayNow(){
                `<u class="qedit" onclick="openGodnatt()">ändra</u>`));
   const el = document.getElementById('playNowTiles');
   if (el) el.innerHTML = tiles.join('');
-  const pl = document.getElementById('homePls');
-  if (pl) pl.innerHTML = (L.topPlaylists || []).length ? `<div class="vsec">SPELLISTOR</div><div class="showgrid">${L.topPlaylists.map(p =>
-    `<button title="${esc(p.title)}" aria-label="${esc(p.title)}" onclick="openMusicView('pl:${p.id}')">${p.cover ? `<img src="${esc(p.cover)}" alt="" loading="lazy" onerror="this.remove()">` : ''}${I_('shuffle')}</button>`).join('')}</div>` : '';
+  renderHomeMix();
 }
 function I_(n){ return ic(n); }
 // Poddarna hon lyssnar mest på först, med antal olyssnade nya avsnitt
@@ -2520,8 +2524,27 @@ function podGridHtml(){
   return `<div class="showgrid">${pods.shows.map(sh => `<button title="${esc(sh.name)}" aria-label="${esc(sh.name)}" onclick="openMusicView('pod:${sh.id}')">${sh.cover ? `<img src="${esc(sh.cover)}" alt="" loading="lazy" onerror="this.remove()">` : ''}${ic('mic')}${sh.newCount ? `<b>${sh.newCount}</b>` : ''}</button>`).join('')}</div>`;
 }
 function renderHomePods(){
-  const el = document.getElementById('homePods');
-  if (el) el.innerHTML = pods && pods.connected && pods.shows.length ? `<div class="vsec">PODDAR</div>${podGridHtml()}` : '';
+  const el = document.getElementById('homeEps');
+  const top = pods && pods.connected ? (pods.top || []) : [];
+  if (el) el.innerHTML = top.length ? `<div class="vsec">REKOMMENDERADE AVSNITT</div>${top.map(e => {
+    const left = e.durationMs ? Math.max(0, e.durationMs - e.resumeMs) : 0;
+    const meta = e.resumeMs && left ? `${fmtMinutes(left)} kvar` : e.durationMs ? fmtMinutes(e.durationMs) : '';
+    return `<div class="rec" onclick="playEp('${e.id}')"><div class="ecov">${e.cover ? `<img src="${esc(e.cover)}" alt="" loading="lazy" onerror="this.remove()">` : ''}${ic('mic')}</div>
+      <div class="ttxt"><div class="et">${e.isNew ? '<span class="newtag">NY</span>' : ''}${esc(e.name)}</div>
+      <div class="em">${esc(e.showName)}${e.date ? ' · ' + esc(dayWord(e.date)) : ''}${meta ? ' · ' + meta : ''}</div>
+      ${e.desc ? `<div class="rdesc">${esc(e.desc)}</div>` : ''}
+      ${e.resumeMs && e.durationMs ? `<div class="prog"><i style="width:${Math.min(100, e.resumeMs / e.durationMs * 100)}%"></i></div>` : ''}</div></div>`; }).join('')}` : '';
+  renderHomeMix();
+}
+// Spellistor och poddar blandat, populärast först; poddarna med räknare
+function renderHomeMix(){
+  const el = document.getElementById('homeMix');
+  if (!el) return;
+  const pls = ((listen || {}).topPlaylists || []).map(p => `<button title="${esc(p.title)}" aria-label="${esc(p.title)}" onclick="openMusicView('pl:${p.id}')">${p.cover ? `<img src="${esc(p.cover)}" alt="" loading="lazy" onerror="this.remove()">` : ''}${ic('shuffle')}</button>`);
+  const shs = (pods && pods.connected ? pods.shows : []).map(sh => `<button title="${esc(sh.name)}" aria-label="${esc(sh.name)}" onclick="openMusicView('pod:${sh.id}')">${sh.cover ? `<img src="${esc(sh.cover)}" alt="" loading="lazy" onerror="this.remove()">` : ''}${ic('mic')}${sh.newCount ? `<b>${sh.newCount}</b>` : ''}</button>`);
+  const mix = [];
+  for (let i = 0; i < Math.max(pls.length, shs.length); i++) { if (pls[i]) mix.push(pls[i]); if (shs[i]) mix.push(shs[i]); }
+  el.innerHTML = mix.length ? `<div class="vsec">SPELLISTOR & PODDAR</div><div class="showgrid">${mix.slice(0, 12).join('')}</div>` : '';
 }
 function playPlaylist(id){
   sendMacropadCommand('play_music', null, null, null, { url: `https://open.spotify.com/playlist/${id}`, shuffle: true });
