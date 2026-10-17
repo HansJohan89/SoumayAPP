@@ -81,6 +81,7 @@ main{max-width:520px;margin:0 auto;padding:16px;padding-bottom:60px;}
 .knob{width:64px;height:64px;border-radius:50%;background:#D9CEB8;border:2px solid var(--ink);
   display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
 .keys-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.mp-key.mp-sleep-on{background:#1F2A44;color:#fff;}
 
 /* ── Alarm ── */
 .alarm-status{border:var(--border-thick);border-radius:14px;padding:14px 16px;margin-bottom:20px;box-shadow:4px 4px 0 var(--ink);background:var(--white);}
@@ -215,7 +216,7 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
 
     <div class="card">
       <div class="card-label">SIMULERAD MACROPAD</div>
-      <div class="hint">Samma sex knappar och vred som TogKey Pad Plus — fungerar identiskt med den riktiga när den är inkopplad.</div>
+      <div class="hint">Samma knappar och vred som TogKey Pad Plus — fungerar identiskt med den riktiga när den är inkopplad. Medan musik spelar blir en knapp sov-timer 🌙 (välj vilken under Inställningar).</div>
       <div class="macropad-body">
         <div class="oled-row">
           <div id="macropadOled">Redo</div>
@@ -376,6 +377,13 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
         <div class="field-label">Stäng av efter</div>
         <select class="input-field" id="alarmAutoStop"></select>
       </div>
+    </div>
+    <div class="field" style="display:flex;align-items:center;gap:12px;">
+      <div style="flex:1;">
+        <div class="field-label" style="margin-bottom:2px;">Nyheter efter alarmet</div>
+        <div class="hint" style="margin:0;">Ekot senaste nytt (1–3 min) på 65 % när du stängt av</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="alarmNews"><span></span></label>
     </div>
     <div class="pin-error" id="alarmError"></div>
     <div class="sheet-actions">
@@ -585,11 +593,12 @@ const MACROPAD_LABELS = {
   spotify_play_pause: 'Play/Paus',
   knob: { 1: 'Volym +', '-1': 'Volym −' },
   spotify_next: 'Nästa låt',
+  sleep_timer: 'Sov-timer',
   alarm_stop: 'Alarm av',
   alarm_snooze: 'Snooze',
 };
 let macropadOledTimer = null;
-async function sendMacropadCommand(action, viewOrParam, direction){
+async function sendMacropadCommand(action, viewOrParam, direction, button){
   const oled = document.getElementById('macropadOled');
   let label = MACROPAD_LABELS[action];
   if(typeof label === 'object') label = label[viewOrParam ?? direction] || action;
@@ -602,7 +611,7 @@ async function sendMacropadCommand(action, viewOrParam, direction){
     await fetch('/api/board/command', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ action, view: action === 'show_view' ? viewOrParam : null, direction: direction || null })
+      body: JSON.stringify({ action, view: action === 'show_view' ? viewOrParam : null, direction: direction || null, button: button || null })
     });
   } catch(e) {
     oled.textContent = 'Fel: ej ansluten';
@@ -1086,15 +1095,29 @@ function schemaItem(board, key){
   for (const g of (((board || {}).settingsSchema || {}).groups || [])) for (const it of g.items) if (it.key === key) return it;
   return null;
 }
+// Medan musik spelar är en av knapparna sov-timer (Inställningar ->
+// Macropad-knappar), precis som på den riktiga macropaden.
+function musicState(board){
+  if (!board) return {};
+  const fresh = board.piStatusAt && (Date.now() - board.piStatusAt) < 30000;
+  return (fresh && (board.piStatus || {}).music) || {};
+}
 function renderKeys(board){
   const views = DEFAULT_KEYS.map((v, i) => boardValue(board, `button${i+1}View`, v));
-  const sig = views.join(',');
+  const m = musicState(board), sl = m.sleep || {};
+  const sleepBtn = String(boardValue(board, 'sleepButton', '3'));
+  const sig = views.join(',') + '|' + sleepBtn + '|' + !!m.playing + '|' + (sl.active ? sl.endsAt : '');
   if (sig === keysSig) return;
   keysSig = sig;
   const grid = document.getElementById('keysGrid');
-  grid.innerHTML = views.map(v =>
-    `<button class="mp-key" onclick="sendMacropadCommand('show_view','${v}')">${VIEW_ICONS[v] || '▫️'}<br>${VIEW_NAMES[v] || v}</button>`
-  ).join('') + `<button class="mp-key" onclick="sendMacropadCommand('spotify_play_pause')">⏯️<br>Play</button>`;
+  grid.innerHTML = views.map((v, i) => {
+    if (String(i + 1) === sleepBtn && (m.playing || sl.active)) {
+      const t = sl.active ? new Date(sl.endsAt) : null;
+      const sub = t ? `${pad2(t.getHours())}:${pad2(t.getMinutes())}` : 'Sov';
+      return `<button class="mp-key${t ? ' mp-sleep-on' : ''}" onclick="sendMacropadCommand('show_view','${v}',null,${i + 1})">🌙<br>${sub}</button>`;
+    }
+    return `<button class="mp-key" onclick="sendMacropadCommand('show_view','${v}',null,${i + 1})">${VIEW_ICONS[v] || '▫️'}<br>${VIEW_NAMES[v] || v}</button>`;
+  }).join('') + `<button class="mp-key" onclick="sendMacropadCommand('spotify_play_pause')">⏯️<br>Play</button>`;
 }
 
 // ═══════════════════════════════════════════════════
@@ -1204,7 +1227,7 @@ function renderAlarmList(board){
       <div class="alarm-info">
         <div class="alarm-time">${esc(a.time)}</div>
         ${a.label ? `<div class="alarm-label">${esc(a.label)}</div>` : ''}
-        <div class="alarm-meta">${esc(daysText(a))} · ${a.volume} % · ${esc(music)}</div>
+        <div class="alarm-meta">${esc(daysText(a))} · ${a.volume} % · ${esc(music)}${a.news ? ' · 📻 Nyheter' : ''}</div>
       </div>
       <label class="switch" onclick="event.stopPropagation()">
         <input type="checkbox" ${on ? 'checked' : ''} onchange="toggleAlarm('${a.id}', this.checked)"><span></span>
@@ -1441,6 +1464,7 @@ function openAlarmEditor(id){
   document.getElementById('alarmVolumeText').textContent = vol + ' %';
   fillSelect('alarmRamp', RAMP_CHOICES, a ? a.rampMinutes : 3, m => m ? `${m} min` : 'Av (direkt)');
   fillSelect('alarmAutoStop', STOP_CHOICES, a ? a.autoStopMinutes : 30, m => `${m} min`);
+  document.getElementById('alarmNews').checked = !!(a && a.news);
   document.getElementById('alarmDeleteWrap').style.display = a ? '' : 'none';
   document.getElementById('alarmError').textContent = '';
   renderMusicPick();
@@ -1468,6 +1492,7 @@ function alarmFromEditor(){
     volume: Number(document.getElementById('alarmVolume').value),
     rampMinutes: Number(document.getElementById('alarmRamp').value),
     autoStopMinutes: Number(document.getElementById('alarmAutoStop').value),
+    news: document.getElementById('alarmNews').checked,
   };
 }
 function alarmEditorError(text){ document.getElementById('alarmError').textContent = text; }
@@ -1557,8 +1582,35 @@ function renderPiSettings(errors){
           ${errors[it.key] ? `<div class="set-error">${esc(errors[it.key])}</div>` : ''}
         </div>`;
       }).join('')}
+      ${g.group === 'Blodsocker' ? sensorRow() : ''}
     </div>`).join('') + `
     <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:20px;" onclick="resetAllSettings()">↺ Återställ alla inställningar ovan till standard</button>`;
+}
+// Sensorstarten (för påminnelsen om sensorbyte): från xDrip eller knappen här.
+function sensorRow(){
+  const sen = (tavlaState || {}).sensor;
+  const days = Number(((tavlaState || {}).settings || {}).sensorDays) || (schemaItem(tavlaState, 'sensorDays') || {}).default || 14;
+  let info = 'Ingen sensorstart än — tryck på knappen när du satt en ny, eller slå på "Ladda upp behandlingar" i xDrip.';
+  if (sen && sen.startedAt) {
+    const st = new Date(sen.startedAt), end = new Date(sen.startedAt + days * 86400000);
+    const f = d => `${d.getDate()}/${d.getMonth() + 1} kl ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    info = `Satt ${f(st)} (${sen.source === 'xdrip' ? 'från xDrip' : 'knappen'}) · går ut ${f(end)}`;
+  }
+  return `<div class="set-row">
+    <div class="set-top">
+      <div class="setting-label">Senaste sensorbyte</div>
+      <div class="set-ctrl"><button class="btn btn-ghost btn-sm" onclick="newSensorToday()">Ny sensor idag</button></div>
+    </div>
+    <div class="set-help">${esc(info)}</div>
+  </div>`;
+}
+async function newSensorToday(){
+  try {
+    const data = await api('POST', '/api/board/sensor', {});
+    tavlaState.sensor = data.sensor;
+    renderPiSettings();
+    toast('Sparat ✓');
+  } catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
 }
 function saveNumber(key, input){
   const item = schemaItem(tavlaState, key);

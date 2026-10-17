@@ -37,13 +37,31 @@ function getCalendarClient() {
   return google.calendar({ version: 'v3', auth: oauth2Client });
 }
 const PORT           = process.env.PORT || 3000;
-const DATA_DIR       = process.env.DATA_DIR || path.join(__dirname, 'data');
-const UPLOADS_DIR    = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads/meals');
+// Var datan sparas. På Railway nollställs appens egna filer vid VARJE ny
+// version — därför används en Railway Volume (beständig disk) när en sådan
+// är kopplad: Railway sätter då RAILWAY_VOLUME_MOUNT_PATH själv
+// (https://docs.railway.com/volumes). DATA_DIR/UPLOADS_DIR går före om de satts.
+const VOLUME_DIR     = process.env.RAILWAY_VOLUME_MOUNT_PATH || '';
+const DATA_DIR       = process.env.DATA_DIR || (VOLUME_DIR ? path.join(VOLUME_DIR, 'data') : path.join(__dirname, 'data'));
+const UPLOADS_DIR    = process.env.UPLOADS_DIR || (VOLUME_DIR ? path.join(VOLUME_DIR, 'uploads/meals') : path.join(__dirname, 'uploads/meals'));
+const STORAGE_PERSISTENT = !!(VOLUME_DIR || process.env.DATA_DIR);
 
 // Skapa mappar om de saknas
 [DATA_DIR, UPLOADS_DIR].forEach(dir => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
+// Första starten med en ny, tom volym: flytta över det som finns i appens
+// egen datamapp (finns bara kvar om servern inte startats om sedan dess).
+if (VOLUME_DIR) {
+  const oldData = path.join(__dirname, 'data');
+  try {
+    if (oldData !== DATA_DIR && fs.existsSync(oldData) && !fs.readdirSync(DATA_DIR).length) {
+      for (const f of fs.readdirSync(oldData)) fs.copyFileSync(path.join(oldData, f), path.join(DATA_DIR, f));
+      console.log(`[lagring] Flyttade ${fs.readdirSync(DATA_DIR).length} filer till volymen`);
+    }
+  } catch (e) { console.log('[lagring] Kunde inte flytta gamla data:', e.message); }
+}
+console.log(`[lagring] Data sparas i ${DATA_DIR} — ${STORAGE_PERSISTENT ? 'beständig (överlever nya versioner)' : 'INTE beständig: koppla en Volume i Railway'}`);
 
 // ── DATA-FILER ───────────────────────────────────────────────
 const SUBS_FILE      = path.join(DATA_DIR, 'subscriptions.json');
@@ -634,6 +652,35 @@ app.get(['/api/v1/treatments', '/api/v1/treatments.json'], (req, res) => {
   res.json([]);
 });
 
+// xDrip laddar upp behandlingar hit om "Ladda upp behandlingar" är på i
+// dess Nightscout-inställningar. Bara SENSORSTARTEN sparas (för tavlans
+// påminnelse om sensorbyte) — resten tas emot och slängs. De senaste
+// typerna sparas också, så man kan se vad xDrip faktiskt skickar:
+// GET /api/board/sensor.
+app.post(['/api/v1/treatments', '/api/v1/treatments.json'], xdripAuth, (req, res) => {
+  let body = req.body;
+  if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) {} }
+  const list = Array.isArray(body) ? body : [body];
+  if (!Array.isArray(boardState.treatmentTypesSeen)) boardState.treatmentTypesSeen = [];
+  let changed = false;
+  for (const t of list) {
+    if (!t || typeof t !== 'object') continue;
+    const type = String(t.eventType || '').slice(0, 40);
+    const ms = Number(t.mills) || Date.parse(t.created_at || t.timestamp || '') || Number(t.date) || Date.now();
+    boardState.treatmentTypesSeen.unshift({ type, at: ms, receivedAt: Date.now() });
+    if (/sensor\s*(start|change)/i.test(type) && ms > Date.now() - 60 * 86400000 && ms < Date.now() + 3600000) {
+      if (!boardState.sensor || ms > boardState.sensor.startedAt) {
+        boardState.sensor = { startedAt: ms, source: 'xdrip' };
+        changed = true;
+        console.log(`[sensor] Sensorstart från xDrip: ${new Date(ms).toISOString()}`);
+      }
+    }
+  }
+  boardState.treatmentTypesSeen = boardState.treatmentTypesSeen.slice(0, 20);
+  if (changed) bumpConfig(); else writeJSON(BOARD_FILE, boardState);
+  res.status(200).json(list);
+});
+
 app.get(['/api/v1/status', '/api/v1/status.json'], (req, res) => {
   console.log('xDrip GET /api/v1/status.json headers:', JSON.stringify(req.headers));
   res.json({
@@ -1063,6 +1110,9 @@ app.post('/api/journal', (req, res) => {
 
 // Hämta inställningar + bildlista (UTAN base64-data, bara metadata —
 // annars blir svaret enormt varje gång appen öppnar sidan)
+// Visar om datan överlever nya versioner (Railway Volume kopplad?)
+app.get('/api/storage', (req, res) => res.json({ persistent: STORAGE_PERSISTENT, dataDir: DATA_DIR }));
+
 app.get('/api/board', (req, res) => {
   const { images, pin, alarmTest, music: _music, ...settings } = boardState;
   res.json({
@@ -1162,9 +1212,10 @@ app.post('/api/board/select', requirePin, (req, res) => {
 
 // Simulerad macropad i appen — lägger en knapptryckning i kö
 app.post('/api/board/command', (req, res) => {
-  const { action, view, destination, direction } = req.body;
+  const { action, view, destination, direction, button } = req.body;
   if (!action) return res.status(400).json({ error: 'Saknar action' });
-  pendingCommand = { action, view: view || null, destination: destination || null, direction: direction || null, ts: Date.now() };
+  const btn = Number.isInteger(button) && button >= 1 && button <= 5 ? button : null;
+  pendingCommand = { action, view: view || null, destination: destination || null, direction: direction || null, button: btn, ts: Date.now() };
   res.json({ ok: true });
 });
 
@@ -1590,6 +1641,7 @@ async function cleanAlarm(a) {
       volume: intIn(a.volume, 1, 100, 30),
       rampMinutes: intIn(a.rampMinutes, 0, 30, 3),
       autoStopMinutes: intIn(a.autoStopMinutes, 5, 180, 30),
+      news: a.news === true,      // Ekots senaste nytt efter att hon stängt av (tavlans news.py)
     },
   };
 }
@@ -1637,6 +1689,7 @@ app.post('/api/board/pi-sync', (req, res) => {
     out.alarms = boardState.alarms;
     out.boardChangedAt = boardState.boardChangedAt || null;
     out.alarmTest = boardState.alarmTest || null;
+    out.sensor = boardState.sensor || null;
   }
   res.json(out);
 });
@@ -1644,6 +1697,39 @@ app.post('/api/board/pi-sync', (req, res) => {
 // Om serverns data skulle ha försvunnit (t.ex. ny server utan sparad
 // data) har tavlan kvar sin egen kopia av alarm och inställningar och
 // lämnar tillbaka dem hit — men BARA om servern verkligen är tom.
+// Tavlan ber om en notis till telefonen (kontrollen före alarmet). Bara
+// färdiga meddelanden — tavlan skickar bara vilken sort och klockslaget —
+// och högst en per sort var 20:e minut, så ingen kan skicka vad som helst.
+const PI_NOTIFY = {
+  speaker: t => ['⏰ Högtalaren är inte ansluten', `Alarmet kl ${t} kanske inte hörs. Slå på högtalaren.`],
+  spotify: t => ['⏰ Tavlans Spotify svarar inte', `Alarmet kl ${t} kanske inte spelar. Starta om tavlan om det inte rättar sig.`],
+};
+const piNotifiedAt = {};
+app.post('/api/board/pi-notify', async (req, res) => {
+  const { kind, alarmTime } = req.body || {};
+  const make = PI_NOTIFY[kind];
+  const t = String(alarmTime || '');
+  if (!make || !/^([01]\d|2[0-3]):[0-5]\d$/.test(t)) return res.status(400).json({ error: 'Okänd notis' });
+  if (Date.now() - (piNotifiedAt[kind] || 0) < 20 * 60000) return res.json({ ok: true, skipped: true });
+  piNotifiedAt[kind] = Date.now();
+  const [title, body] = make(t);
+  await pushToAll(title, body, 'tavlan-' + kind);
+  console.log(`[tavlan] Notis: ${title} (${t})`);
+  res.json({ ok: true, to: subscriptions.length });
+});
+
+// Sensorstart: se vad som finns (felsökning) / "Ny sensor idag" i appen
+app.get('/api/board/sensor', (req, res) => {
+  res.json({ sensor: boardState.sensor || null, treatmentsFromXdrip: boardState.treatmentTypesSeen || [] });
+});
+app.post('/api/board/sensor', requirePin, (req, res) => {
+  const ms = Number(req.body && req.body.startedAt) || Date.now();
+  if (ms < Date.now() - 60 * 86400000 || ms > Date.now() + 3600000) return res.status(400).json({ error: 'Orimligt datum' });
+  boardState.sensor = { startedAt: ms, source: 'manual' };
+  bumpConfig();
+  res.json({ ok: true, sensor: boardState.sensor });
+});
+
 app.post('/api/board/pi-restore', (req, res) => {
   const body = req.body || {};
   const serverEmpty = !boardState.alarms.length && !Object.keys(boardState.settings).length;
