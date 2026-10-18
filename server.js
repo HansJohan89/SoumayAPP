@@ -2521,7 +2521,10 @@ function noteTitle(title) {
   const m = /^\s*(🔔|!)\s*(.*)$/u.exec(title || '');
   return m ? { note: true, title: m[2].trim() || '(Ingen titel)' } : { note: false, title: title || '(Ingen titel)' };
 }
-async function icsEventsToday(url) {
+// Händelser för idag och (days > 1) de närmaste dagarna. Varje händelse
+// får "day" (YYYY-MM-DD) = dagen den visas på; en heldagshändelse över
+// flera dagar kommer med en gång per dag.
+async function icsEventsToday(url, days = 1) {
   if (!icsCache || icsCache.url !== url || Date.now() - icsCache.at > 5 * 60000) {
     const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
     if (!r.ok) throw new Error(`Google svarade ${r.status} — stämmer länken?`);
@@ -2529,40 +2532,44 @@ async function icsEventsToday(url) {
     if (!/BEGIN:VCALENDAR/.test(text)) throw new Error('Länken gav ingen kalender');
     icsCache = { url, at: Date.now(), data: ical.sync.parseICS(text) };
   }
-  const today = stockholmDate();
-  const dayStart = new Date(stockholmIso(new Date()).slice(0, 10) + 'T00:00:00' + stockholmIso(new Date()).slice(19));
-  const dayEnd = new Date(dayStart.getTime() + 24 * 3600e3);
   const out = [];
-  const add = (ev, start, end) => {
-    if (!ev || ev.status === 'CANCELLED') return;
-    const allDay = !!(ev.start && ev.start.dateOnly) || ev.datetype === 'date';
-    const dur = (ev.end && ev.start) ? ev.end - ev.start : 0;
-    end = end || new Date(start.getTime() + dur);
-    if (allDay) {
-      const sd = dateOnlyStr(start), ed = dateOnlyStr(end);
-      if (!(sd <= today && (ed > today || ed === sd))) return;
-      out.push({ ...noteTitle(String(ev.summary || '')), start: sd, end: ed, allDay: true, location: String(ev.location || '') });
-    } else {
-      if (!(start < dayEnd && end > dayStart)) return;
-      out.push({ ...noteTitle(String(ev.summary || '')), start: stockholmIso(start), end: stockholmIso(end), allDay: false, location: String(ev.location || '') });
-    }
-  };
-  for (const ev of Object.values(icsCache.data)) {
-    if (!ev || ev.type !== 'VEVENT') continue;
-    if (ev.rrule) {
-      const dur = ev.end - ev.start;
-      for (const occ of ev.rrule.between(new Date(dayStart.getTime() - Math.max(dur, 0) - 36 * 3600e3), new Date(dayEnd.getTime() + 36 * 3600e3), true)) {
-        const key = occ.toISOString().slice(0, 10);
-        if (ev.exdate && Object.keys(ev.exdate).some(k => k.slice(0, 10) === key && Math.abs(new Date(ev.exdate[k]) - occ) < 60000)) continue;
-        const ov = ev.recurrences && Object.entries(ev.recurrences).find(([k]) => k.slice(0, 10) === key);
-        if (ov) add(ov[1], ov[1].start, ov[1].end);
-        else add(ev, occ, new Date(occ.getTime() + dur));
+  const t0 = stockholmDate();
+  for (let k = 0; k < Math.max(1, Math.min(7, days)); k++) {
+    const noon = new Date(Date.parse(t0 + 'T12:00:00Z') + k * 86400e3);
+    const today = noon.toISOString().slice(0, 10);
+    const dayStart = new Date(today + 'T00:00:00' + stockholmIso(noon).slice(19));
+    const dayEnd = new Date(dayStart.getTime() + 24 * 3600e3);
+    const add = (ev, start, end) => {
+      if (!ev || ev.status === 'CANCELLED') return;
+      const allDay = !!(ev.start && ev.start.dateOnly) || ev.datetype === 'date';
+      const dur = (ev.end && ev.start) ? ev.end - ev.start : 0;
+      end = end || new Date(start.getTime() + dur);
+      if (allDay) {
+        const sd = dateOnlyStr(start), ed = dateOnlyStr(end);
+        if (!(sd <= today && (ed > today || ed === sd))) return;
+        out.push({ ...noteTitle(String(ev.summary || '')), start: sd, end: ed, allDay: true, location: String(ev.location || ''), day: today });
+      } else {
+        if (!(start < dayEnd && end > dayStart)) return;
+        out.push({ ...noteTitle(String(ev.summary || '')), start: stockholmIso(start), end: stockholmIso(end), allDay: false, location: String(ev.location || ''), day: today });
       }
-    } else if (!ev.recurrenceid) add(ev, ev.start, ev.end);
+    };
+    for (const ev of Object.values(icsCache.data)) {
+      if (!ev || ev.type !== 'VEVENT') continue;
+      if (ev.rrule) {
+        const dur = ev.end - ev.start;
+        for (const occ of ev.rrule.between(new Date(dayStart.getTime() - Math.max(dur, 0) - 36 * 3600e3), new Date(dayEnd.getTime() + 36 * 3600e3), true)) {
+          const key = occ.toISOString().slice(0, 10);
+          if (ev.exdate && Object.keys(ev.exdate).some(k => k.slice(0, 10) === key && Math.abs(new Date(ev.exdate[k]) - occ) < 60000)) continue;
+          const ov = ev.recurrences && Object.entries(ev.recurrences).find(([k]) => k.slice(0, 10) === key);
+          if (ov) add(ov[1], ov[1].start, ov[1].end);
+          else add(ev, occ, new Date(occ.getTime() + dur));
+        }
+      } else if (!ev.recurrenceid) add(ev, ev.start, ev.end);
+    }
   }
   const seen = new Set();
-  return out.filter(e => { const k = e.title + e.start; return !seen.has(k) && seen.add(k); })
-            .sort((a, b) => (a.allDay === b.allDay ? a.start.localeCompare(b.start) : a.allDay ? -1 : 1));
+  return out.filter(e => { const k = e.day + e.title + e.start; return !seen.has(k) && seen.add(k); })
+            .sort((a, b) => a.day.localeCompare(b.day) || (a.allDay === b.allDay ? a.start.localeCompare(b.start) : a.allDay ? -1 : 1));
 }
 app.post('/api/board/calendar', requirePin, async (req, res) => {
   const url = String(req.body.url || '').trim();
@@ -2579,7 +2586,8 @@ app.post('/api/board/calendar', requirePin, async (req, res) => {
 // ── KALENDER (Google Calendar) ──────────────────────────────────
 app.get('/api/calendar/today', async (req, res) => {
   if (boardState.calendarIcs) {
-    try { return res.json({ events: await icsEventsToday(boardState.calendarIcs), source: 'ical' }); }
+    const days = Math.max(1, Math.min(7, parseInt(req.query.days, 10) || 1));
+    try { return res.json({ events: await icsEventsToday(boardState.calendarIcs, days), days, source: 'ical' }); }
     catch (e) { return res.status(502).json({ error: 'Kunde inte hämta kalendern: ' + e.message }); }
   }
   if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REFRESH_TOKEN) {
@@ -2590,7 +2598,7 @@ app.get('/api/calendar/today', async (req, res) => {
     const calendar = getCalendarClient();
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + Math.max(1, Math.min(7, parseInt(req.query.days, 10) || 1)));
 
     const result = await calendar.events.list({
       calendarId: 'primary',
@@ -2606,6 +2614,7 @@ app.get('/api/calendar/today', async (req, res) => {
       end: e.end.dateTime || e.end.date,
       allDay: !e.start.dateTime,
       location: e.location || '',
+      day: String(e.start.dateTime || e.start.date || '').slice(0, 10),
     }));
 
     res.json({ events });
