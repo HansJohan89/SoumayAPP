@@ -534,7 +534,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
       </div>
     </div>
 
-    <div class="card pi-block" data-title="FOTONAS FÄRGER" data-keys="photoBrightness,photoContrast,photoSaturation" data-extra="photoTune"></div>
+    <div class="card pi-block" data-title="FOTONAS FÄRGER" data-keys="photoBrightness,photoContrast,photoSaturation,photoDither" data-extra="photoTune"></div>
     <div class="card" id="photoCard">
       <div class="card-label">ALBUMETS BILDER</div>
       <div class="chips2" id="photoFilter" style="margin-bottom:10px;"></div>
@@ -2086,7 +2086,10 @@ function photoTuneHtml(title, its, saved){
   const changed = its.some(it => saved[it.key] !== undefined && saved[it.key] !== it.default);
   return `<div class="card-label">${esc(title)}</div>
     <div class="hint" style="margin-top:-4px;">Ställ in mot den riktiga skärmen — tavlan ritar om bilden när du släpper reglaget (om Tavla-vyn syns).</div>
-    ${its.map(it => { const [lab, fmt, lo, hi] = PHOTO_TUNE[it.key] || [it.label, v => v, '', '']; const v = saved[it.key] !== undefined ? saved[it.key] : it.default;
+    ${its.filter(it => it.type === 'select').map(it => { const v = saved[it.key] !== undefined ? saved[it.key] : it.default;
+      return `<div class="field" style="margin:10px 0 2px;"><div class="field-label">Mönster</div><div class="chips2">${(it.options || []).map(o =>
+        `<button class="${o.value === v ? 'on' : ''}" onclick="saveSetting('${it.key}', '${o.value}')">${esc(o.label)}</button>`).join('')}</div></div>`; }).join('')}
+    ${its.filter(it => it.type !== 'select').map(it => { const [lab, fmt, lo, hi] = PHOTO_TUNE[it.key] || [it.label, v => v, '', '']; const v = saved[it.key] !== undefined ? saved[it.key] : it.default;
       return `<div class="field" style="margin:10px 0 2px;"><div class="field-label"><span>${lab}</span><b id="pt_${it.key}">${fmt(v)}</b></div>
         <input type="range" min="${it.min}" max="${it.max}" step="${it.step || 1}" value="${v}"
           oninput="document.getElementById('pt_${it.key}').textContent=(PHOTO_TUNE['${it.key}'][1])(Number(this.value))"
@@ -2094,9 +2097,9 @@ function photoTuneHtml(title, its, saved){
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-muted);"><span>${lo}</span><span>${hi}</span></div></div>`; }).join('')}
     ${changed ? `<button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="photoTuneReset()">Återställ</button>` : ''}`;
 }
-async function photoTuneReset(){            // alla tre i ett anrop = en omritning
+async function photoTuneReset(){            // alla i ett anrop = en omritning
   try {
-    const data = await api('PUT', '/api/board/settings', Object.fromEntries(Object.keys(PHOTO_TUNE).map(k => [k, null])));
+    const data = await api('PUT', '/api/board/settings', Object.fromEntries([...Object.keys(PHOTO_TUNE), 'photoDither'].map(k => [k, null])));
     tavlaState.settings = data.settings; tavlaState.settingTitles = data.settingTitles;
     if (lastBoard) lastBoard.settings = data.settings;
     renderPiSettings(); toast('Återställt ✓');
