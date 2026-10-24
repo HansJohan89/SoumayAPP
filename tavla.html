@@ -2095,8 +2095,10 @@ function photoTuneHtml(title, its, saved){
           oninput="document.getElementById('pt_${it.key}').textContent=(PHOTO_TUNE['${it.key}'][1])(Number(this.value))"
           onchange="saveSetting('${it.key}', Number(this.value))">
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-muted);"><span>${lo}</span><span>${hi}</span></div></div>`; }).join('')}
-    ${changed ? `<button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="photoTuneReset()">Återställ</button>` : ''}`;
+    <div class="sheet-actions" style="margin-top:12px;"><button class="btn btn-ghost" onclick="photoTest()">Testbild på tavlan (A–D)</button>${changed ? `<button class="btn btn-ghost" onclick="photoTuneReset()">Återställ</button>` : ''}</div>
+    <div class="hint" style="margin-top:6px;">Testbilden visar fotot som syns nu på fyra sätt samtidigt: A nu, B kraftigare, C klassisk, D mörkare med kvar detaljer i ljusa partier. Den försvinner vid nästa omritning.</div>`;
 }
+function photoTest(){ sendMacropadCommand('photo_test'); toast('Tavlan ritar testbilden — tar ungefär en halv minut'); }
 async function photoTuneReset(){            // alla i ett anrop = en omritning
   try {
     const data = await api('PUT', '/api/board/settings', Object.fromEntries([...Object.keys(PHOTO_TUNE), 'photoDither'].map(k => [k, null])));
