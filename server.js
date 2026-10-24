@@ -1278,6 +1278,16 @@ if (!boardState.podStats || typeof boardState.podStats !== 'object') boardState.
 if (!boardState.photoEdits || typeof boardState.photoEdits !== 'object') boardState.photoEdits = {};   // nyckel -> { z, fx, fy, fit, hidden, pair }
 if (!boardState.photoDims || typeof boardState.photoDims !== 'object') boardState.photoDims = {};     // nyckel -> [bredd, höjd]
 if (typeof boardState.photoAutoPair !== 'boolean') boardState.photoAutoPair = true;
+// Ny fotobehandling (2026-10-24): fotonas reglage börjar om på de rekommenderade
+// värdena (tavlans standard: ljushet 0, kontrast 0 %, mättnad 15 %, Mjukt) — en gång
+if (!boardState.photoTuneReset3) {
+  boardState.settings = boardState.settings || {};
+  for (const k of ['photoBrightness', 'photoContrast', 'photoSaturation', 'photoDither']) delete boardState.settings[k];
+  if (boardState.settingTitles) for (const k of ['photoBrightness', 'photoContrast', 'photoSaturation', 'photoDither']) delete boardState.settingTitles[k];
+  boardState.photoTuneReset3 = true;
+  boardState.configVersion = (boardState.configVersion || 0) + 1;
+  writeJSON(BOARD_FILE, boardState);
+}
 let piStatus = null, piStatusAt = null;
 
 function bumpConfig() {
