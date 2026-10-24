@@ -358,6 +358,10 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 .pframe{position:relative;width:100%;aspect-ratio:800/480;overflow:hidden;border:3px solid var(--ink);border-radius:10px;background:#F8F5EF;box-shadow:4px 4px 0 var(--ink);touch-action:none;cursor:grab;}
 .pframe img{position:absolute;max-width:none;user-select:none;-webkit-user-drag:none;pointer-events:none;}
 .pframe .half{position:absolute;top:0;bottom:0;overflow:hidden;}
+.pframe .half.sel::after{content:'';position:absolute;inset:0;box-shadow:inset 0 0 0 4px var(--hero-blue);pointer-events:none;}
+.pth.wide{grid-column:span 2;aspect-ratio:2/1;display:flex;gap:3px;background:#fff;}
+.pth.wide img{flex:1;min-width:0;}
+.btn.btn-ghost.on{background:var(--hero-blue);color:#fff;text-shadow:1px 1px 0 var(--ink);}
 </style>
 </head>
 <body>
@@ -719,9 +723,14 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 <div class="sheet-bg" id="pairSheet" onclick="if(event.target===this)closePairSheet()">
   <div class="sheet">
     <div class="sheet-title">PARA IHOP</div>
-    <div class="hint" style="margin-top:-6px;">Visas bredvid varandra på tavlan</div>
+    <div class="hint" style="margin-top:-6px;" id="pairHint">Så visas paret på tavlan — tryck på en halva, dra för att flytta, nyp för att zooma</div>
     <div class="pframe" id="pairFrame"></div>
-    <div class="sheet-actions" style="margin-top:12px;"><button class="btn btn-ghost" onclick="pairSwap()"><svg class="ic"><use href="#i-swap"/></svg> Byt plats</button><button class="btn btn-ghost" id="pairSplit" onclick="pairSplit()"><svg class="ic"><use href="#i-x"/></svg> Ta isär</button></div>
+    <div class="field" style="display:flex;align-items:center;gap:12px;margin-top:12px;">
+      <div class="field-label" style="margin:0;width:52px;" id="pairZoomLabel">Zoom</div>
+      <input type="range" id="pairZoom" min="1" max="4" step="0.01" value="1" oninput="pairZoomInput(this.value)" style="flex:1;">
+      <b id="pairZoomText" style="width:52px;text-align:right;white-space:nowrap;">100 %</b></div>
+    <div class="sheet-actions" style="margin-top:0;"><button class="btn btn-ghost" onclick="pairCenter()">Mitten</button><button class="btn btn-ghost" id="pairFitBtn" onclick="pairFit()">Hela bilden</button></div>
+    <div class="sheet-actions"><button class="btn btn-ghost" onclick="pairSwap()"><svg class="ic"><use href="#i-swap"/></svg> Byt plats</button><button class="btn btn-ghost" id="pairSplit" onclick="pairSplit()"><svg class="ic"><use href="#i-x"/></svg> Ta isär</button></div>
     <div class="vsec" style="margin-top:14px;">VÄLJ ANDRA BILDEN · STÅENDE</div>
     <div class="pgrid four" id="pairGrid"></div>
     <div class="sheet-actions stick"><button class="btn btn-ghost" onclick="closePairSheet()">Avbryt</button><button class="btn btn-primary" style="flex:2;" onclick="savePair()">Spara paret</button></div>
@@ -2967,15 +2976,25 @@ function renderPhotos(){
     return;
   }
   const items = photos.items;
+  const autoMate = {};
+  photoSlides().forEach(s => { if (s.length === 2 && !pPartner(s[0])) { autoMate[s[0]] = s[1]; autoMate[s[1]] = s[0]; } });
   const changed = k => { const e = pEdit(k); return !!(e.z || e.fx != null || e.fy != null || e.fit || e.pair || pPartner(k)); };
-  const F = [['all', `Alla ${items.length}`], ['portrait', 'Stående'], ['changed', 'Ändrade'], ['hidden', 'Dolda']];
+  const pairs = photoSlides().filter(s => s.length === 2);
+  const F = [['all', `Alla ${items.length}`], ['pairs', `Par ${pairs.length}`], ['portrait', 'Stående'], ['changed', 'Ändrade'], ['hidden', 'Dolda']];
   document.getElementById('photoFilter').innerHTML = F.map(([k, l]) => `<button class="${photoFilter === k ? 'on' : ''}" onclick="photoFilter='${k}';renderPhotos()">${l}</button>`).join('');
   const list = items.filter(i => photoFilter === 'all' || (photoFilter === 'portrait' && pPortrait(i.k))
     || (photoFilter === 'changed' && changed(i.k)) || (photoFilter === 'hidden' && pEdit(i.k).hidden));
+  if (photoFilter === 'pairs') {
+    grid.innerHTML = pairs.length ? pairs.map(([a, b]) => `<button class="pth wide" onclick="openPairSheet('${a}','${b}')">
+      <img src="${esc(pUrl(a, 'w300-h300'))}" alt=""><img src="${esc(pUrl(b, 'w300-h300'))}" alt="">
+      <span class="bds"><span class="bd ${pPartner(a) ? '' : 'w'}">${ic('pair')}</span></span></button>`).join('')
+      : '<div class="hint" style="grid-column:1/-1">Inga par än. Öppna en stående bild och välj "Para ihop med…", eller slå på automatisk ihopparning.</div>';
+    if (pairs.some(([a]) => !pPartner(a))) grid.innerHTML += '<div class="hint" style="grid-column:1/-1">Vitt märke = parat automatiskt. Sparar du ett sådant par låses det ihop.</div>';
+  } else
   grid.innerHTML = list.length ? list.map(i => {
     const e = pEdit(i.k), b = [];
     if (e.z || e.fx != null || e.fy != null || e.fit) b.push('<span class="bd">' + ic('crop') + '</span>');
-    if (pPartner(i.k)) b.push('<span class="bd">' + ic('pair') + '</span>');
+    if (pPartner(i.k) || autoMate[i.k]) b.push(`<span class="bd ${pPartner(i.k) ? '' : 'w'}">` + ic('pair') + '</span>');
     if (e.hidden) b.push('<span class="bd w">' + ic('eyeoff') + '</span>');
     return `<button class="pth ${e.hidden ? 'off' : ''}" onclick="openPhotoEditor('${i.k}')"><img src="${esc(i.u)}=w300-h300" alt="" loading="lazy" data-k="${i.k}" onload="photoMeasured(this)">${b.length ? `<span class="bds">${b.join('')}</span>` : ''}</button>`;
   }).join('') : '<div class="hint" style="grid-column:1/-1">Inga bilder här</div>';
@@ -3043,7 +3062,7 @@ function renderPhotoEditor(){
   document.getElementById('photoEdHint').textContent = w < P_W ? 'Visas som halva i ett par — dra för att flytta, nyp för att zooma' : 'Så här visas den på tavlan — dra för att flytta, nyp för att zooma';
   document.getElementById('photoZoom').value = photoEd.e.z;
   document.getElementById('photoZoomText').textContent = photoEd.e.fit ? 'Hela' : Math.round(photoEd.e.z * 100) + ' %';
-  document.getElementById('photoFitBtn').classList.toggle('btn-primary', !!photoEd.e.fit);
+  document.getElementById('photoFitBtn').classList.toggle('on', !!photoEd.e.fit);
 }
 function photoZoomInput(v){ if (!photoEd) return; photoEd.e.fit = null; photoEd.e.z = Number(v); renderPhotoEditor(); }
 function photoCenter(){ if (!photoEd) return; Object.assign(photoEd.e, { fx: .5, fy: .5, fit: null }); renderPhotoEditor(); }
@@ -3097,31 +3116,112 @@ async function photoShowNow(){
   try { await api('POST', '/api/board/photos/show', { k }); toast('Tavlan visar bilden om några sekunder'); setTimeout(loadPhotos, 15000); }
   catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
 }
-// ── Para ihop ──
+// Bildspelet som tavlan visar det (samma regler som refresh.py::photo_slides)
+function photoSlides(){
+  if (!photos) return [];
+  const keys = (photos.items || []).map(i => i.k), E = photos.edits || {};
+  const hidden = new Set(keys.filter(k => (E[k] || {}).hidden));
+  const partner = {}, second = new Set();
+  Object.entries(E).forEach(([k, e]) => { const p = e && e.pair;
+    if (p && keys.includes(k) && keys.includes(p) && !hidden.has(k) && !hidden.has(p) && k !== p && !(p in partner)) partner[k] = p; });
+  Object.values(partner).forEach(v => second.add(v));
+  const primaryOf = {}; Object.entries(partner).forEach(([k, v]) => primaryOf[v] = k);
+  const slides = [], used = new Set(), auto = photos.autoPair !== false;
+  keys.forEach((k, i) => {
+    if (hidden.has(k) || used.has(k)) return;
+    if (k in partner || second.has(k)) { const a = k in partner ? k : primaryOf[k];
+      if (!used.has(a) && !used.has(partner[a])) { slides.push([a, partner[a]]); used.add(a); used.add(partner[a]); } return; }
+    if (auto && pPortrait(k)) {
+      const m = keys.slice(i + 1).find(x => !used.has(x) && !hidden.has(x) && !second.has(x) && !(x in partner) && pPortrait(x));
+      if (m) { slides.push([k, m]); used.add(k); used.add(m); return; }
+    }
+    slides.push([k]); used.add(k);
+  });
+  return slides;
+}
+// ── Para ihop: välj bilder, ordning och hur varje halva ser ut ──
 let pairEd = null;
-function openPairSheet(k){
-  const p = pPartner(k);
-  const first = p && pEdit(p).pair === k ? p : k, second = first === k ? p : k;
-  pairEd = { a: first, b: second || null, was: !!p };
-  document.getElementById('pairSplit').style.display = p ? '' : 'none';
+const P_HALF = (P_W - P_GAP) / 2;
+function edCopy(k){ const e = pEdit(k); return { z: e.z || 1, fx: e.fx == null ? .5 : e.fx, fy: e.fy == null ? .5 : e.fy, fit: e.fit || null }; }
+function openPairSheet(k, other){
+  let a = k, b = other || null;
+  if (!other) { const p = pPartner(k); if (p) { if (pEdit(p).pair === k) { a = p; b = k; } else b = p; } }
+  pairEd = { a, b, ea: edCopy(a), eb: b ? edCopy(b) : null, sel: 0, explicit: !!pPartner(a) };
+  document.getElementById('pairSplit').style.display = pairEd.explicit ? '' : 'none';
   document.getElementById('pairSheet').classList.add('open');
   renderPairSheet();
 }
 function closePairSheet(){ document.getElementById('pairSheet').classList.remove('open'); pairEd = null; }
+function pairCur(){ return pairEd.sel ? pairEd.eb : pairEd.ea; }
 function renderPairSheet(){
   if (!pairEd) return;
-  const frame = document.getElementById('pairFrame'), scale = frame.clientWidth / P_W, half = (P_W - P_GAP) / 2;
-  frame.innerHTML = [pairEd.a, pairEd.b].map((k, i) => `<div class="half" style="left:${i ? (half + P_GAP) * scale : 0}px;width:${half * scale}px">${k ? `<img src="${esc(pUrl(k, 'w1600-h1600'))}" data-i="${i}" alt="">` : '<div class="hint" style="padding:30% 10px;text-align:center">Välj en bild nedan</div>'}</div>`).join('');
-  frame.querySelectorAll('img').forEach(img => {
-    const go = () => placeImg(img, frame, 0, half, P_H, pEdit(img.dataset.i === '1' ? pairEd.b : pairEd.a), scale);
-    if (img.complete && img.naturalWidth) go(); else img.onload = go;
+  const frame = document.getElementById('pairFrame'), scale = frame.clientWidth / P_W;
+  const halves = [[pairEd.a, pairEd.ea], [pairEd.b, pairEd.eb]];
+  if (frame.childElementCount !== 2 || frame.dataset.k !== pairEd.a + '|' + pairEd.b) {
+    frame.dataset.k = pairEd.a + '|' + pairEd.b;
+    frame.innerHTML = halves.map(([k], i) => `<div class="half" data-i="${i}" style="left:${i ? (P_HALF + P_GAP) * scale : 0}px;width:${P_HALF * scale}px">${k ? `<img src="${esc(pUrl(k, 'w1600-h1600'))}" alt="">` : '<div class="hint" style="padding:30% 10px;text-align:center">Välj en bild nedan</div>'}</div>`).join('');
+    frame.querySelectorAll('img').forEach(img => img.onload = () => renderPairSheet());
+  }
+  frame.querySelectorAll('.half').forEach(h => {
+    const i = Number(h.dataset.i), e = i ? pairEd.eb : pairEd.ea, img = h.querySelector('img');
+    Object.assign(h.style, { left: (i ? (P_HALF + P_GAP) * scale : 0) + 'px', width: P_HALF * scale + 'px', background: '#F8F5EF' });
+    h.classList.toggle('sel', i === pairEd.sel && !!pairEd.b);
+    if (img && img.naturalWidth && e) placeImg(img, h, 0, P_HALF, P_H, e, scale);
   });
+  const cur = pairCur();
+  document.getElementById('pairZoomLabel').textContent = pairEd.sel ? 'Höger' : 'Vänster';
+  document.getElementById('pairZoom').value = cur ? cur.z : 1;
+  document.getElementById('pairZoomText').textContent = !cur ? '' : cur.fit ? 'Hela' : Math.round(cur.z * 100) + ' %';
+  document.getElementById('pairFitBtn').classList.toggle('on', !!(cur && cur.fit));
   const keep = new Set([pairEd.a, pairEd.b]);
   const cands = (photos.items || []).filter(i => i.k !== pairEd.a && !pEdit(i.k).hidden && (pPortrait(i.k) || keep.has(i.k)));
-  document.getElementById('pairGrid').innerHTML = cands.length ? cands.map(i => `<button class="pth ${i.k === pairEd.b ? 'sel' : ''}" onclick="pairEd.b='${i.k}';renderPairSheet()"><img src="${esc(i.u)}=w300-h300" alt="" loading="lazy" data-k="${i.k}" onload="photoMeasured(this)">${pPartner(i.k) && i.k !== pairEd.b ? '<span class="bds"><span class="bd">' + ic('pair') + '</span></span>' : ''}</button>`).join('')
-    : '<div class="hint" style="grid-column:1/-1">Inga andra stående bilder hittades i albumet.</div>';
+  const grid = document.getElementById('pairGrid');
+  const sig = cands.map(i => i.k).join() + '|' + pairEd.b;
+  if (grid.dataset.sig !== sig) {
+    grid.dataset.sig = sig;
+    grid.innerHTML = cands.length ? cands.map(i => `<button class="pth ${i.k === pairEd.b ? 'sel' : ''}" onclick="pairPick('${i.k}')"><img src="${esc(i.u)}=w300-h300" alt="" loading="lazy" data-k="${i.k}" onload="photoMeasured(this)">${pPartner(i.k) && !keep.has(i.k) ? '<span class="bds"><span class="bd">' + ic('pair') + '</span></span>' : ''}</button>`).join('')
+      : '<div class="hint" style="grid-column:1/-1">Inga andra stående bilder hittades i albumet.</div>';
+  }
 }
-function pairSwap(){ if (pairEd && pairEd.b) { [pairEd.a, pairEd.b] = [pairEd.b, pairEd.a]; renderPairSheet(); } }
+function pairPick(k){ pairEd.b = k; pairEd.eb = edCopy(k); pairEd.sel = 1; renderPairSheet(); }
+function pairZoomInput(v){ const e = pairEd && pairCur(); if (!e) return; e.fit = null; e.z = Number(v); renderPairSheet(); }
+function pairCenter(){ const e = pairEd && pairCur(); if (!e) return; Object.assign(e, { fx: .5, fy: .5, fit: null }); renderPairSheet(); }
+function pairFit(){ const e = pairEd && pairCur(); if (!e) return; e.fit = e.fit ? null : 'contain'; renderPairSheet(); }
+function pairSwap(){ if (pairEd && pairEd.b) { [pairEd.a, pairEd.b, pairEd.ea, pairEd.eb] = [pairEd.b, pairEd.a, pairEd.eb, pairEd.ea]; pairEd.sel = 1 - pairEd.sel; renderPairSheet(); } }
+// Dra/nyp i paret: den halva man tar i blir vald och flyttas
+(function(){
+  const pts = new Map(); let start = null;
+  const frame = () => document.getElementById('pairFrame');
+  document.addEventListener('pointerdown', ev => {
+    if (!pairEd || !frame().contains(ev.target)) return;
+    const half = ev.target.closest('.half');
+    if (half && pts.size === 0) { const i = Number(half.dataset.i); if (i === 0 || pairEd.b) pairEd.sel = i; }
+    frame().setPointerCapture(ev.pointerId); pts.set(ev.pointerId, [ev.clientX, ev.clientY]);
+    start = { e: { ...pairCur() }, pts: new Map(pts) };
+    renderPairSheet();
+  });
+  document.addEventListener('pointermove', ev => {
+    if (!pairEd || !pts.has(ev.pointerId) || !start) return;
+    pts.set(ev.pointerId, [ev.clientX, ev.clientY]);
+    const e = pairCur(); if (!e) return;
+    const img = frame().querySelector(`.half[data-i="${pairEd.sel}"] img`); if (!img || !img.naturalWidth) return;
+    const scale = frame().clientWidth / P_W;
+    if (pts.size === 1 && start.pts.size === 1) {
+      if (e.fit) return;
+      const [x0, y0] = [...start.pts.values()][0], [x1, y1] = [...pts.values()][0];
+      const B = photoBox(img.naturalWidth, img.naturalHeight, P_HALF, P_H, start.e);
+      const nb = photoBox(img.naturalWidth, img.naturalHeight, P_HALF, P_H, { ...start.e, fx: start.e.fx - (x1 - x0) / scale / B.nw, fy: start.e.fy - (y1 - y0) / scale / B.nh });
+      e.fx = Math.min(1, Math.max(0, (-nb.x + P_HALF / 2) / nb.nw)); e.fy = Math.min(1, Math.max(0, (-nb.y + P_H / 2) / nb.nh));
+    } else if (pts.size === 2 && start.pts.size === 2) {
+      const d = m => { const [a, b] = [...m.values()]; return Math.hypot(a[0] - b[0], a[1] - b[1]); };
+      e.fit = null; e.z = Math.min(4, Math.max(1, start.e.z * d(pts) / Math.max(1, d(start.pts))));
+    }
+    renderPairSheet();
+  });
+  const up = ev => { pts.delete(ev.pointerId); if (pairEd && pairCur()) start = { e: { ...pairCur() }, pts: new Map(pts) }; };
+  document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
+})();
+const editBody = (k, e) => e.fit ? { k, fit: 'contain' } : { k, z: e.z, fx: e.fx, fy: e.fy };
 async function pairSplit(){
   if (!pairEd) return;
   try { const r = await api('POST', '/api/board/photos/pair', { a: pairEd.a, b: null }); photos.edits = r.edits; closePairSheet();
@@ -3130,9 +3230,18 @@ async function pairSplit(){
 }
 async function savePair(){
   if (!pairEd || !pairEd.b) return toast('Välj den andra bilden');
-  try { const r = await api('POST', '/api/board/photos/pair', { a: pairEd.a, b: pairEd.b }); photos.edits = r.edits; closePairSheet();
-        if (photoEd) openPhotoEditor(photoEd.k); toast('Paret är sparat ✓'); renderPhotos(); }
-  catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+  const { a, b, ea, eb } = pairEd;
+  try {
+    await api('POST', '/api/board/photos/pair', { a, b });
+    const ra = await api('POST', '/api/board/photos/edit', editBody(a, ea));
+    const rb = await api('POST', '/api/board/photos/edit', editBody(b, eb));
+    photos.edits = { ...(photos.edits || {}) };
+    for (const [k, r] of [[a, ra], [b, rb]]) { if (Object.keys(r.edit).length) photos.edits[k] = r.edit; else delete photos.edits[k]; }
+    Object.keys(photos.edits).forEach(k => { if (k !== a && [a, b].includes(photos.edits[k].pair)) delete photos.edits[k].pair; });
+    photos.edits[a] = { ...photos.edits[a], pair: b };
+    closePairSheet(); if (photoEd) closePhotoEditor();
+    toast('Paret är sparat ✓'); renderPhotos();
+  } catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
 }
 
 // ── Hoppa över nästa alarm ──
