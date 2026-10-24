@@ -534,7 +534,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
       </div>
     </div>
 
-    <div class="card pi-block" data-title="FOTONAS FÄRGER" data-keys="photoMethod,photoBrightness,photoContrast,photoSaturation,photoDither" data-extra="photoTune"></div>
+    <div class="card pi-block" data-title="FOTONAS FÄRGER" data-keys="photoMethod,photoHdr,photoBrightness,photoContrast,photoSaturation,photoDither" data-extra="photoTune"></div>
     <div class="card" id="photoCard">
       <div class="card-label">ALBUMETS BILDER</div>
       <div class="chips2" id="photoFilter" style="margin-bottom:10px;"></div>
@@ -2087,8 +2087,8 @@ function photoTuneHtml(title, its, saved){
   const mi = its.find(it => it.key === 'photoMethod'), method = mi ? (saved.photoMethod !== undefined ? saved.photoMethod : mi.default) : 'anpassad';
   return `<div class="card-label">${esc(title)}</div>
     <div class="hint" style="margin-top:-4px;">Original = fotot som det är (som tidigare). Reglagen: 0 = ingen ändring. Tavlan ritar om bilden när du släpper ett reglage, om Tavla-vyn syns.</div>
-    ${its.filter(it => it.type === 'select' && !(it.key === 'photoDither' && method !== 'anpassad')).map(it => { const v = saved[it.key] !== undefined ? saved[it.key] : it.default;
-      return `<div class="field" style="margin:10px 0 2px;"><div class="field-label">${esc(it.label.replace(/^Foton: /, '').replace(/^./, c => c.toUpperCase()))}</div><div class="chips2">${(it.options || []).map(o =>
+    ${its.filter(it => it.type === 'select' && !(it.key === 'photoDither' && method !== 'anpassad') && !(it.key === 'photoHdr' && method === 'anpassad')).map(it => { const v = saved[it.key] !== undefined ? saved[it.key] : it.default;
+      return `<div class="field" style="margin:10px 0 2px;"><div class="field-label">${esc(it.label.replace(/^Foton: /, '').replace(/^./, c => c.toUpperCase()))}</div>${it.help ? `<div class="hint" style="margin:-2px 0 8px;">${esc(it.help)}</div>` : ''}<div class="chips2">${(it.options || []).map(o =>
         `<button class="${o.value === v ? 'on' : ''}" onclick="saveSetting('${it.key}', '${o.value}')">${esc(o.label)}</button>`).join('')}</div></div>`; }).join('')}
     ${its.filter(it => it.type !== 'select').map(it => { const [lab, fmt, lo, hi] = PHOTO_TUNE[it.key] || [it.label, v => v, '', '']; const v = saved[it.key] !== undefined ? saved[it.key] : it.default;
       return `<div class="field" style="margin:10px 0 2px;"><div class="field-label"><span>${lab}</span><b id="pt_${it.key}">${fmt(v)}</b></div>
@@ -2102,7 +2102,7 @@ function photoTuneHtml(title, its, saved){
 function photoTest(){ sendMacropadCommand('photo_test'); toast('Tavlan ritar testbilden — tar ungefär en halv minut'); }
 async function photoTuneReset(){            // alla i ett anrop = en omritning
   try {
-    const data = await api('PUT', '/api/board/settings', Object.fromEntries([...Object.keys(PHOTO_TUNE), 'photoDither', 'photoMethod'].map(k => [k, null])));
+    const data = await api('PUT', '/api/board/settings', Object.fromEntries([...Object.keys(PHOTO_TUNE), 'photoDither', 'photoMethod', 'photoHdr'].map(k => [k, null])));
     tavlaState.settings = data.settings; tavlaState.settingTitles = data.settingTitles;
     if (lastBoard) lastBoard.settings = data.settings;
     renderPiSettings(); toast('Återställt ✓');
