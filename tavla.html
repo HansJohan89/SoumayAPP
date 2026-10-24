@@ -341,6 +341,23 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
   cursor:pointer;padding:0;color:var(--ink);box-shadow:2px 2px 0 var(--ink);}
 .xbtn .ic{width:18px;height:18px;}
 .toast .undo{margin-left:12px;background:none;border:none;color:#9fe3c4;font-weight:800;font-size:inherit;font-family:inherit;text-decoration:underline;cursor:pointer;padding:0;pointer-events:auto;}
+/* ── Albumets bilder (2026-10-24) ── */
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.pgrid.four{grid-template-columns:repeat(4,1fr);}
+.pth{position:relative;border:2px solid var(--ink);border-radius:8px;overflow:hidden;aspect-ratio:1;background:var(--paper-soft);cursor:pointer;padding:0;}
+.pth img{width:100%;height:100%;object-fit:cover;display:block;}
+.pth.off img{opacity:.35;}
+.pth.sel{outline:3px solid var(--hero-blue);outline-offset:2px;}
+.pth .bds{position:absolute;top:4px;right:4px;display:flex;gap:3px;}
+.pth .bd{width:22px;height:22px;border-radius:6px;background:var(--hero-blue);color:#fff;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--ink);}
+.pth .bd.w{background:#fff;color:var(--ink);}
+.pth .bd .ic{width:14px;height:14px;}
+.pnext{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;}
+.pnext .slide{flex:none;width:96px;aspect-ratio:5/3;border:2px solid var(--ink);border-radius:6px;overflow:hidden;display:flex;gap:2px;background:#fff;}
+.pnext .slide img{flex:1;min-width:0;height:100%;object-fit:cover;}
+.pframe{position:relative;width:100%;aspect-ratio:800/480;overflow:hidden;border:3px solid var(--ink);border-radius:10px;background:#F8F5EF;box-shadow:4px 4px 0 var(--ink);touch-action:none;cursor:grab;}
+.pframe img{position:absolute;max-width:none;user-select:none;-webkit-user-drag:none;pointer-events:none;}
+.pframe .half{position:absolute;top:0;bottom:0;overflow:hidden;}
 </style>
 </head>
 <body>
@@ -356,7 +373,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
  <symbol id="i-heartf" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.4-7.5-10.1A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.7C19.5 15.6 12 20 12 20z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
  <symbol id="i-vol" viewBox="0 0 24 24"><path d="M4 9.5h3.2L12 5.4v13.2l-4.8-4.1H4z" fill="currentColor"/><path d="M15.4 9a4.2 4.2 0 0 1 0 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
  <symbol id="i-volhi" viewBox="0 0 24 24"><path d="M4 9.5h3.2L12 5.4v13.2l-4.8-4.1H4z" fill="currentColor"/><path d="M15.4 9a4.2 4.2 0 0 1 0 6M18 6.6a7.6 7.6 0 0 1 0 10.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
-<symbol id="i-music" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 18V5l11-2v13"/><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="6.5" cy="18" r="2.5"/><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="17.5" cy="16" r="2.5"/></symbol><symbol id="i-radio" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="3" y="8" width="18" height="12" rx="2.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 8l10-5"/><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="15.5" cy="14" r="2.6"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6.5 12.5h4M6.5 15.5h4"/></symbol><symbol id="i-news" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 4h12a2 2 0 0 1 2 2v13a1 1 0 0 0 1 1H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M19 8h1a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M8 8h7M8 12h7M8 16h4"/></symbol><symbol id="i-shuffle" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 6h3.5c2 0 3.2 1 4.3 2.6l2.4 6.8C14.3 17 15.5 18 17.5 18H21"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 18h3.5c1.4 0 2.4-.5 3.2-1.4M14.3 7.4C15.1 6.5 16.1 6 17.5 6H21"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M18.5 3.5 21 6l-2.5 2.5M18.5 15.5 21 18l-2.5 2.5"/></symbol><symbol id="i-mic" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="9" y="3" width="6" height="11" rx="3"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></symbol><symbol id="i-image" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="3" y="4.5" width="18" height="15" rx="2.5"/><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="9" cy="10" r="1.8"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 16l-5-5-8.5 8.5"/></symbol><symbol id="i-alarm" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="13" r="7.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 9.5V13l2.5 2M4 5l3-2.5M20 5l-3-2.5"/></symbol><symbol id="i-bell" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 20.5a2.2 2.2 0 0 0 4 0"/></symbol><symbol id="i-playpause" viewBox="0 0 24 24"><path d="M3.5 6.5v11L11 12z" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15 6.5v11M20 6.5v11"/></symbol><symbol id="i-timer" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="13.5" r="7.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 10v3.5M9.5 2.5h5M18.5 6.5l1.5-1.5"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="10.5" cy="10.5" r="6.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15.5 15.5 21 21"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3.5 11 12 4l8.5 7"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5.5 9.5V20h13V9.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 20v-5.5h4V20"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="12" r="3"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol><symbol id="i-bus" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="4" y="3.5" width="16" height="14" rx="3"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 11h16M8 21v-3.5M16 21v-3.5"/><circle cx="8" cy="14.5" r="1.1" fill="currentColor"/><circle cx="16" cy="14.5" r="1.1" fill="currentColor"/></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3.5 10h17M8 3v4M16 3v4"/></symbol><symbol id="i-snooze" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 7h5L4 13h5M13 4h4l-4 5h4M14 15h6l-6 6h6"/></symbol><symbol id="i-speaker" viewBox="0 0 24 24"><path d="M4 9.5h3.2L12 5.4v13.2l-4.8-4.1H4z" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15.4 9a4.2 4.2 0 0 1 0 6M18 6.6a7.6 7.6 0 0 1 0 10.8"/></symbol><symbol id="i-wifi" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.3" r="1.3" fill="currentColor"/></symbol><symbol id="i-ball" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="12" r="8.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 7.5l4 2.9-1.5 4.7h-5L8 10.4z"/></symbol><symbol id="i-link" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol><symbol id="i-drop" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11z"/></symbol><symbol id="i-steps" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 3.5c1.7 0 2.7 2 2.7 4.5S8.7 13 7 13s-2.7-2.5-2.7-5S5.3 3.5 7 3.5zM5 16h4M17 8c1.7 0 2.7 2 2.7 4.5s-1 5-2.7 5-2.7-2.5-2.7-5S15.3 8 17 8zM15 20.5h4"/></symbol><symbol id="i-pad" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="3" y="5" width="18" height="14" rx="3"/><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="6.5" y="9" width="3" height="3" rx=".7"/><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="10.5" y="9" width="3" height="3" rx=".7"/><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="17" cy="10.5" r="1.8"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="5" y="10.5" width="14" height="10" rx="2.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol><symbol id="i-tools" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M14.5 6.5a4 4 0 0 0 5 5l-9 9a2.1 2.1 0 0 1-3-3l9-9a4 4 0 0 0-2-2z"/></symbol><symbol id="i-starf" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol><symbol id="i-globe" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="12" r="8.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3.5 12h17M12 3.5c2.4 2.4 3.4 5.2 3.4 8.5S14.4 18.1 12 20.5C9.6 18.1 8.6 15.3 8.6 12S9.6 5.9 12 3.5z"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="12" r="8.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M8 12.3l2.7 2.7L16.2 9.5"/></symbol><symbol id="i-warn" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4 21 19.5H3z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 10v4"/><circle cx="12" cy="16.8" r="1.1" fill="currentColor"/></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol></defs></svg>
+<symbol id="i-music" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 18V5l11-2v13"/><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="6.5" cy="18" r="2.5"/><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="17.5" cy="16" r="2.5"/></symbol><symbol id="i-radio" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="3" y="8" width="18" height="12" rx="2.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 8l10-5"/><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="15.5" cy="14" r="2.6"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6.5 12.5h4M6.5 15.5h4"/></symbol><symbol id="i-news" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 4h12a2 2 0 0 1 2 2v13a1 1 0 0 0 1 1H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M19 8h1a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M8 8h7M8 12h7M8 16h4"/></symbol><symbol id="i-shuffle" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 6h3.5c2 0 3.2 1 4.3 2.6l2.4 6.8C14.3 17 15.5 18 17.5 18H21"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 18h3.5c1.4 0 2.4-.5 3.2-1.4M14.3 7.4C15.1 6.5 16.1 6 17.5 6H21"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M18.5 3.5 21 6l-2.5 2.5M18.5 15.5 21 18l-2.5 2.5"/></symbol><symbol id="i-mic" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="9" y="3" width="6" height="11" rx="3"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></symbol><symbol id="i-image" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="3" y="4.5" width="18" height="15" rx="2.5"/><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="9" cy="10" r="1.8"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 16l-5-5-8.5 8.5"/></symbol><symbol id="i-alarm" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="13" r="7.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 9.5V13l2.5 2M4 5l3-2.5M20 5l-3-2.5"/></symbol><symbol id="i-bell" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 20.5a2.2 2.2 0 0 0 4 0"/></symbol><symbol id="i-playpause" viewBox="0 0 24 24"><path d="M3.5 6.5v11L11 12z" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15 6.5v11M20 6.5v11"/></symbol><symbol id="i-timer" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="13.5" r="7.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 10v3.5M9.5 2.5h5M18.5 6.5l1.5-1.5"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="10.5" cy="10.5" r="6.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15.5 15.5 21 21"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3.5 11 12 4l8.5 7"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5.5 9.5V20h13V9.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 20v-5.5h4V20"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="12" r="3"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol><symbol id="i-bus" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="4" y="3.5" width="16" height="14" rx="3"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 11h16M8 21v-3.5M16 21v-3.5"/><circle cx="8" cy="14.5" r="1.1" fill="currentColor"/><circle cx="16" cy="14.5" r="1.1" fill="currentColor"/></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3.5 10h17M8 3v4M16 3v4"/></symbol><symbol id="i-snooze" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 7h5L4 13h5M13 4h4l-4 5h4M14 15h6l-6 6h6"/></symbol><symbol id="i-speaker" viewBox="0 0 24 24"><path d="M4 9.5h3.2L12 5.4v13.2l-4.8-4.1H4z" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15.4 9a4.2 4.2 0 0 1 0 6M18 6.6a7.6 7.6 0 0 1 0 10.8"/></symbol><symbol id="i-wifi" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.3" r="1.3" fill="currentColor"/></symbol><symbol id="i-ball" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="12" r="8.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 7.5l4 2.9-1.5 4.7h-5L8 10.4z"/></symbol><symbol id="i-link" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol><symbol id="i-drop" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11z"/></symbol><symbol id="i-steps" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 3.5c1.7 0 2.7 2 2.7 4.5S8.7 13 7 13s-2.7-2.5-2.7-5S5.3 3.5 7 3.5zM5 16h4M17 8c1.7 0 2.7 2 2.7 4.5s-1 5-2.7 5-2.7-2.5-2.7-5S15.3 8 17 8zM15 20.5h4"/></symbol><symbol id="i-pad" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="3" y="5" width="18" height="14" rx="3"/><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="6.5" y="9" width="3" height="3" rx=".7"/><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="10.5" y="9" width="3" height="3" rx=".7"/><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="17" cy="10.5" r="1.8"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="5" y="10.5" width="14" height="10" rx="2.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol><symbol id="i-tools" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M14.5 6.5a4 4 0 0 0 5 5l-9 9a2.1 2.1 0 0 1-3-3l9-9a4 4 0 0 0-2-2z"/></symbol><symbol id="i-starf" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol><symbol id="i-globe" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="12" r="8.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3.5 12h17M12 3.5c2.4 2.4 3.4 5.2 3.4 8.5S14.4 18.1 12 20.5C9.6 18.1 8.6 15.3 8.6 12S9.6 5.9 12 3.5z"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="12" r="8.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M8 12.3l2.7 2.7L16.2 9.5"/></symbol><symbol id="i-warn" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4 21 19.5H3z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 10v4"/><circle cx="12" cy="16.8" r="1.1" fill="currentColor"/></symbol><symbol id="i-crop" viewBox="0 0 24 24"><path d="M6 2v14a2 2 0 0 0 2 2h14M2 6h14a2 2 0 0 1 2 2v14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol><symbol id="i-pair" viewBox="0 0 24 24"><rect x="3" y="5" width="8" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13" y="5" width="8" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/></symbol><symbol id="i-eyeoff" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 6.1A10 10 0 0 1 12 6c5 0 9 6 9 6a17 17 0 0 1-3.2 3.8M6.3 7.6C4.2 9.2 3 12 3 12s4 6 9 6c1.6 0 3-.4 4.3-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol><symbol id="i-swap" viewBox="0 0 24 24"><path d="M7 7h12l-3-3M17 17H5l3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol></defs></svg>
 
 <div class="header">
   <div class="status">
@@ -511,6 +528,17 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
       <div style="font-size:11px;color:var(--ink-muted);margin-top:6px;">
         Google Photos-appen → öppna albumet → Dela-ikonen → "Skapa länk" (inte "Bjud in personer"). En länk per rad — flera album blandas ihop till samma bildrotation. Lämna tomt för att använda de uppladdade bilderna nedan istället.
       </div>
+    </div>
+
+    <div class="card" id="photoCard">
+      <div class="card-label">ALBUMETS BILDER</div>
+      <div class="chips2" id="photoFilter" style="margin-bottom:10px;"></div>
+      <div id="photoGrid" class="pgrid"></div>
+      <div id="photoNext"></div>
+      <div class="set-row" style="margin-top:12px;"><div class="set-top"><div class="setting-label">Para ihop stående bilder automatiskt</div>
+        <div class="set-ctrl"><label class="switch"><input type="checkbox" id="photoAuto" onchange="photoAutoPair(this.checked)"><span></span></label></div></div>
+        <div class="set-help">Två stående foton visas bredvid varandra i stället för ett kraftigt beskuret.</div></div>
+      <div class="hint" style="margin-top:8px;">Tryck på en bild för att beskära, flytta fokus, para ihop eller dölja den. Märken: <svg class="ic"><use href="#i-crop"/></svg> beskuren · <svg class="ic"><use href="#i-pair"/></svg> ihopparad · <svg class="ic"><use href="#i-eyeoff"/></svg> visas inte.</div>
     </div>
 
     <div class="card yellow">
@@ -670,6 +698,36 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 </div>
 
 <!-- Välj musik (spellistor/låtar ur musikbiblioteket) -->
+<!-- En albumbild: utsnitt, dölj, para ihop, visa nu -->
+<div class="sheet-bg" id="photoSheet" onclick="if(event.target===this)closePhotoEditor()">
+  <div class="sheet">
+    <div class="sheet-title">BILD</div>
+    <div class="hint" id="photoEdHint" style="margin-top:-6px;">Så här visas den på tavlan — dra för att flytta, nyp för att zooma</div>
+    <div class="pframe" id="photoFrame"><div class="half" id="photoEdBox"><img id="photoEdImg" alt=""></div></div>
+    <div class="field" style="display:flex;align-items:center;gap:12px;margin-top:12px;">
+      <div class="field-label" style="margin:0;width:52px;">Zoom</div>
+      <input type="range" id="photoZoom" min="1" max="4" step="0.01" value="1" oninput="photoZoomInput(this.value)" style="flex:1;">
+      <b id="photoZoomText" style="width:52px;text-align:right;white-space:nowrap;">100 %</b></div>
+    <div class="sheet-actions" style="margin-top:0;"><button class="btn btn-ghost" onclick="photoCenter()">Mitten</button><button class="btn btn-ghost" id="photoFitBtn" onclick="photoFit()">Hela bilden</button></div>
+    <div class="set-row" style="margin-top:12px;"><div class="set-top"><div class="setting-label">Visa på tavlan</div>
+      <div class="set-ctrl"><label class="switch"><input type="checkbox" id="photoShowOn" checked><span></span></label></div></div>
+      <div class="set-help">Av = hoppas över i bildspelet</div></div>
+    <div class="sheet-actions"><button class="btn btn-ghost" onclick="openPairSheet(photoEd.k)"><svg class="ic"><use href="#i-pair"/></svg> <span id="photoPairBtn">Para ihop med…</span></button><button class="btn btn-ghost" onclick="photoShowNow()">▶ Visa nu</button></div>
+    <div class="sheet-actions stick"><button class="btn btn-ghost" onclick="photoReset()">Återställ</button><button class="btn btn-primary" style="flex:2;" onclick="savePhotoEdit()">Spara</button></div>
+  </div>
+</div>
+<div class="sheet-bg" id="pairSheet" onclick="if(event.target===this)closePairSheet()">
+  <div class="sheet">
+    <div class="sheet-title">PARA IHOP</div>
+    <div class="hint" style="margin-top:-6px;">Visas bredvid varandra på tavlan</div>
+    <div class="pframe" id="pairFrame"></div>
+    <div class="sheet-actions" style="margin-top:12px;"><button class="btn btn-ghost" onclick="pairSwap()"><svg class="ic"><use href="#i-swap"/></svg> Byt plats</button><button class="btn btn-ghost" id="pairSplit" onclick="pairSplit()"><svg class="ic"><use href="#i-x"/></svg> Ta isär</button></div>
+    <div class="vsec" style="margin-top:14px;">VÄLJ ANDRA BILDEN · STÅENDE</div>
+    <div class="pgrid four" id="pairGrid"></div>
+    <div class="sheet-actions stick"><button class="btn btn-ghost" onclick="closePairSheet()">Avbryt</button><button class="btn btn-primary" style="flex:2;" onclick="savePair()">Spara paret</button></div>
+  </div>
+</div>
+
 <!-- Ny timer -->
 <div class="sheet-bg" id="timerSheet" onclick="if(event.target===this)closeTimerEditor()">
   <div class="sheet">
@@ -2087,6 +2145,7 @@ function openSetPage(id, key){
   document.getElementById('setPageTitle').textContent = (PAGE_TITLE[id] || '').toUpperCase();
   document.querySelectorAll('.set-page').forEach(p => p.classList.toggle('open', p.dataset.page === id));
   if (id === 'kalender') renderCalendarState();
+  if (id === 'bilder') loadPhotos();
   if (id === 'status') renderStatusBox();
   if (id === 'musik' && !listen) loadListen().then(() => renderPiSettings());
   if (id === 'musik') renderSpotifyCard();
@@ -2876,6 +2935,205 @@ function renderTimers(board){
 function fmtLeft(s){ const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); return h ? `${h}:${pad2(m)}:${pad2(s % 60)}` : `${m}:${pad2(s % 60)}`; }
 async function extendTimer(id){ try { await api('POST', `/api/board/timers/${id}/extend`, { minutes: 5 }); await reloadBoard(); renderTimers(lastBoard); toast('+5 min ✓'); } catch(e) { if (e.message !== 'avbrutet') toast(e.message); } }
 async function cancelTimer(id){ try { await api('DELETE', `/api/board/timers/${id}`); await reloadBoard(); renderTimers(lastBoard); toast('Timern borttagen'); } catch(e) { if (e.message !== 'avbrutet') toast(e.message); } }
+
+// ═══════════════════════════════════════════════════
+// ALBUMETS BILDER (Inställningar → Bilder & album)
+// Tavlan skickar albumets bildlista; här väljer man utsnitt, döljer,
+// parar ihop och visar nu. Utsnittet räknas exakt som på tavlan
+// (render.py::crop_photo): zoom z ≥ 1, fokuspunkt fx/fy (0–1), eller
+// "hela bilden" (fit: contain).
+// ═══════════════════════════════════════════════════
+let photos = null, photoFilter = 'all', photoDimsQueue = {}, photoDimsTimer = null;
+const P_W = 800, P_H = 480, P_GAP = 12;
+async function loadPhotos(){
+  try { photos = await (await fetch('/api/board/photos')).json(); } catch(e) { photos = null; }
+  renderPhotos();
+}
+function pUrl(k, size){ const it = (photos.items || []).find(i => i.k === k); return it ? `${it.u}=${size}` : ''; }
+function pEdit(k){ return (photos.edits || {})[k] || {}; }
+function pPortrait(k){ const d = (photos.dims || {})[k]; return !!d && d[1] > d[0] * 1.05; }
+function pPartner(k){
+  const e = pEdit(k); if (e.pair) return e.pair;
+  const o = Object.entries(photos.edits || {}).find(([, v]) => v.pair === k); return o ? o[0] : null;
+}
+function renderPhotos(){
+  const card = document.getElementById('photoCard');
+  if (!card) return;
+  const grid = document.getElementById('photoGrid');
+  if (!photos || !(photos.items || []).length) {
+    document.getElementById('photoFilter').innerHTML = '';
+    document.getElementById('photoNext').innerHTML = '';
+    grid.innerHTML = `<div class="hint" style="grid-column:1/-1">${photos && photos.albums ? 'Tavlan har inte skickat albumets bilder än — de dyker upp här efter nästa bildbyte.' : 'Lägg till ett album ovan, så visas bilderna här.'}</div>`;
+    return;
+  }
+  const items = photos.items;
+  const changed = k => { const e = pEdit(k); return !!(e.z || e.fx != null || e.fy != null || e.fit || e.pair || pPartner(k)); };
+  const F = [['all', `Alla ${items.length}`], ['portrait', 'Stående'], ['changed', 'Ändrade'], ['hidden', 'Dolda']];
+  document.getElementById('photoFilter').innerHTML = F.map(([k, l]) => `<button class="${photoFilter === k ? 'on' : ''}" onclick="photoFilter='${k}';renderPhotos()">${l}</button>`).join('');
+  const list = items.filter(i => photoFilter === 'all' || (photoFilter === 'portrait' && pPortrait(i.k))
+    || (photoFilter === 'changed' && changed(i.k)) || (photoFilter === 'hidden' && pEdit(i.k).hidden));
+  grid.innerHTML = list.length ? list.map(i => {
+    const e = pEdit(i.k), b = [];
+    if (e.z || e.fx != null || e.fy != null || e.fit) b.push('<span class="bd">' + ic('crop') + '</span>');
+    if (pPartner(i.k)) b.push('<span class="bd">' + ic('pair') + '</span>');
+    if (e.hidden) b.push('<span class="bd w">' + ic('eyeoff') + '</span>');
+    return `<button class="pth ${e.hidden ? 'off' : ''}" onclick="openPhotoEditor('${i.k}')"><img src="${esc(i.u)}=w300-h300" alt="" loading="lazy" data-k="${i.k}" onload="photoMeasured(this)">${b.length ? `<span class="bds">${b.join('')}</span>` : ''}</button>`;
+  }).join('') : '<div class="hint" style="grid-column:1/-1">Inga bilder här</div>';
+  const T = photos.tavla;
+  const slideHtml = s => `<div class="slide">${s.map(k => `<img src="${esc(pUrl(k, 'w300-h300'))}" alt="">`).join('')}</div>`;
+  document.getElementById('photoNext').innerHTML = T && T.current ? `<div class="vsec" style="margin-top:14px;">PÅ TAVLAN NU · SEDAN</div>
+    <div class="pnext">${[T.current, ...(T.next || [])].map(slideHtml).join('')}</div>` : '';
+  document.getElementById('photoAuto').checked = photos.autoPair !== false;
+}
+// Bildernas mått (stående/liggande) — tavlan behöver dem för att para ihop automatiskt
+function photoMeasured(img){
+  const k = img.dataset.k, w = img.naturalWidth, h = img.naturalHeight, d = (photos.dims || {})[k];
+  if (!w || !h || (d && Math.abs(d[0] / d[1] - w / h) < 0.02)) return;
+  photoDimsQueue[k] = [w, h]; photos.dims = { ...(photos.dims || {}), [k]: [w, h] };
+  clearTimeout(photoDimsTimer);
+  photoDimsTimer = setTimeout(async () => {
+    const dims = photoDimsQueue; photoDimsQueue = {};
+    try { await api('POST', '/api/board/photos/dims', { dims }); } catch(e) {}
+    if (photoFilter === 'portrait') renderPhotos();
+  }, 1200);
+}
+async function photoAutoPair(on){
+  try { await api('POST', '/api/board/photos/autopair', { on }); photos.autoPair = on; toast(on ? 'Stående bilder paras ihop automatiskt' : 'Ingen automatisk ihopparning'); }
+  catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+}
+// Samma uträkning som render.py::crop_photo — i målrutans pixlar (w×h)
+function photoBox(sw, sh, w, h, e){
+  if (e.fit === 'contain') { const s = Math.min(w / sw, h / sh); const nw = sw * s, nh = sh * s; return { x: (w - nw) / 2, y: (h - nh) / 2, nw, nh }; }
+  const z = Math.min(4, Math.max(1, e.z || 1)), fx = e.fx == null ? .5 : e.fx, fy = e.fy == null ? .5 : e.fy;
+  const s = Math.max(w / sw, h / sh) * z, nw = Math.max(w, sw * s), nh = Math.max(h, sh * s);
+  const left = Math.min(Math.max(fx * nw - w / 2, 0), nw - w), top = Math.min(Math.max(fy * nh - h / 2, 0), nh - h);
+  return { x: -left, y: -top, nw, nh };
+}
+function placeImg(img, frameEl, ox, w, h, e, scale){
+  const B = photoBox(img.naturalWidth, img.naturalHeight, w, h, e);
+  Object.assign(img.style, { left: (ox + B.x) * scale + 'px', top: B.y * scale + 'px', width: B.nw * scale + 'px', height: B.nh * scale + 'px' });
+}
+let photoEd = null;
+function photoEdSize(){
+  // Som halva i ett par: ihopparad, eller stående när automatisk ihopparning är på
+  const half = !!pPartner(photoEd.k) || (photos.autoPair !== false && pPortrait(photoEd.k));
+  return half ? [(P_W - P_GAP) / 2, P_H] : [P_W, P_H];
+}
+function openPhotoEditor(k){
+  const e = pEdit(k);
+  photoEd = { k, e: { z: e.z || 1, fx: e.fx == null ? .5 : e.fx, fy: e.fy == null ? .5 : e.fy, fit: e.fit || null } };
+  document.getElementById('photoShowOn').checked = !e.hidden;
+  document.getElementById('photoPairBtn').textContent = pPartner(k) ? 'Ändra paret…' : 'Para ihop med…';
+  const img = document.getElementById('photoEdImg');
+  img.onload = () => renderPhotoEditor();
+  img.src = pUrl(k, 'w1600-h1600');
+  document.getElementById('photoSheet').classList.add('open');
+  if (img.complete && img.naturalWidth) renderPhotoEditor();
+}
+function closePhotoEditor(){ document.getElementById('photoSheet').classList.remove('open'); photoEd = null; }
+function renderPhotoEditor(){
+  if (!photoEd) return;
+  const frame = document.getElementById('photoFrame'), img = document.getElementById('photoEdImg');
+  if (!img.naturalWidth) return;
+  const [w, h] = photoEdSize(), scale = frame.clientWidth / P_W;
+  const box = document.getElementById('photoEdBox');
+  Object.assign(box.style, { left: (P_W - w) / 2 * scale + 'px', width: w * scale + 'px', background: '#F8F5EF' });
+  placeImg(img, box, 0, w, h, photoEd.e, scale);
+  frame.style.background = w < P_W ? 'repeating-linear-gradient(45deg,#EAE2D0 0 8px,#F8F5EF 8px 16px)' : '#F8F5EF';
+  document.getElementById('photoEdHint').textContent = w < P_W ? 'Visas som halva i ett par — dra för att flytta, nyp för att zooma' : 'Så här visas den på tavlan — dra för att flytta, nyp för att zooma';
+  document.getElementById('photoZoom').value = photoEd.e.z;
+  document.getElementById('photoZoomText').textContent = photoEd.e.fit ? 'Hela' : Math.round(photoEd.e.z * 100) + ' %';
+  document.getElementById('photoFitBtn').classList.toggle('btn-primary', !!photoEd.e.fit);
+}
+function photoZoomInput(v){ if (!photoEd) return; photoEd.e.fit = null; photoEd.e.z = Number(v); renderPhotoEditor(); }
+function photoCenter(){ if (!photoEd) return; Object.assign(photoEd.e, { fx: .5, fy: .5, fit: null }); renderPhotoEditor(); }
+function photoFit(){ if (!photoEd) return; photoEd.e.fit = photoEd.e.fit ? null : 'contain'; renderPhotoEditor(); }
+function photoReset(){ if (!photoEd) return; photoEd.e = { z: 1, fx: .5, fy: .5, fit: null }; document.getElementById('photoShowOn').checked = true; renderPhotoEditor(); }
+// Dra = flytta fokus, två fingrar = zooma
+(function(){
+  const pts = new Map(); let start = null;
+  const frame = () => document.getElementById('photoFrame');
+  document.addEventListener('pointerdown', ev => {
+    if (!photoEd || !frame().contains(ev.target)) return;
+    frame().setPointerCapture(ev.pointerId); pts.set(ev.pointerId, [ev.clientX, ev.clientY]);
+    start = { e: { ...photoEd.e }, pts: new Map(pts) };
+  });
+  document.addEventListener('pointermove', ev => {
+    if (!photoEd || !pts.has(ev.pointerId)) return;
+    pts.set(ev.pointerId, [ev.clientX, ev.clientY]);
+    const img = document.getElementById('photoEdImg'), [w, h] = photoEdSize(), scale = frame().clientWidth / P_W;
+    if (pts.size === 1 && start.pts.size === 1) {
+      if (photoEd.e.fit) return;
+      const [x0, y0] = [...start.pts.values()][0], [x1, y1] = [...pts.values()][0];
+      const B = photoBox(img.naturalWidth, img.naturalHeight, w, h, start.e);
+      const fx = start.e.fx - (x1 - x0) / scale / B.nw, fy = start.e.fy - (y1 - y0) / scale / B.nh;
+      // spara den faktiska punkten (efter att utsnittet stannat vid kanten)
+      const nb = photoBox(img.naturalWidth, img.naturalHeight, w, h, { ...start.e, fx, fy });
+      photoEd.e.fx = Math.min(1, Math.max(0, (-nb.x + w / 2) / nb.nw)); photoEd.e.fy = Math.min(1, Math.max(0, (-nb.y + h / 2) / nb.nh));
+    } else if (pts.size === 2 && start.pts.size === 2) {
+      const d = m => { const [a, b] = [...m.values()]; return Math.hypot(a[0] - b[0], a[1] - b[1]); };
+      photoEd.e.fit = null; photoEd.e.z = Math.min(4, Math.max(1, start.e.z * d(pts) / Math.max(1, d(start.pts))));
+    }
+    renderPhotoEditor();
+  });
+  const up = ev => { pts.delete(ev.pointerId); if (photoEd) start = { e: { ...photoEd.e }, pts: new Map(pts) }; };
+  document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
+  window.addEventListener('resize', () => { renderPhotoEditor(); renderPairSheet(); });
+})();
+async function savePhotoEdit(){
+  if (!photoEd) return;
+  const e = photoEd.e, body = { k: photoEd.k, hidden: !document.getElementById('photoShowOn').checked };
+  if (e.fit) body.fit = 'contain'; else Object.assign(body, { z: e.z, fx: e.fx, fy: e.fy });
+  try { const r = await api('POST', '/api/board/photos/edit', body); photos.edits = { ...(photos.edits || {}), [photoEd.k]: r.edit };
+        if (!Object.keys(r.edit).length) delete photos.edits[photoEd.k];
+        if (body.hidden) Object.keys(photos.edits).forEach(k => { if (photos.edits[k].pair === photoEd.k) delete photos.edits[k].pair; });
+        closePhotoEditor(); toast('Sparat ✓ — syns nästa gång bilden visas'); renderPhotos(); }
+  catch(err) { if (err.message !== 'avbrutet') toast(err.message); }
+}
+async function photoShowNow(){
+  if (!photoEd) return;
+  const k = photoEd.k;
+  await savePhotoEdit();
+  try { await api('POST', '/api/board/photos/show', { k }); toast('Tavlan visar bilden om några sekunder'); setTimeout(loadPhotos, 15000); }
+  catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+}
+// ── Para ihop ──
+let pairEd = null;
+function openPairSheet(k){
+  const p = pPartner(k);
+  const first = p && pEdit(p).pair === k ? p : k, second = first === k ? p : k;
+  pairEd = { a: first, b: second || null, was: !!p };
+  document.getElementById('pairSplit').style.display = p ? '' : 'none';
+  document.getElementById('pairSheet').classList.add('open');
+  renderPairSheet();
+}
+function closePairSheet(){ document.getElementById('pairSheet').classList.remove('open'); pairEd = null; }
+function renderPairSheet(){
+  if (!pairEd) return;
+  const frame = document.getElementById('pairFrame'), scale = frame.clientWidth / P_W, half = (P_W - P_GAP) / 2;
+  frame.innerHTML = [pairEd.a, pairEd.b].map((k, i) => `<div class="half" style="left:${i ? (half + P_GAP) * scale : 0}px;width:${half * scale}px">${k ? `<img src="${esc(pUrl(k, 'w1600-h1600'))}" data-i="${i}" alt="">` : '<div class="hint" style="padding:30% 10px;text-align:center">Välj en bild nedan</div>'}</div>`).join('');
+  frame.querySelectorAll('img').forEach(img => {
+    const go = () => placeImg(img, frame, 0, half, P_H, pEdit(img.dataset.i === '1' ? pairEd.b : pairEd.a), scale);
+    if (img.complete && img.naturalWidth) go(); else img.onload = go;
+  });
+  const keep = new Set([pairEd.a, pairEd.b]);
+  const cands = (photos.items || []).filter(i => i.k !== pairEd.a && !pEdit(i.k).hidden && (pPortrait(i.k) || keep.has(i.k)));
+  document.getElementById('pairGrid').innerHTML = cands.length ? cands.map(i => `<button class="pth ${i.k === pairEd.b ? 'sel' : ''}" onclick="pairEd.b='${i.k}';renderPairSheet()"><img src="${esc(i.u)}=w300-h300" alt="" loading="lazy" data-k="${i.k}" onload="photoMeasured(this)">${pPartner(i.k) && i.k !== pairEd.b ? '<span class="bds"><span class="bd">' + ic('pair') + '</span></span>' : ''}</button>`).join('')
+    : '<div class="hint" style="grid-column:1/-1">Inga andra stående bilder hittades i albumet.</div>';
+}
+function pairSwap(){ if (pairEd && pairEd.b) { [pairEd.a, pairEd.b] = [pairEd.b, pairEd.a]; renderPairSheet(); } }
+async function pairSplit(){
+  if (!pairEd) return;
+  try { const r = await api('POST', '/api/board/photos/pair', { a: pairEd.a, b: null }); photos.edits = r.edits; closePairSheet();
+        if (photoEd) openPhotoEditor(photoEd.k); toast('Paret är isärtaget'); renderPhotos(); }
+  catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+}
+async function savePair(){
+  if (!pairEd || !pairEd.b) return toast('Välj den andra bilden');
+  try { const r = await api('POST', '/api/board/photos/pair', { a: pairEd.a, b: pairEd.b }); photos.edits = r.edits; closePairSheet();
+        if (photoEd) openPhotoEditor(photoEd.k); toast('Paret är sparat ✓'); renderPhotos(); }
+  catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+}
 
 // ── Hoppa över nästa alarm ──
 function nextAlarmDate(a){

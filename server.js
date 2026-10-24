@@ -1114,7 +1114,7 @@ app.post('/api/journal', (req, res) => {
 app.get('/api/storage', (req, res) => res.json({ persistent: STORAGE_PERSISTENT, dataDir: DATA_DIR }));
 
 app.get('/api/board', (req, res) => {
-  const { images, pin, alarmTest, music: _music, calendarIcs, radioStats: _rs, playlistStats: _ps, podStats: _pds, spotifyAuth: _sa, ...settings } = boardState;
+  const { images, pin, alarmTest, music: _music, calendarIcs, radioStats: _rs, playlistStats: _ps, podStats: _pds, spotifyAuth: _sa, photoListing: _pl, ...settings } = boardState;
   res.json({
     ...settings,
     timers: activeTimers(),
@@ -1275,6 +1275,9 @@ if (!Array.isArray(boardState.radioFavs)) boardState.radioFavs = [];
 if (!boardState.radioStats || typeof boardState.radioStats !== 'object') boardState.radioStats = {};
 if (!boardState.playlistStats || typeof boardState.playlistStats !== 'object') boardState.playlistStats = {};
 if (!boardState.podStats || typeof boardState.podStats !== 'object') boardState.podStats = {};
+if (!boardState.photoEdits || typeof boardState.photoEdits !== 'object') boardState.photoEdits = {};   // nyckel -> { z, fx, fy, fit, hidden, pair }
+if (!boardState.photoDims || typeof boardState.photoDims !== 'object') boardState.photoDims = {};     // nyckel -> [bredd, höjd]
+if (typeof boardState.photoAutoPair !== 'boolean') boardState.photoAutoPair = true;
 let piStatus = null, piStatusAt = null;
 
 function bumpConfig() {
@@ -1773,6 +1776,99 @@ app.post('/api/board/alarms/test', requirePin, async (req, res) => {
 });
 
 // ── Tavlans egna anrop (ingen PIN — tavlan kontrollerar allt själv) ──
+// ── Albumbilderna i appen (2026-10-24) ───────────────────────────
+// Tavlan läser de delade Google Foto-albumen och skickar hit listan
+// (nyckel = kort hash av bildens adress, samma på tavlan). Appen visar
+// bilderna och sparar val per bild: utsnitt (zoom + fokuspunkt, eller
+// hela bilden), dold, ihopparad med en annan stående bild. Tavlan läser
+// valen ur /api/board (photoEdits, photoDims, photoAutoPair, photoNow).
+const PHOTO_KEY = /^[0-9a-f]{12}$/;
+const listedKeys = () => new Set(((boardState.photoListing || {}).items || []).map(i => i.k));
+app.post('/api/board/photos/listing', (req, res) => {          // från tavlan
+  const items = (Array.isArray(req.body.items) ? req.body.items : []).slice(0, 2000)
+    .filter(i => i && PHOTO_KEY.test(String(i.k)) && /^https:\/\/lh3\.googleusercontent\.com\/pw\//.test(String(i.u)) && String(i.u).length < 2000)
+    .map(i => ({ k: i.k, u: i.u }));
+  boardState.photoListing = { items, at: Date.now() };
+  writeJSON(BOARD_FILE, boardState);
+  res.json({ ok: true, count: items.length });
+});
+app.get('/api/board/photos', (req, res) => {
+  const L = boardState.photoListing || {};
+  res.json({ items: L.items || [], listedAt: L.at || null, edits: boardState.photoEdits, dims: boardState.photoDims,
+             autoPair: boardState.photoAutoPair, tavla: (piStatus || {}).tavla || null,
+             albums: (boardState.googlePhotosAlbumUrls || []).length, rotateMinutes: ((boardState.settings || {}).tavlaRotateMinutes) || 30 });
+});
+function cleanEdit(e) {
+  const out = {};
+  if (e.fit === 'contain') out.fit = 'contain';
+  else {
+    const z = Number(e.z), fx = Number(e.fx), fy = Number(e.fy);
+    if (Number.isFinite(z) && z > 1.001) out.z = Math.round(Math.min(4, z) * 100) / 100;
+    if (Number.isFinite(fx) && Math.abs(fx - 0.5) > 0.001) out.fx = Math.round(Math.min(1, Math.max(0, fx)) * 1000) / 1000;
+    if (Number.isFinite(fy) && Math.abs(fy - 0.5) > 0.001) out.fy = Math.round(Math.min(1, Math.max(0, fy)) * 1000) / 1000;
+  }
+  if (e.hidden) out.hidden = true;
+  return out;
+}
+function setEdit(k, e) {
+  if (e && Object.keys(e).length) boardState.photoEdits[k] = e; else delete boardState.photoEdits[k];
+}
+app.post('/api/board/photos/edit', requirePin, (req, res) => {
+  const k = String(req.body.k || '');
+  if (!PHOTO_KEY.test(k)) return res.status(400).json({ error: 'Okänd bild' });
+  const pair = (boardState.photoEdits[k] || {}).pair;
+  const e = cleanEdit(req.body || {});
+  if (pair && !e.hidden) e.pair = pair;
+  if (e.hidden) unpair(k);
+  setEdit(k, e);
+  touchBoard();
+  res.json({ ok: true, edit: boardState.photoEdits[k] || {} });
+});
+function unpair(k) {
+  for (const [key, e] of Object.entries(boardState.photoEdits)) {
+    if (key === k || e.pair === k) { const { pair, ...rest } = e; setEdit(key, rest); }
+  }
+}
+app.post('/api/board/photos/pair', requirePin, (req, res) => {
+  const a = String(req.body.a || ''), b = req.body.b ? String(req.body.b) : null;
+  if (!PHOTO_KEY.test(a) || (b && (!PHOTO_KEY.test(b) || b === a))) return res.status(400).json({ error: 'Välj två olika bilder' });
+  unpair(a);
+  if (b) {
+    unpair(b);
+    const eb = { ...(boardState.photoEdits[b] || {}) }; delete eb.hidden; setEdit(b, eb);
+    const ea = { ...(boardState.photoEdits[a] || {}) }; delete ea.hidden; ea.pair = b; setEdit(a, ea);
+  }
+  touchBoard();
+  res.json({ ok: true, edits: boardState.photoEdits });
+});
+app.post('/api/board/photos/autopair', requirePin, (req, res) => {
+  boardState.photoAutoPair = !!req.body.on;
+  touchBoard();
+  res.json({ ok: true, autoPair: boardState.photoAutoPair });
+});
+app.post('/api/board/photos/dims', requirePin, (req, res) => {   // appen mäter bilderna när de laddas
+  const known = listedKeys();
+  let n = 0;
+  for (const [k, d] of Object.entries((req.body || {}).dims || {})) {
+    if (!known.has(k) || !Array.isArray(d)) continue;
+    const w = Math.round(Number(d[0])), h = Math.round(Number(d[1]));
+    if (!(w > 0 && h > 0 && w < 100000 && h < 100000)) continue;
+    const old = boardState.photoDims[k];
+    if (!old || Math.abs(old[0] / old[1] - w / h) > 0.01) { boardState.photoDims[k] = [w, h]; n++; }
+  }
+  for (const k of Object.keys(boardState.photoDims)) if (known.size && !known.has(k)) delete boardState.photoDims[k];
+  if (n) touchBoard();
+  res.json({ ok: true, updated: n });
+});
+app.post('/api/board/photos/show', requirePin, (req, res) => {
+  const k = String(req.body.k || '');
+  if (!listedKeys().has(k)) return res.status(400).json({ error: 'Bilden finns inte i albumet' });
+  boardState.photoNow = { k, at: Date.now() };
+  writeJSON(BOARD_FILE, boardState);
+  pendingCommand = { action: 'photo_show', view: null, destination: null, direction: null, button: null, params: { k }, ts: Date.now() };
+  res.json({ ok: true });
+});
+
 app.post('/api/board/pi-sync', (req, res) => {
   lastPiSeenAt = Date.now();
   const body = req.body || {};
