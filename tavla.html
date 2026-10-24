@@ -359,8 +359,10 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
 .pframe img{position:absolute;max-width:none;user-select:none;-webkit-user-drag:none;pointer-events:none;}
 .pframe .half{position:absolute;top:0;bottom:0;overflow:hidden;}
 .pframe .half.sel::after{content:'';position:absolute;inset:0;box-shadow:inset 0 0 0 4px var(--hero-blue);pointer-events:none;}
-.pth.wide{grid-column:span 2;aspect-ratio:2/1;display:flex;gap:3px;background:#fff;}
-.pth.wide img{flex:1;min-width:0;}
+/* Par som ett "inlägg": hela raden, tavlans format, båda halvorna med sina utsnitt */
+/* Par: en vanlig ruta med båda bilderna sida vid sida + parmärket */
+.pth.post{display:flex;gap:2px;background:var(--ink);}
+.pth.post img{flex:1;min-width:0;width:50%;}
 .btn.btn-ghost.on{background:var(--hero-blue);color:#fff;text-shadow:1px 1px 0 var(--ink);}
 </style>
 </head>
@@ -731,7 +733,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
       <input type="range" id="pairZoom" min="1" max="4" step="0.01" value="1" oninput="pairZoomInput(this.value)" style="flex:1;">
       <b id="pairZoomText" style="width:52px;text-align:right;white-space:nowrap;">100 %</b></div>
     <div class="sheet-actions" style="margin-top:0;"><button class="btn btn-ghost" onclick="pairCenter()">Mitten</button><button class="btn btn-ghost" id="pairFitBtn" onclick="pairFit()">Hela bilden</button></div>
-    <div class="sheet-actions"><button class="btn btn-ghost" onclick="pairSwap()"><svg class="ic"><use href="#i-swap"/></svg> Byt plats</button><button class="btn btn-ghost" id="pairSplit" onclick="pairSplit()"><svg class="ic"><use href="#i-x"/></svg> Ta isär</button></div>
+    <div class="sheet-actions"><button class="btn btn-ghost" onclick="pairSwap()"><svg class="ic"><use href="#i-swap"/></svg> Byt plats</button><button class="btn btn-ghost" id="pairSplit" onclick="pairSplit()"><svg class="ic"><use href="#i-x"/></svg> Ta isär</button><button class="btn btn-ghost" onclick="pairShowNow()">▶ Visa nu</button></div>
     <div class="vsec" style="margin-top:14px;">VÄLJ ANDRA BILDEN · STÅENDE</div>
     <div class="pgrid four" id="pairGrid"></div>
     <div class="sheet-actions stick"><button class="btn btn-ghost" onclick="closePairSheet()">Avbryt</button><button class="btn btn-primary" style="flex:2;" onclick="savePair()">Spara paret</button></div>
@@ -2998,6 +3000,12 @@ function pPartner(k){
   const e = pEdit(k); if (e.pair) return e.pair;
   const o = Object.entries(photos.edits || {}).find(([, v]) => v.pair === k); return o ? o[0] : null;
 }
+// Ett par som en ruta (samma storlek som en enskild bild) med båda bilderna och parmärket
+function pairPost(a, b, badges){
+  return `<button class="pth post" onclick="openPairSheet('${a}','${b}')">${[a, b].map(k =>
+    `<img src="${esc(pUrl(k, 'w300-h300'))}" alt="" loading="lazy" data-k="${k}" onload="photoMeasured(this)">`).join('')}
+    <span class="bds">${badges}</span></button>`;
+}
 function renderPhotos(){
   const card = document.getElementById('photoCard');
   if (!card) return;
@@ -3009,8 +3017,8 @@ function renderPhotos(){
     return;
   }
   const items = photos.items;
-  const autoMate = {};
-  photoSlides().forEach(s => { if (s.length === 2 && !pPartner(s[0])) { autoMate[s[0]] = s[1]; autoMate[s[1]] = s[0]; } });
+  const autoMate = {}, autoFirst = {};
+  photoSlides().forEach(s => { if (s.length === 2 && !pPartner(s[0])) { autoMate[s[0]] = s[1]; autoMate[s[1]] = s[0]; autoFirst[s[0]] = autoFirst[s[1]] = s[0]; } });
   const changed = k => { const e = pEdit(k); return !!(e.z || e.fx != null || e.fy != null || e.fit || e.pair || pPartner(k)); };
   const pairs = photoSlides().filter(s => s.length === 2);
   const F = [['all', `Alla ${items.length}`], ['pairs', `Par ${pairs.length}`], ['portrait', 'Stående'], ['changed', 'Ändrade'], ['hidden', 'Dolda']];
@@ -3018,23 +3026,22 @@ function renderPhotos(){
   const list = items.filter(i => photoFilter === 'all' || (photoFilter === 'portrait' && pPortrait(i.k))
     || (photoFilter === 'changed' && changed(i.k)) || (photoFilter === 'hidden' && pEdit(i.k).hidden));
   if (photoFilter === 'pairs') {
-    grid.innerHTML = pairs.length ? pairs.map(([a, b]) => `<button class="pth wide" onclick="openPairSheet('${a}','${b}')">
-      <img src="${esc(pUrl(a, 'w300-h300'))}" alt=""><img src="${esc(pUrl(b, 'w300-h300'))}" alt="">
-      <span class="bds"><span class="bd ${pPartner(a) ? '' : 'w'}">${ic('pair')}</span></span></button>`).join('')
+    grid.innerHTML = pairs.length ? pairs.map(([a, b]) => pairPost(a, b, `<span class="bd ${pPartner(a) ? '' : 'w'}">${ic('pair')}</span>`)).join('')
       : '<div class="hint" style="grid-column:1/-1">Inga par än. Öppna en stående bild och välj "Para ihop med…", eller slå på automatisk ihopparning.</div>';
     if (pairs.some(([a]) => !pPartner(a))) grid.innerHTML += '<div class="hint" style="grid-column:1/-1">Vitt märke = parat automatiskt. Sparar du ett sådant par låses det ihop.</div>';
   } else {
-  // Par som användaren sparat visas som en ruta (där den första av dem ligger), inte var för sig
+  // Par visas som en ruta (där den första av dem ligger), inte var för sig — både sparade
+  // och automatiska (vitt märke), precis som tavlan visar dem
   const shownPair = new Set();
   grid.innerHTML = list.length ? list.map(i => {
-    const mate = pPartner(i.k);
+    const saved = pPartner(i.k), mate = saved || autoMate[i.k];
     if (mate && !pEdit(i.k).hidden && !pEdit(mate).hidden) {
       if (shownPair.has(i.k)) return '';
       shownPair.add(i.k); shownPair.add(mate);
-      const [a, b] = pEdit(i.k).pair === mate ? [i.k, mate] : [mate, i.k];
+      const [a, b] = saved ? (pEdit(i.k).pair === mate ? [i.k, mate] : [mate, i.k])
+                           : (autoFirst[i.k] === i.k ? [i.k, mate] : [mate, i.k]);
       const crop = [a, b].some(k => { const e = pEdit(k); return e.z || e.fx != null || e.fy != null || e.fit; });
-      return `<button class="pth wide" onclick="openPairSheet('${a}','${b}')"><img src="${esc(pUrl(a, 'w300-h300'))}" alt="" data-k="${a}" onload="photoMeasured(this)"><img src="${esc(pUrl(b, 'w300-h300'))}" alt="" data-k="${b}" onload="photoMeasured(this)">
-        <span class="bds">${crop ? '<span class="bd">' + ic('crop') + '</span>' : ''}<span class="bd">${ic('pair')}</span></span></button>`;
+      return pairPost(a, b, `${crop ? '<span class="bd">' + ic('crop') + '</span>' : ''}<span class="bd ${saved ? '' : 'w'}">${ic('pair')}</span>`);
     }
     const e = pEdit(i.k), b = [];
     if (e.z || e.fx != null || e.fy != null || e.fit) b.push('<span class="bd">' + ic('crop') + '</span>');
@@ -3272,6 +3279,21 @@ async function pairSplit(){
   try { const r = await api('POST', '/api/board/photos/pair', { a: pairEd.a, b: null }); photos.edits = r.edits; closePairSheet();
         if (photoEd) openPhotoEditor(photoEd.k); toast('Paret är isärtaget'); renderPhotos(); }
   catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
+}
+async function pairShowNow(){
+  if (!pairEd || !pairEd.b) return toast('Välj den andra bilden');
+  const { a, b, ea, eb } = pairEd, same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+  // oförändrat = paret finns redan så i bildspelet (sparat eller automatiskt) med samma utsnitt
+  const changed = !same(ea, edCopy(a)) || !same(eb, edCopy(b)) || !photoSlides().some(s => s[0] === a && s[1] === b);
+  try {
+    if (changed) {        // sparas tyst — Visa nu ritar en gång med det sparade
+      const r = await api('POST', '/api/board/photos/pair', { a, b, ea: editBody(a, ea), eb: editBody(b, eb), quiet: true });
+      photos.edits = r.edits;
+    }
+    await api('POST', '/api/board/photos/show', { k: a });
+    closePairSheet(); if (photoEd) closePhotoEditor(); renderPhotos();
+    toast('Tavlan visar paret om några sekunder'); setTimeout(loadPhotos, 15000);
+  } catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
 }
 async function savePair(){
   if (!pairEd || !pairEd.b) return toast('Välj den andra bilden');

@@ -1853,7 +1853,8 @@ app.post('/api/board/photos/pair', requirePin, (req, res) => {
     const eb = req.body.eb ? cleanEdit(req.body.eb) : { ...(boardState.photoEdits[b] || {}) }; delete eb.hidden; setEdit(b, eb);
     const ea = req.body.ea ? cleanEdit(req.body.ea) : { ...(boardState.photoEdits[a] || {}) }; delete ea.hidden; ea.pair = b; setEdit(a, ea);
   }
-  if (JSON.stringify(boardState.photoEdits) !== before) touchBoard();
+  // quiet: "Visa nu" i par-redigeraren sparar först och ritar sedan själv, en gång
+  if (JSON.stringify(boardState.photoEdits) !== before) { if (req.body.quiet) bumpConfig(); else touchBoard(); }
   res.json({ ok: true, edits: boardState.photoEdits });
 });
 app.post('/api/board/photos/autopair', requirePin, (req, res) => {
