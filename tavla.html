@@ -2990,14 +2990,26 @@ function renderPhotos(){
       <span class="bds"><span class="bd ${pPartner(a) ? '' : 'w'}">${ic('pair')}</span></span></button>`).join('')
       : '<div class="hint" style="grid-column:1/-1">Inga par än. Öppna en stående bild och välj "Para ihop med…", eller slå på automatisk ihopparning.</div>';
     if (pairs.some(([a]) => !pPartner(a))) grid.innerHTML += '<div class="hint" style="grid-column:1/-1">Vitt märke = parat automatiskt. Sparar du ett sådant par låses det ihop.</div>';
-  } else
+  } else {
+  // Par som användaren sparat visas som en ruta (där den första av dem ligger), inte var för sig
+  const shownPair = new Set();
   grid.innerHTML = list.length ? list.map(i => {
+    const mate = pPartner(i.k);
+    if (mate && !pEdit(i.k).hidden && !pEdit(mate).hidden) {
+      if (shownPair.has(i.k)) return '';
+      shownPair.add(i.k); shownPair.add(mate);
+      const [a, b] = pEdit(i.k).pair === mate ? [i.k, mate] : [mate, i.k];
+      const crop = [a, b].some(k => { const e = pEdit(k); return e.z || e.fx != null || e.fy != null || e.fit; });
+      return `<button class="pth wide" onclick="openPairSheet('${a}','${b}')"><img src="${esc(pUrl(a, 'w300-h300'))}" alt="" data-k="${a}" onload="photoMeasured(this)"><img src="${esc(pUrl(b, 'w300-h300'))}" alt="" data-k="${b}" onload="photoMeasured(this)">
+        <span class="bds">${crop ? '<span class="bd">' + ic('crop') + '</span>' : ''}<span class="bd">${ic('pair')}</span></span></button>`;
+    }
     const e = pEdit(i.k), b = [];
     if (e.z || e.fx != null || e.fy != null || e.fit) b.push('<span class="bd">' + ic('crop') + '</span>');
     if (pPartner(i.k) || autoMate[i.k]) b.push(`<span class="bd ${pPartner(i.k) ? '' : 'w'}">` + ic('pair') + '</span>');
     if (e.hidden) b.push('<span class="bd w">' + ic('eyeoff') + '</span>');
     return `<button class="pth ${e.hidden ? 'off' : ''}" onclick="openPhotoEditor('${i.k}')"><img src="${esc(i.u)}=w300-h300" alt="" loading="lazy" data-k="${i.k}" onload="photoMeasured(this)">${b.length ? `<span class="bds">${b.join('')}</span>` : ''}</button>`;
   }).join('') : '<div class="hint" style="grid-column:1/-1">Inga bilder här</div>';
+  }
   const T = photos.tavla;
   const slideHtml = s => `<div class="slide">${s.map(k => `<img src="${esc(pUrl(k, 'w300-h300'))}" alt="">`).join('')}</div>`;
   document.getElementById('photoNext').innerHTML = T && T.current ? `<div class="vsec" style="margin-top:14px;">PÅ TAVLAN NU · SEDAN</div>
