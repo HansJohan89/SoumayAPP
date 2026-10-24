@@ -1816,12 +1816,15 @@ function setEdit(k, e) {
 app.post('/api/board/photos/edit', requirePin, (req, res) => {
   const k = String(req.body.k || '');
   if (!PHOTO_KEY.test(k)) return res.status(400).json({ error: 'Okänd bild' });
+  const before = JSON.stringify(boardState.photoEdits);
   const pair = (boardState.photoEdits[k] || {}).pair;
   const e = cleanEdit(req.body || {});
   if (pair && !e.hidden) e.pair = pair;
   if (e.hidden) unpair(k);
   setEdit(k, e);
-  touchBoard();
+  // Tavlan ritar bara om när något faktiskt ändrats — och inte alls med
+  // quiet (Visa nu sparar först och ritar sedan själv, en gång)
+  if (JSON.stringify(boardState.photoEdits) !== before) { if (req.body.quiet) bumpConfig(); else touchBoard(); }
   res.json({ ok: true, edit: boardState.photoEdits[k] || {} });
 });
 function unpair(k) {
@@ -1832,13 +1835,15 @@ function unpair(k) {
 app.post('/api/board/photos/pair', requirePin, (req, res) => {
   const a = String(req.body.a || ''), b = req.body.b ? String(req.body.b) : null;
   if (!PHOTO_KEY.test(a) || (b && (!PHOTO_KEY.test(b) || b === a))) return res.status(400).json({ error: 'Välj två olika bilder' });
+  const before = JSON.stringify(boardState.photoEdits);
   unpair(a);
   if (b) {
     unpair(b);
-    const eb = { ...(boardState.photoEdits[b] || {}) }; delete eb.hidden; setEdit(b, eb);
-    const ea = { ...(boardState.photoEdits[a] || {}) }; delete ea.hidden; ea.pair = b; setEdit(a, ea);
+    // utsnitten för båda halvorna kan skickas med — då en enda omritning
+    const eb = req.body.eb ? cleanEdit(req.body.eb) : { ...(boardState.photoEdits[b] || {}) }; delete eb.hidden; setEdit(b, eb);
+    const ea = req.body.ea ? cleanEdit(req.body.ea) : { ...(boardState.photoEdits[a] || {}) }; delete ea.hidden; ea.pair = b; setEdit(a, ea);
   }
-  touchBoard();
+  if (JSON.stringify(boardState.photoEdits) !== before) touchBoard();
   res.json({ ok: true, edits: boardState.photoEdits });
 });
 app.post('/api/board/photos/autopair', requirePin, (req, res) => {

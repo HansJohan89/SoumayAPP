@@ -3111,20 +3111,20 @@ function photoReset(){ if (!photoEd) return; photoEd.e = { z: 1, fx: .5, fy: .5,
   document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
   window.addEventListener('resize', () => { renderPhotoEditor(); renderPairSheet(); });
 })();
-async function savePhotoEdit(){
+async function savePhotoEdit(quiet){
   if (!photoEd) return;
-  const e = photoEd.e, body = { k: photoEd.k, hidden: !document.getElementById('photoShowOn').checked };
+  const e = photoEd.e, body = { k: photoEd.k, hidden: !document.getElementById('photoShowOn').checked, quiet: !!quiet };
   if (e.fit) body.fit = 'contain'; else Object.assign(body, { z: e.z, fx: e.fx, fy: e.fy });
   try { const r = await api('POST', '/api/board/photos/edit', body); photos.edits = { ...(photos.edits || {}), [photoEd.k]: r.edit };
         if (!Object.keys(r.edit).length) delete photos.edits[photoEd.k];
         if (body.hidden) Object.keys(photos.edits).forEach(k => { if (photos.edits[k].pair === photoEd.k) delete photos.edits[k].pair; });
-        closePhotoEditor(); toast('Sparat ✓ — syns nästa gång bilden visas'); renderPhotos(); }
+        closePhotoEditor(); if (!quiet) toast('Sparat ✓ — syns nästa gång bilden visas'); renderPhotos(); }
   catch(err) { if (err.message !== 'avbrutet') toast(err.message); }
 }
 async function photoShowNow(){
   if (!photoEd) return;
   const k = photoEd.k;
-  await savePhotoEdit();
+  await savePhotoEdit(true);              // utan omritning — Visa nu ritar en gång med det sparade
   try { await api('POST', '/api/board/photos/show', { k }); toast('Tavlan visar bilden om några sekunder'); setTimeout(loadPhotos, 15000); }
   catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
 }
@@ -3244,13 +3244,8 @@ async function savePair(){
   if (!pairEd || !pairEd.b) return toast('Välj den andra bilden');
   const { a, b, ea, eb } = pairEd;
   try {
-    await api('POST', '/api/board/photos/pair', { a, b });
-    const ra = await api('POST', '/api/board/photos/edit', editBody(a, ea));
-    const rb = await api('POST', '/api/board/photos/edit', editBody(b, eb));
-    photos.edits = { ...(photos.edits || {}) };
-    for (const [k, r] of [[a, ra], [b, rb]]) { if (Object.keys(r.edit).length) photos.edits[k] = r.edit; else delete photos.edits[k]; }
-    Object.keys(photos.edits).forEach(k => { if (k !== a && [a, b].includes(photos.edits[k].pair)) delete photos.edits[k].pair; });
-    photos.edits[a] = { ...photos.edits[a], pair: b };
+    const r = await api('POST', '/api/board/photos/pair', { a, b, ea: editBody(a, ea), eb: editBody(b, eb) });   // ett anrop = en omritning
+    photos.edits = r.edits;
     closePairSheet(); if (photoEd) closePhotoEditor();
     toast('Paret är sparat ✓'); renderPhotos();
   } catch(e) { if (e.message !== 'avbrutet') toast(e.message); }
