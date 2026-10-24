@@ -1280,11 +1280,11 @@ if (!boardState.photoDims || typeof boardState.photoDims !== 'object') boardStat
 if (typeof boardState.photoAutoPair !== 'boolean') boardState.photoAutoPair = true;
 // Ny fotobehandling (2026-10-24): fotonas reglage börjar om på de rekommenderade
 // värdena (tavlans standard: ljushet 0, kontrast 0 %, mättnad 15 %, Mjukt) — en gång
-if (!boardState.photoTuneReset3) {
+if (!boardState.photoTuneReset4) {          // (4: ny grundbehandling, reglagen utgår från 0)
   boardState.settings = boardState.settings || {};
   for (const k of ['photoBrightness', 'photoContrast', 'photoSaturation', 'photoDither']) delete boardState.settings[k];
   if (boardState.settingTitles) for (const k of ['photoBrightness', 'photoContrast', 'photoSaturation', 'photoDither']) delete boardState.settingTitles[k];
-  boardState.photoTuneReset3 = true;
+  boardState.photoTuneReset4 = true;
   boardState.configVersion = (boardState.configVersion || 0) + 1;
   writeJSON(BOARD_FILE, boardState);
 }
