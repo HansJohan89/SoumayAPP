@@ -90,6 +90,7 @@ let meals           = readJSON(MEALS_FILE, []);
 let walks           = readJSON(WALKS_FILE, []);
 let tasks           = readJSON(TASKS_FILE, []);
 let glucoseLog      = readJSON(GLUCOSE_FILE, []);
+let glucoseUpdatedAt = 0;          // nytt värde inkommet -> tavlans vakt kollar direkt (via pi-sync)
 let pendingApprovals = readJSON(APPROVALS_FILE, []);
 let pendingRewards  = readJSON(REWARDS_FILE, []);
 
@@ -572,6 +573,7 @@ app.post(['/api/v1/entries', '/api/v1/entries.json'], xdripAuth, (req, res) => {
       added++;
     });
 
+    if (added > 0) glucoseUpdatedAt = Date.now();
     if (added > 0) {
       // Sortera och trimma
       glucoseLog.sort((a, b) => a.time - b.time);
@@ -1897,6 +1899,7 @@ app.post('/api/board/pi-sync', (req, res) => {
   const out = {
     version: boardState.configVersion,
     needSchema: body.schemaHash !== (boardState.settingsSchema || {}).hash,
+    glucoseAt: glucoseUpdatedAt,     // alltid med: tavlan kollar blodsockret direkt när det ändras
   };
   if (body.version !== boardState.configVersion) {
     out.settings = boardState.settings;
