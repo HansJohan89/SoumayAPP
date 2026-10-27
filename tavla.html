@@ -230,6 +230,13 @@ input[type=range]{width:100%;accent-color:var(--hero-blue);}
 .set-page.open{display:block;}
 .set-row.flash{background:#FFF7D6;transition:background 1.5s;}
 details.adv{margin-bottom:20px;}
+details.ptune > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;}
+details.ptune > summary::-webkit-details-marker{display:none;}
+details.ptune > summary .card-label{margin:0;flex:1;}
+details.ptune > summary .chev{width:18px;height:18px;transition:transform .2s;flex:none;}
+details.ptune[open] > summary .chev{transform:rotate(180deg);}
+details.ptune > summary .now{font-size:12px;color:var(--ink-muted);font-weight:600;}
+details.ptune[open] > summary{margin-bottom:10px;}
 details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor:pointer;padding:6px 2px;}
 .status-line{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--paper-soft);font-size:14px;}
 .status-line:last-child{border-bottom:none;}
@@ -536,7 +543,7 @@ details.adv summary{font-weight:700;font-size:13px;color:var(--ink-muted);cursor
       </div>
     </div>
 
-    <div class="card pi-block" data-title="FOTONAS FÄRGER" data-keys="photoMethod,photoHdr,photoBrightness,photoContrast,photoSaturation,photoDither" data-extra="photoTune"></div>
+    <div class="card pi-block" data-title="FOTONAS FÄRGER" data-keys="photoMethod,photoHdr,photoNature,photoBrightness,photoContrast,photoSaturation,photoDither" data-extra="photoTune"></div>
     <div class="card" id="photoCard">
       <div class="card-label">ALBUMETS BILDER</div>
       <div class="chips2" id="photoFilter" style="margin-bottom:10px;"></div>
@@ -2087,9 +2094,14 @@ function photoTuneHtml(title, its, saved){
   if (!its.length) return `<div class="card-label">${esc(title)}</div><div class="hint">Uppdatera tavlan så dyker reglagen upp här.</div>`;
   const changed = its.some(it => saved[it.key] !== undefined && saved[it.key] !== it.default);
   const mi = its.find(it => it.key === 'photoMethod'), method = mi ? (saved.photoMethod !== undefined ? saved.photoMethod : mi.default) : 'anpassad';
-  return `<div class="card-label">${esc(title)}</div>
+  const cur = k => { const it = its.find(i => i.key === k); if (!it) return null; const v = saved[k] !== undefined ? saved[k] : it.default;
+                     const o = (it.options || []).find(o => o.value === v); return o ? o.label : v; };
+  const now = method === 'anpassad' ? [cur('photoMethod')] : [cur('photoMethod'), 'HDR ' + (cur('photoHdr') || '').toLowerCase(), 'Natur ' + (cur('photoNature') || '').toLowerCase()];
+  return `<details class="ptune" ${photoTuneOpen ? 'open' : ''} ontoggle="photoTuneOpen=this.open"><summary>
+      <div style="flex:1;min-width:0;"><div class="card-label">${esc(title)}</div><div class="now">${esc(now.filter(Boolean).join(' · '))}${changed ? ' · ändrat' : ''}</div></div>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></summary>
     <div class="hint" style="margin-top:-4px;">Original = fotot som det är (som tidigare). Reglagen: 0 = ingen ändring. Tavlan ritar om bilden när du släpper ett reglage, om Tavla-vyn syns.</div>
-    ${its.filter(it => it.type === 'select' && !(it.key === 'photoDither' && method !== 'anpassad') && !(it.key === 'photoHdr' && method === 'anpassad')).map(it => { const v = saved[it.key] !== undefined ? saved[it.key] : it.default;
+    ${its.filter(it => it.type === 'select' && !(it.key === 'photoDither' && method !== 'anpassad') && !((it.key === 'photoHdr' || it.key === 'photoNature') && method === 'anpassad')).map(it => { const v = saved[it.key] !== undefined ? saved[it.key] : it.default;
       return `<div class="field" style="margin:10px 0 2px;"><div class="field-label">${esc(it.label.replace(/^Foton: /, '').replace(/^./, c => c.toUpperCase()))}</div>${it.help ? `<div class="hint" style="margin:-2px 0 8px;">${esc(it.help)}</div>` : ''}<div class="chips2">${(it.options || []).map(o =>
         `<button class="${o.value === v ? 'on' : ''}" onclick="saveSetting('${it.key}', '${o.value}')">${esc(o.label)}</button>`).join('')}</div></div>`; }).join('')}
     ${its.filter(it => it.type !== 'select').map(it => { const [lab, fmt, lo, hi] = PHOTO_TUNE[it.key] || [it.label, v => v, '', '']; const v = saved[it.key] !== undefined ? saved[it.key] : it.default;
@@ -2099,12 +2111,13 @@ function photoTuneHtml(title, its, saved){
           onchange="saveSetting('${it.key}', Number(this.value))">
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-muted);"><span>${lo}</span><span>${hi}</span></div></div>`; }).join('')}
     <div class="sheet-actions" style="margin-top:12px;"><button class="btn btn-ghost" onclick="photoTest()">Testbild på tavlan (A–D)</button>${changed ? `<button class="btn btn-ghost" onclick="photoTuneReset()">Återställ</button>` : ''}</div>
-    <div class="hint" style="margin-top:6px;">Testbilden visar fotot som syns nu på fyra sätt samtidigt: A som nu, B kraftigare, C klassisk, D mörkare med kvar detaljer i ljusa partier. Den försvinner vid nästa omritning.</div>`;
+    <div class="hint" style="margin-top:6px;">Testbilden visar fotot som syns nu på fyra sätt samtidigt: A som nu, B kraftigare, C klassisk, D mörkare med kvar detaljer i ljusa partier. Den försvinner vid nästa omritning.</div></details>`;
 }
+let photoTuneOpen = false;      // hopfälld som standard; hålls öppen medan man ändrar
 function photoTest(){ sendMacropadCommand('photo_test'); toast('Tavlan ritar testbilden — tar ungefär en halv minut'); }
 async function photoTuneReset(){            // alla i ett anrop = en omritning
   try {
-    const data = await api('PUT', '/api/board/settings', Object.fromEntries([...Object.keys(PHOTO_TUNE), 'photoDither', 'photoMethod', 'photoHdr'].map(k => [k, null])));
+    const data = await api('PUT', '/api/board/settings', Object.fromEntries([...Object.keys(PHOTO_TUNE), 'photoDither', 'photoMethod', 'photoHdr', 'photoNature'].map(k => [k, null])));
     tavlaState.settings = data.settings; tavlaState.settingTitles = data.settingTitles;
     if (lastBoard) lastBoard.settings = data.settings;
     renderPiSettings(); toast('Återställt ✓');
