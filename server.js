@@ -1230,11 +1230,25 @@ app.post('/api/board/command', (req, res) => {
 // Detta är den ENDA endpointen bara den fysiska Pi-processen anropar
 // (webbläsaren/appen anropar den aldrig), så den är rätt plats att
 // registrera "Pi:n är faktiskt igång och pratar med servern" på.
+// Lång väntan (2026-10-28): med ?wait=25 hålls frågan öppen tills ett
+// kommando kommer (svar direkt) eller 25 s gått (svar utan kommando). Tavlan
+// frågar då ca 2 ggr/min i stället för varje sekund — ~98 % färre anrop, och
+// knapptryck når fram minst lika snabbt. Utan wait: svar direkt som förut.
 app.post('/api/board/command/poll', (req, res) => {
   lastPiSeenAt = Date.now();
-  const cmd = pendingCommand;
-  pendingCommand = null;
-  res.json({ command: cmd });
+  const wait = Math.min(30, Math.max(0, Number(req.query.wait) || 0)) * 1000;
+  const take = () => { const cmd = pendingCommand; pendingCommand = null; return cmd; };
+  if (pendingCommand || !wait) return res.json({ command: take(), waited: !!wait });
+  const start = Date.now();
+  let done = false;
+  const timer = setInterval(() => {
+    if (done) return;
+    if (pendingCommand || Date.now() - start >= wait) {
+      done = true; clearInterval(timer); lastPiSeenAt = Date.now();
+      res.json({ command: take(), waited: true });
+    }
+  }, 100);
+  res.on('close', () => { if (!done) { done = true; clearInterval(timer); } });   // tavlan gav upp: kommandot ligger kvar
 });
 
 // Pi:n rapporterar hit efter varje RIKTIG skärmuppdatering (se
